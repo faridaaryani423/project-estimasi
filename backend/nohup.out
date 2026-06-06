@@ -1,0 +1,1505 @@
+INFO:     Started server process [9542]
+INFO:     Waiting for application startup.
+2026-04-08 16:30:20,182 - server - ERROR - Error initializing data: localhost:27017: [Errno 111] Connection refused, Timeout: 30s, Topology Description: <TopologyDescription id: 69d6827e90a0079c38be51d7, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [Errno 111] Connection refused')>]>
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+INFO:     204.76.203.30:49776 - "GET http%3A//ip-api.com/json/ HTTP/1.1" 404 Not Found
+INFO:     160.19.227.248:4168 - "GET / HTTP/1.1" 404 Not Found
+INFO:     160.19.227.248:24376 - "GET /docs HTTP/1.1" 200 OK
+INFO:     160.19.227.248:24376 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     Started server process [12025]
+INFO:     Waiting for application startup.
+2026-04-08 16:59:53,168 - server - ERROR - Error initializing data: localhost:27017: [Errno 111] Connection refused, Timeout: 30s, Topology Description: <TopologyDescription id: 69d6896ba374a0cbbc7e5ae9, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [Errno 111] Connection refused')>]>
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started server process [20865]
+INFO:     Waiting for application startup.
+2026-04-10 00:41:36,406 - server - ERROR - Error initializing data: localhost:27017: [Errno 111] Connection refused, Timeout: 30s, Topology Description: <TopologyDescription id: 69d84722cd995e2f08406cc3, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [Errno 111] Connection refused')>]>
+INFO:     Application startup complete.
+ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 8000): address already in use
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     127.0.0.1:57404 - "POST /api/api/auth/login HTTP/1.1" 404 Not Found
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 408, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/applications.py", line 123, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 148, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 65, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 756, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 776, in app
+    await route.handle(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/server.py", line 209, in login
+    user = await db.users.find_one({"username": data.username}, {"_id": 0})
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/collection.py", line 1508, in find_one
+    for result in cursor.limit(-1):
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/cursor.py", line 1262, in next
+    if len(self.__data) or self._refresh():
+                           ^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/cursor.py", line 1153, in _refresh
+    self.__session = self.__collection.database.client._ensure_session()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/mongo_client.py", line 1868, in _ensure_session
+    return self.__start_session(True, causal_consistency=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/mongo_client.py", line 1811, in __start_session
+    self._topology._check_implicit_session_support()
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/topology.py", line 583, in _check_implicit_session_support
+    self._check_session_support()
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/topology.py", line 599, in _check_session_support
+    self._select_servers_loop(
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/topology.py", line 269, in _select_servers_loop
+    raise ServerSelectionTimeoutError(
+pymongo.errors.ServerSelectionTimeoutError: localhost:27017: [Errno 111] Connection refused, Timeout: 30s, Topology Description: <TopologyDescription id: 69d6896ba374a0cbbc7e5ae9, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [Errno 111] Connection refused')>]>
+INFO:     127.0.0.1:32832 - "POST /api/auth/login HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 408, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/applications.py", line 123, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 148, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 65, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 756, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 776, in app
+    await route.handle(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/server.py", line 209, in login
+    user = await db.users.find_one({"username": data.username}, {"_id": 0})
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/collection.py", line 1508, in find_one
+    for result in cursor.limit(-1):
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/cursor.py", line 1262, in next
+    if len(self.__data) or self._refresh():
+                           ^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/cursor.py", line 1153, in _refresh
+    self.__session = self.__collection.database.client._ensure_session()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/mongo_client.py", line 1868, in _ensure_session
+    return self.__start_session(True, causal_consistency=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/mongo_client.py", line 1811, in __start_session
+    self._topology._check_implicit_session_support()
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/topology.py", line 583, in _check_implicit_session_support
+    self._check_session_support()
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/topology.py", line 599, in _check_session_support
+    self._select_servers_loop(
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/topology.py", line 269, in _select_servers_loop
+    raise ServerSelectionTimeoutError(
+pymongo.errors.ServerSelectionTimeoutError: localhost:27017: [Errno 111] Connection refused, Timeout: 30s, Topology Description: <TopologyDescription id: 69d6896ba374a0cbbc7e5ae9, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [Errno 111] Connection refused')>]>
+INFO:     127.0.0.1:39942 - "GET /api/barang HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:39956 - "GET /api/estimasi HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:39968 - "GET /api/penawaran HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:48148 - "POST /api/auth/login HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 408, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/applications.py", line 123, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 148, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 65, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 756, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 776, in app
+    await route.handle(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/server.py", line 209, in login
+    user = await db.users.find_one({"username": data.username}, {"_id": 0})
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/collection.py", line 1508, in find_one
+    for result in cursor.limit(-1):
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/cursor.py", line 1262, in next
+    if len(self.__data) or self._refresh():
+                           ^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/cursor.py", line 1153, in _refresh
+    self.__session = self.__collection.database.client._ensure_session()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/mongo_client.py", line 1868, in _ensure_session
+    return self.__start_session(True, causal_consistency=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/mongo_client.py", line 1811, in __start_session
+    self._topology._check_implicit_session_support()
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/topology.py", line 583, in _check_implicit_session_support
+    self._check_session_support()
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/topology.py", line 599, in _check_session_support
+    self._select_servers_loop(
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/topology.py", line 269, in _select_servers_loop
+    raise ServerSelectionTimeoutError(
+pymongo.errors.ServerSelectionTimeoutError: localhost:27017: [Errno 111] Connection refused, Timeout: 30s, Topology Description: <TopologyDescription id: 69d6896ba374a0cbbc7e5ae9, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [Errno 111] Connection refused')>]>
+INFO:     127.0.0.1:38900 - "POST /api/auth/login HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 408, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/applications.py", line 123, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 148, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 65, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 756, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 776, in app
+    await route.handle(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/server.py", line 209, in login
+    user = await db.users.find_one({"username": data.username}, {"_id": 0})
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/collection.py", line 1508, in find_one
+    for result in cursor.limit(-1):
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/cursor.py", line 1262, in next
+    if len(self.__data) or self._refresh():
+                           ^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/cursor.py", line 1153, in _refresh
+    self.__session = self.__collection.database.client._ensure_session()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/mongo_client.py", line 1868, in _ensure_session
+    return self.__start_session(True, causal_consistency=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/mongo_client.py", line 1811, in __start_session
+    self._topology._check_implicit_session_support()
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/topology.py", line 583, in _check_implicit_session_support
+    self._check_session_support()
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/topology.py", line 599, in _check_session_support
+    self._select_servers_loop(
+  File "/home/azureuser/project-estimasi/backend/venv/lib/python3.12/site-packages/pymongo/topology.py", line 269, in _select_servers_loop
+    raise ServerSelectionTimeoutError(
+pymongo.errors.ServerSelectionTimeoutError: localhost:27017: [Errno 111] Connection refused, Timeout: 30s, Topology Description: <TopologyDescription id: 69d6896ba374a0cbbc7e5ae9, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [Errno 111] Connection refused')>]>
+INFO:     Started server process [22869]
+INFO:     Waiting for application startup.
+2026-04-10 01:25:09,101 - server - INFO - Default users created
+2026-04-10 01:25:09,135 - server - INFO - Default barang created
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:49110 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49126 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49128 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49144 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44828 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54756 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53080 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47826 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47834 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51976 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51964 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51986 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51998 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52006 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50710 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50702 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50718 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48446 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48460 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48470 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48484 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48490 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54340 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54350 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36476 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36482 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56184 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56194 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60032 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60038 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60042 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60052 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60066 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47916 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47904 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50000 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50008 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56552 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33542 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:42568 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33546 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:43758 - "GET /api/.git/config HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59892 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53342 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56224 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60082 - "GET /api/tags HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60086 - "GET /api/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38858 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55708 - "GET /api/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55724 - "GET /api/tags HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:42480 - "GET /api/.git/config HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60002 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59072 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41586 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59596 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49206 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45852 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47762 - "GET /api/.git/config HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48948 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48960 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48966 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48980 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48990 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44104 - "POST /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44118 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44126 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44132 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40848 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40864 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40868 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58470 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58480 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33970 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33960 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46252 - "PUT /api/estimasi/1776153938506 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46262 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46276 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38598 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38612 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51056 - "POST /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51066 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51078 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33390 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51326 - "GET /api/.git/config HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:42528 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42812 - "POST /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42824 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42832 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42840 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34370 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34378 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34392 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36854 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57288 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58586 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58602 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58618 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58624 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51940 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51952 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50526 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45994 - "POST /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46000 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48974 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48986 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44040 - "PUT /api/estimasi/1776156421358 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44048 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44056 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37994 - "PUT /api/estimasi/1776156421358 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37998 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38012 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40540 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40318 - "POST /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40334 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56974 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56980 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36174 - "PUT /api/estimasi/1776156421358 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36186 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36198 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50786 - "PUT /api/estimasi/1776156421358 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50794 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50802 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39440 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47548 - "GET /api/.git/config HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53598 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36178 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:44928 - "GET /api/.git/config HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53834 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48106 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41942 - "GET /api/v2/about HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41952 - "GET /api/v1/check-version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41966 - "GET /api/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41968 - "GET /api/server/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41978 - "GET /api/vip/i18n/api/v2/translation/products/vRNIUI/versions/1 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48038 - "GET /api/v1.0/environment HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48044 - "GET /api/v3/meta HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48060 - "GET /api/v1/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48074 - "GET /api/v2/hoverfly/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48088 - "GET /api/status HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48094 - "GET /api/v1/info HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48108 - "GET /api-description HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48114 - "GET /api/v1/cluster/summary HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48128 - "GET /api/v2.0/systeminfo HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48138 - "GET /api/system/status HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:39730 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49282 - "GET /api/.git/config HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52334 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38928 - "GET /api/penawaran HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:38942 - "GET /api/barang HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:38944 - "GET /api/estimasi HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:41456 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41460 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41462 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41476 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54624 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54640 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54648 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50800 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50790 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40774 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40786 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40788 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40188 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40204 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54086 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54096 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48292 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48296 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38424 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38428 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47502 - "DELETE /api/estimasi/1776503306304 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47520 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47518 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46254 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46256 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46264 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50706 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50714 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59296 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59302 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40360 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40362 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44144 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44160 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36556 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36558 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43712 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43724 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43730 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43742 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50850 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50866 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50868 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50880 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50894 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60778 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60780 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43976 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43986 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43994 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43802 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48866 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60790 - "GET /api/.git/config HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54274 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59894 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48172 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48188 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46102 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40668 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40670 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50034 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50038 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58830 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38322 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38328 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48402 - "PUT /api/estimasi/1776503822946 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48410 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48422 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37922 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37928 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60154 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60168 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60170 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59040 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59068 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59056 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47980 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47984 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54208 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54212 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54228 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54230 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48320 - "DELETE /api/estimasi/1776503822946 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48322 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48326 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53648 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53664 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53660 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58724 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58746 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58730 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     Started server process [113017]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:45096 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45100 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54032 - "DELETE /api/estimasi/1776523944881 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54038 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54050 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35730 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35738 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35750 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43282 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43284 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56582 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56596 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38462 - "DELETE /api/estimasi/1776524252151 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38476 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38490 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36616 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36620 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36636 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47742 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59656 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59644 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46214 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46216 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32852 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32846 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58338 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58340 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60094 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:39830 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50054 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50066 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50072 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48608 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48606 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52994 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41608 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51770 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47296 - "GET /api/barang HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:47300 - "GET /api/estimasi HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:47314 - "GET /api/penawaran HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:51504 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51514 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51518 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51520 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51546 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51534 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33544 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34932 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34942 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52982 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52984 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36818 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36820 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33232 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33246 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40084 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40088 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34520 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34536 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34550 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44752 - "PUT /api/estimasi/1776688487162 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44768 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44770 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55700 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55712 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51526 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51540 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51550 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32826 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32832 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34458 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34460 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34470 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59038 - "DELETE /api/estimasi/1776689976425 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59050 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59054 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59058 - "DELETE /api/estimasi/1776689685350 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59076 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59060 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59086 - "DELETE /api/estimasi/1776688487162 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59088 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59090 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43418 - "DELETE /api/estimasi/1776524606874 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43430 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43436 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43444 - "DELETE /api/estimasi/1776522975188 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43450 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43458 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43468 - "DELETE /api/estimasi/1776506403413 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43478 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43488 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36364 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36368 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38614 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38622 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39498 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39502 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39518 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37468 - "PUT /api/estimasi/1776694590508 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55404 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55420 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56908 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56916 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45738 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53302 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53316 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33466 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59934 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41086 - "GET /api/barang HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:41098 - "GET /api/penawaran HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:41102 - "GET /api/estimasi HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:41108 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41124 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41110 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41134 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41144 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59940 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59954 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50136 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49046 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49040 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51856 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51858 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36802 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36806 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36820 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44840 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44852 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43334 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43350 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41356 - "PUT /api/estimasi/1776156421358 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41372 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41386 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34960 - "PUT /api/estimasi/1776156421358 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34976 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34986 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50030 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50014 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48282 - "PUT /api/estimasi/1776156421358 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48298 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48302 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47854 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47844 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43348 - "PUT /api/estimasi/1776156421358 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43364 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43376 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46770 - "PUT /api/estimasi/1776156421358 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46784 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46786 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49666 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49680 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49694 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48858 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45228 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45230 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51480 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51496 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49666 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49678 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42420 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42424 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36364 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36354 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46876 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46882 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51132 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51130 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33796 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60202 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41502 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:39700 - "GET /api/estimasi HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:39712 - "GET /api/barang HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:39722 - "GET /api/penawaran HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:46872 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46874 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46886 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46892 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46902 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46914 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36874 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36884 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37120 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37126 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37142 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57430 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57436 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46352 - "PUT /api/estimasi/1777179336212 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46356 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46370 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45632 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45636 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45644 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57106 - "PUT /api/estimasi/1777179851015 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57110 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57112 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34976 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34984 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51304 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51308 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51312 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51314 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34800 - "DELETE /api/estimasi/1777179851015 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34816 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34820 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42772 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42774 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42776 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38852 - "PUT /api/estimasi/1776156421358 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38858 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38862 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51154 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51162 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52064 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52074 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47936 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47952 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34718 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34724 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34928 - "DELETE /api/estimasi/1777180538396 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34940 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34952 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59836 - "DELETE /api/estimasi/1777179336212 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59842 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59856 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59872 - "DELETE /api/estimasi/1776863735106 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59880 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59894 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38742 - "DELETE /api/estimasi/1776694590508 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38770 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47714 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47730 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41630 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41634 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58714 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:42690 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42694 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40476 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40492 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56920 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56932 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37020 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37024 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55890 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55898 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54950 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54964 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43128 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43140 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58238 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:44830 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:39872 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:42324 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42340 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42344 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42346 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37920 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37916 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38198 - "GET /api/barang HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:38212 - "GET /api/penawaran HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:38228 - "GET /api/estimasi HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:38232 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38238 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38266 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38250 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59736 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59752 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59750 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54492 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54506 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51614 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51616 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60018 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60004 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45750 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:37708 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51200 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:32782 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33646 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:43188 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56742 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56748 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56762 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56768 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56766 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58040 - "GET /api/penawaran HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:58042 - "GET /api/estimasi HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:54528 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54534 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54548 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54558 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54582 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54570 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43658 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43674 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58832 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58848 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60782 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60784 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38870 - "POST /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38874 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38876 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53366 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59628 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59622 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59638 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34180 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34186 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34190 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34196 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46976 - "DELETE /api/penawaran/1777483230569 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46986 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46992 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39884 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39886 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41286 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41302 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46806 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46810 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43944 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:34576 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34572 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40380 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40392 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42948 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42964 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50608 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50620 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39200 - "POST /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39206 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39212 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56448 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56450 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46710 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48220 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59976 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:46274 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:46278 - "GET /api/.env.local HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:46286 - "GET /api/.env.production HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54682 - "GET /api/actuator/env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:39362 - "GET /api/config/mail.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35210 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41870 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:39130 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56432 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48692 - "GET /api/penawaran HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:48700 - "GET /api/estimasi HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:48712 - "GET /api/barang HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:48724 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48736 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48746 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48750 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39244 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39250 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47068 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47080 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58962 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58970 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48284 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48286 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46990 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46996 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39412 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39422 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53448 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53452 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44548 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44562 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34436 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34438 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34454 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34462 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49756 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49770 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49778 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49790 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58960 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58962 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37248 - "POST /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37260 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37268 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44568 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:43332 - "GET /api/auth/login HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:43334 - "GET /api/users HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:43348 - "GET /api/users/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:43350 - "GET /api/estimasi/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:43360 - "GET /api/barang HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:43374 - "GET /api/penawaran HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:43382 - "GET /api/barang/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:43398 - "GET /api/estimasi HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:43414 - "GET /api/penawaran/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:43416 - "GET /api/users HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:43422 - "GET /api/estimasi HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:43436 - "GET /api/barang HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:43452 - "GET /api/penawaran HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:40942 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38120 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45572 - "GET /api/sonicos/auth HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45586 - "GET /api/sonicos/tfa HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59624 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48612 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55862 - "GET /api/session/properties HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:43800 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54256 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51158 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58340 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52082 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36066 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45226 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36160 - "GET /api/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49806 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53314 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33582 - "GET /api/v2/about HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33586 - "GET /api/v1/check-version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33588 - "GET /api/server/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33602 - "GET /api/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33618 - "GET /api/vip/i18n/api/v2/translation/products/vRNIUI/versions/1 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33624 - "GET /api/v1.0/environment HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33640 - "GET /api/v3/meta HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33650 - "GET /api/v1/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33662 - "GET /api/v2/hoverfly/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57682 - "GET /api/v1/info HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57686 - "GET /api/status HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57694 - "GET /api-description HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57702 - "GET /api/v1/cluster/summary HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57714 - "GET /api/v2.0/systeminfo HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57724 - "GET /api/system/status HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:39858 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56582 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38854 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36764 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36766 - "POST /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59316 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48400 - "GET /api/v1/check-version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48414 - "GET /api/v2/about HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48430 - "GET /api/server/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48432 - "GET /api/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58974 - "GET /api/vip/i18n/api/v2/translation/products/vRNIUI/versions/1 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58988 - "GET /api/v1.0/environment HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59000 - "GET /api/v3/meta HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59006 - "GET /api/v1/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59016 - "GET /api/v2/hoverfly/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59024 - "GET /api/v1/info HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59034 - "GET /api/status HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59038 - "GET /api-description HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59052 - "GET /api/v1/cluster/summary HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59054 - "GET /api/v2.0/systeminfo HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59056 - "GET /api/system/status HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60822 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33542 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33546 - "POST /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48672 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48682 - "POST /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49424 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49426 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49428 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49444 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35172 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35178 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44620 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57206 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33854 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33862 - "GET /api/v1/config HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33866 - "GET /api/v2/config HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33868 - "GET /api/v2/settings HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33884 - "GET /api/config HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33890 - "GET /api/health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33892 - "GET /api/openapi.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33900 - "GET /api/settings HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33906 - "GET /api/env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33910 - "GET /api/v1/settings HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33924 - "GET /api/account HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33928 - "GET /api/v1/env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:42222 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56142 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:46844 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38842 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:37810 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40812 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:34522 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:46496 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36156 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41338 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38266 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:43388 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43396 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43412 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43414 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48452 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48454 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48470 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52500 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52502 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46648 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46632 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36734 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36736 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36750 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50046 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50032 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50058 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50074 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40986 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41002 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41012 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41024 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42412 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42420 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42418 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54032 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54042 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54046 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54062 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41504 - "POST /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41510 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35802 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35812 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58524 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58538 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58552 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58558 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58566 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58568 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55788 - "POST /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55798 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55804 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34494 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34496 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34508 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51122 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51126 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51138 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53720 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53724 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53728 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43116 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43110 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54314 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55296 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55312 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56690 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58164 - "PUT /api/barang/1779094572776 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58172 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58174 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58188 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39446 - "PUT /api/estimasi/1779094987939 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39450 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39452 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59700 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59696 - "GET /api.zip HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59710 - "GET /api.7z HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59720 - "GET /api.tar HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59730 - "GET /api.tar.bz2 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59740 - "GET /api.tar.gz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59748 - "GET /api.tgz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59754 - "GET /api.tar.xz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59768 - "GET /api.gz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59784 - "GET /api.sql.bz2 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59800 - "GET /api.sql HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59804 - "GET /api.sql.gz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59806 - "GET /api.bz2 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59812 - "GET /api.rar HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59820 - "GET /api.zst HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:44318 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56678 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57896 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45022 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40484 - "GET /api.zip HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40488 - "GET /api.tar.gz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40504 - "GET /api.tgz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40512 - "GET /api.tar HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40522 - "GET /api.tar.bz2 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40538 - "GET /api.tar.xz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40548 - "GET /api.7z HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40554 - "GET /api.rar HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40570 - "GET /api.gz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40584 - "GET /api.bz2 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40594 - "GET /api.zst HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40608 - "GET /api.sql.gz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40624 - "GET /api.sql.bz2 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40636 - "GET /api.sql HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59234 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55190 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36722 - "GET /api.zip HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36730 - "GET /api.tar.gz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36740 - "GET /api.tgz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36754 - "GET /api.tar HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36762 - "GET /api.tar.bz2 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36774 - "GET /api.tar.xz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36778 - "GET /api.7z HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36786 - "GET /api.rar HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36790 - "GET /api.gz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36800 - "GET /api.bz2 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36814 - "GET /api.zst HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36818 - "GET /api.sql.gz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36830 - "GET /api.sql.bz2 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:36836 - "GET /api.sql HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48774 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53528 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54876 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38910 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41312 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:46040 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53192 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55226 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56718 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57418 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51060 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47778 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45242 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55200 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38692 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41260 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55650 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53420 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52014 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45734 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35860 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:42408 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33396 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55032 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:39196 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53200 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49610 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59924 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41522 - "GET /api/config HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41534 - "GET /api/v1/config HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41544 - "GET /api/v1/admin/config HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41546 - "GET /api/settings HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41556 - "GET /api/v2/config HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41558 - "GET /api-docs HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41574 - "GET /apisix/admin/routes HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41590 - "GET /apisix/admin/services HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41592 - "GET /apisix/status HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41604 - "GET /apisix/prometheus/metrics HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41620 - "GET /api/v1/namespaces HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41630 - "GET /api/auth/login HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:41638 - "GET /api/users HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:41650 - "GET /api/users/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:41660 - "GET /api/barang HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:41664 - "GET /api/barang/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:41672 - "GET /api/estimasi HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:41674 - "GET /api/estimasi/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:41682 - "GET /api/penawaran HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:41698 - "GET /api/users HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:41714 - "GET /api/penawaran/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:41728 - "GET /api/barang HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:41744 - "GET /api/estimasi HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:41746 - "GET /api/penawaran HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:55956 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:43940 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43956 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43966 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43978 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39064 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58418 - "GET /api/estimasi HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:58426 - "GET /api/barang HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:58430 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58432 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58436 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58442 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42128 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46704 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46718 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42822 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42828 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42832 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42836 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49192 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52008 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52010 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52020 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34418 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34406 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49752 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49746 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49768 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49774 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51308 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51298 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51316 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51324 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51328 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51334 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37468 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37478 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46680 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46688 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53980 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53990 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39774 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39788 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44956 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44964 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53880 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53894 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59010 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59026 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59040 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59424 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59408 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47798 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47806 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49972 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40636 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40638 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42588 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57208 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57218 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46528 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52674 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52682 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50752 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50758 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50774 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50788 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50794 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50796 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50810 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50816 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50830 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50836 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50846 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50852 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50856 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50868 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36574 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36564 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38400 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38412 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34872 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34870 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39754 - "PUT /api/penawaran/1776154409298 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39768 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39770 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55806 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55810 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58802 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43430 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43440 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43454 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43456 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56756 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60326 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60338 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60328 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48322 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:44662 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:43510 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47196 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60528 - "GET /api/v2/about HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60538 - "GET /api/v1/check-version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60554 - "GET /api/server/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:46992 - "GET /api/vip/i18n/api/v2/translation/products/vRNIUI/versions/1 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47006 - "GET /api/v1.0/environment HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47016 - "GET /api/v3/meta HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47028 - "GET /api/v1/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47034 - "GET /api/v2/hoverfly/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47050 - "GET /api/v1/info HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47052 - "GET /api/status HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47068 - "GET /api-description HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47074 - "GET /api/v1/cluster/summary HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47088 - "GET /api/v2.0/systeminfo HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:42272 - "GET /api/system/status HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41008 - "GET /api/barang HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:41012 - "GET /api/estimasi HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:41018 - "GET /api/penawaran HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:41022 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41036 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41040 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41044 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48746 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48750 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48758 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55492 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33324 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33336 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33338 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33340 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47594 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47600 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59878 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59886 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38236 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38250 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50052 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50066 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48490 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49274 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49280 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52672 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57644 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57652 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41372 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41384 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49972 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:34466 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34454 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38376 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38382 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38390 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38392 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35126 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35132 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35154 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35144 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35162 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35312 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35322 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35326 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35336 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35338 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35350 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35352 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45342 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50200 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50206 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50212 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50228 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33964 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44998 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45010 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45012 - "GET /api/penawaran HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48842 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50854 - "GET /api/barang HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50864 - "GET /api/estimasi HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54508 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57352 - "GET /api/actuator/heapdump HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57366 - "GET /api/actuator/env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57368 - "GET /api/actuator/configprops HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57372 - "GET /api/actuator/logfile HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57382 - "GET /api/heapdump HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57398 - "GET /api/env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57410 - "GET /api/configprops HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57420 - "GET /api/aws.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57428 - "GET /api/credentials.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57444 - "GET /api/phpinfo.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57448 - "GET /api/docker-compose.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57460 - "GET /api/docker-compose.prod.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57466 - "GET /api_keys.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57482 - "GET /api-keys.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57496 - "GET /api_keys.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57508 - "GET /api/config.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57512 - "GET /api/config.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57518 - "GET /api/config.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57534 - "GET /api/settings.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57538 - "GET /api/settings.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57546 - "GET /api/database.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57560 - "GET /api/database.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57572 - "GET /api/application.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57584 - "GET /api/application.properties HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57588 - "GET /api/appsettings.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57596 - "GET /api/credentials.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57610 - "GET /api/secrets.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57622 - "GET /api/keys.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57632 - "GET /api/parameters.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57640 - "GET /api/v1/config.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57650 - "GET /api/v1/application.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57658 - "GET /api/v2/config.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57666 - "GET /api/v2/application.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:46764 - "GET /api/client_secret.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:46770 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33440 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33456 - "GET /api/.env.local HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33470 - "GET /api/.env.production HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33486 - "GET /api/.env.prod HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33492 - "GET /api/.env.backup HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33494 - "GET /api/.env.old HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33510 - "GET /api/.env.bak HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33526 - "GET /api/.env.staging HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33542 - "GET /api/.env.dev HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33550 - "GET /api/v1/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33560 - "GET /api/v2/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33568 - "GET /api/v3/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41732 - "GET /api/backend/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58714 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35214 - "GET /api/actuator/heapdump HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35224 - "GET /api/actuator/env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35240 - "GET /api/actuator/configprops HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35250 - "GET /api/actuator/logfile HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35266 - "GET /api/heapdump HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35278 - "GET /api/env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35292 - "GET /api/configprops HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35304 - "GET /api/aws.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35316 - "GET /api/credentials.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35326 - "GET /api/phpinfo.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35330 - "GET /api/docker-compose.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35332 - "GET /api/docker-compose.prod.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41416 - "GET /api_keys.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41422 - "GET /api-keys.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41428 - "GET /api_keys.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41434 - "GET /api/config.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41444 - "GET /api/config.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41460 - "GET /api/config.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41462 - "GET /api/settings.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41468 - "GET /api/settings.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41476 - "GET /api/database.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41478 - "GET /api/database.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41486 - "GET /api/application.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41500 - "GET /api/application.properties HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41506 - "GET /api/appsettings.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41516 - "GET /api/credentials.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41526 - "GET /api/secrets.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41542 - "GET /api/keys.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41558 - "GET /api/parameters.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41568 - "GET /api/v1/config.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41582 - "GET /api/v1/application.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41588 - "GET /api/v2/config.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41596 - "GET /api/v2/application.yml HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38064 - "GET /api/.env.local HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38072 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38082 - "GET /api/.env.bak HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38094 - "GET /api/.env.backup HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38108 - "GET /api/v3/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38116 - "GET /api/.env.production HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38128 - "GET /api/.env.old HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38134 - "GET /api/.env.prod HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38150 - "GET /api/.env.staging HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38156 - "GET /api/v1/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38170 - "GET /api/v2/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38186 - "GET /api/.env.dev HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38190 - "GET /api/backend/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:43824 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50292 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50308 - "GET /api/client_secret.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:46950 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50170 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58888 - "GET /api/sonicos/auth HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58896 - "GET /api/sonicos/tfa HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48982 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:46980 - "GET /api/v2/cmdb/system/admin HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:39296 - "GET /api/v2/cmdb/system/admin/admin HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51510 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 Not Found
