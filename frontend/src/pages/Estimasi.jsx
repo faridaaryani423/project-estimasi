@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Calculator, Plus, Trash2, Weight, Ruler, Pencil, Download, Eye, Loader2, Search, User, MapPin, Phone } from 'lucide-react';
+import { Calculator, Plus, Trash2, Weight, Ruler, Pencil, Download, Eye, Loader2, Search, User, MapPin, Phone, Square } from 'lucide-react';
 import { estimasiAPI } from '@/services/api';
 import { formatNumberWithSeparator } from '@/lib/utils';
 import jsPDF from 'jspdf';
@@ -89,10 +89,9 @@ const Estimasi = () => {
     const marginL = 10;
     const marginR = 10;
 
-    // ── Lebar kolom bersama (dipakai tabel material + grand total) ──
-    const tableAvailWidth = pageWidth - marginL - marginR;          // 277 mm pada A4 landscape
-    const fixedColsWidth  = 48 + 16 + 12 + 12 + 12 + 14 + 12 + 22 + 22; // 170 mm
-    const potonganWidth   = tableAvailWidth - fixedColsWidth;       // 107 mm (sisa)
+    const tableAvailWidth = pageWidth - marginL - marginR;
+    const fixedColsWidth  = 48 + 16 + 12 + 12 + 12 + 14 + 12 + 22 + 22;
+    const potonganWidth   = tableAvailWidth - fixedColsWidth;
 
     const sharedColStyles = {
       0: { cellWidth: 48 },
@@ -394,7 +393,6 @@ const Estimasi = () => {
 
     autoTable(doc, {
       startY,
-      // head dummy tidak ditampilkan — memaksa autoTable mengenali 10 kolom
       showHead  : 'never',
       head      : [['Spesifikasi / Uraian','Pemakaian','Panjang\nSisa','Berat\nSisa',
                     'Berat\nReal','Berat\n+ Waste','Luas\n(M2)','Harga\n+ Waste','Harga\nReal','Potongan']],
@@ -684,7 +682,7 @@ const Estimasi = () => {
 
             <CardContent className="space-y-6">
               {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 {/* Berat */}
                 <Card className="bg-emerald-50">
                   <CardContent className="pt-6 flex items-center gap-3">
@@ -720,7 +718,7 @@ const Estimasi = () => {
                   </CardContent>
                 </Card>
 
-                {/* Dimensi */}
+                {/* Dimensi Kerja */}
                 <Card className="bg-blue-50">
                   <CardContent className="pt-6 flex items-center gap-3">
                     <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
@@ -737,6 +735,31 @@ const Estimasi = () => {
                           return Number(luasKerja).toFixed(2);
                         })()}{' '}
                         m²
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* ── LUAS PERMUKAAN CARD (BARU) ── */}
+                <Card className="bg-violet-50">
+                  <CardContent className="pt-6 flex items-center gap-3">
+                    <div className="w-12 h-12 bg-violet-100 rounded-lg flex items-center justify-center shrink-0">
+                      <Square className="w-6 h-6 text-violet-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600">Luas Permukaan</p>
+                      <p className="text-lg font-bold text-violet-700">
+                        {(() => {
+                          // Prioritas 1: pakai totalLuasPermukaan dari backend
+                          if (viewingEstimasi.totalLuasPermukaan > 0) {
+                            return Number(viewingEstimasi.totalLuasPermukaan).toFixed(2);
+                          }
+                          // Prioritas 2: jumlahkan luasPermukaanTotal tiap item
+                          const total = (viewingEstimasi.items || []).reduce((sum, item) => {
+                            return sum + (parseFloat(item.luasPermukaanTotal || 0) || 0);
+                          }, 0);
+                          return Number(total).toFixed(2);
+                        })()} m²
                       </p>
                     </div>
                   </CardContent>
@@ -806,6 +829,7 @@ const Estimasi = () => {
                     <TableHead>Berat Sisa</TableHead>
                     <TableHead>Berat Real</TableHead>
                     <TableHead>Berat + Waste</TableHead>
+                    <TableHead>Luas Permukaan</TableHead>
                     <TableHead>Harga + Waste</TableHead>
                     <TableHead>Harga Real</TableHead>
                   </TableRow>
@@ -832,13 +856,15 @@ const Estimasi = () => {
                           finalBeratPlusWaste : 0,
                           finalHargaReal      : 0,
                           finalHargaPlusWaste : 0,
+                          finalLuasPermukaan  : 0,   // ← BARU
                           count               : 0,
                           lastItemIndex       : -1,
                         };
                       }
                       const group = groupedItems[groupingKey];
-                      group.totalBahan   += item.breakdown?.kebutuhanBahan || 0;
-                      group.totalJumlah  += item.jumlahKeperluan || 0;
+                      group.totalBahan          += item.breakdown?.kebutuhanBahan || 0;
+                      group.totalJumlah         += item.jumlahKeperluan || 0;
+                      group.finalLuasPermukaan  += parseFloat(item.luasPermukaanTotal || 0) || 0; // ← BARU
                       if (itemIdx >= group.lastItemIndex) {
                         group.finalWaste           = item.breakdown?.waste           || 0;
                         group.finalWastePercentage = item.breakdown?.wastePercentage || 0;
@@ -864,20 +890,30 @@ const Estimasi = () => {
                           group.barangId === '__manual__' ||
                           group.jenisBahan === 'Manual';
                         if (!isManualRow) {
-                          acc.panjangReal    += Number(group.finalPanjangReal   || 0);
-                          acc.panjangWaste   += Number(group.finalWaste         || 0);
-                          acc.beratReal      += Number(group.finalBeratReal     || 0);
+                          acc.panjangReal    += Number(group.finalPanjangReal    || 0);
+                          acc.panjangWaste   += Number(group.finalWaste          || 0);
+                          acc.beratReal      += Number(group.finalBeratReal      || 0);
                           acc.beratPlusWaste += Number(group.finalBeratPlusWaste || 0);
                           acc.beratSisa      += Math.max(
                             Number(group.finalBeratPlusWaste || 0) - Number(group.finalBeratReal || 0),
                             0
                           );
+                          acc.luasPermukaan  += Number(group.finalLuasPermukaan || 0); // ← BARU
                         }
                         acc.hargaPlusWaste += Number(isManualRow ? group.subtotal || 0 : group.finalHargaPlusWaste || 0);
                         acc.hargaReal      += Number(isManualRow ? group.subtotal || 0 : group.finalHargaReal      || 0);
                         return acc;
                       },
-                      { panjangReal: 0, panjangWaste: 0, beratReal: 0, beratPlusWaste: 0, beratSisa: 0, hargaPlusWaste: 0, hargaReal: 0 }
+                      {
+                        panjangReal   : 0,
+                        panjangWaste  : 0,
+                        beratReal     : 0,
+                        beratPlusWaste: 0,
+                        beratSisa     : 0,
+                        luasPermukaan : 0,   // ← BARU
+                        hargaPlusWaste: 0,
+                        hargaReal     : 0,
+                      }
                     );
 
                     const rows = groupedValues.map((group, idx) => {
@@ -931,6 +967,16 @@ const Estimasi = () => {
                           <TableCell className="font-semibold text-indigo-700">
                             {isManualRow ? '-' : `${Number(group.finalBeratPlusWaste || 0).toFixed(2)} kg`}
                           </TableCell>
+
+                          {/* ── LUAS PERMUKAAN CELL (BARU) ── */}
+                          <TableCell className="font-semibold text-violet-700">
+                            {isManualRow
+                              ? '-'
+                              : group.finalLuasPermukaan > 0
+                                ? `${Number(group.finalLuasPermukaan).toFixed(2)} m²`
+                                : <span className="text-gray-400 text-xs">-</span>}
+                          </TableCell>
+
                           <TableCell className="font-semibold text-emerald-600">
                             {isManualRow
                               ? `Rp ${(group.subtotal || 0).toLocaleString('id-ID')}`
@@ -964,6 +1010,12 @@ const Estimasi = () => {
                         </TableCell>
                         <TableCell className="font-bold text-indigo-700">
                           {Number(totals.beratPlusWaste || 0).toFixed(2)} kg
+                        </TableCell>
+                        {/* ── TOTAL LUAS PERMUKAAN (BARU) ── */}
+                        <TableCell className="font-bold text-violet-700">
+                          {totals.luasPermukaan > 0
+                            ? `${Number(totals.luasPermukaan).toFixed(2)} m²`
+                            : '-'}
                         </TableCell>
                         <TableCell className="font-bold text-emerald-600">
                           Rp {Math.round(totals.hargaPlusWaste || 0).toLocaleString('id-ID')}

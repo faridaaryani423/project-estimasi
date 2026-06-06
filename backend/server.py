@@ -70,6 +70,7 @@ class BarangBase(BaseModel):
     panjangPlat: Optional[str] = None
     lebarPlat: Optional[str] = None
     ketebalanPlat: Optional[str] = None
+    supplier: Optional[str] = None
     jenisBahan: str
     beratJenis: str
     beratbatang: Optional[str] = None
