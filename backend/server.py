@@ -113,6 +113,9 @@ class EstimasiItem(BaseModel):
     usedExistingWaste: Optional[float] = 0
 
 class EstimasiCreate(BaseModel):
+    namaClient: Optional[str] = None
+    lokasi: Optional[str] = None
+    kontakPerson: Optional[str] = None
     namaEstimasi: str
     panjangRuangan: Optional[float] = None
     lebarRuangan: Optional[float] = None
@@ -127,6 +130,9 @@ class EstimasiResponse(BaseModel):
     id: str
     nomorEstimasi: str
     namaEstimasi: str
+    namaClient: Optional[str] = None
+    lokasi: Optional[str] = None
+    kontakPerson: Optional[str] = None
     panjangRuangan: Optional[float] = None
     lebarRuangan: Optional[float] = None
     luasRuangan: Optional[float] = None

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import {
   Calculator, Plus, Trash2, Send, Zap,
-  Loader2, ChevronLeft, ChevronRight
+  Loader2, ChevronLeft, ChevronRight, Settings
 } from 'lucide-react';
 import { barangAPI, estimasiAPI } from '@/services/api';
 import { calculateLuasPermukaan, calculateMaterialGroupAllocation, calculateWithWasteReuse } from '@/utils/calculationEngine';
@@ -18,18 +18,28 @@ const EditEstimasi = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [barangList, setBarangList]   = useState([]);
-  const [estimasi, setEstimasi]       = useState(null);
-  const [loading, setLoading]         = useState(true);
-  const [saving, setSaving]           = useState(false);
-  const [formData, setFormData]       = useState({
+  const [barangList, setBarangList] = useState([]);
+  const [estimasi, setEstimasi]     = useState(null);
+  const [loading, setLoading]       = useState(true);
+  const [saving, setSaving]         = useState(false);
+
+  const [formData, setFormData] = useState({
     namaEstimasi: '',
     panjangRuangan: '',
     lebarRuangan: '',
+    namaClient: '',
+    lokasi: '',
+    kontakPerson: '',
   });
+
   const [selectedItems, setSelectedItems] = useState([
     { barangId: '', kodeItem: '', panjangJadi: '', jumlahKeperluan: '', volume: '', namaManual: '', hargaManual: '' },
   ]);
+
+  // ── State untuk edit detail barang (sama seperti EstimasiForm) ────────────────
+  const [localBarangOverrides, setLocalBarangOverrides] = useState({});
+  const [savingBarang, setSavingBarang]                 = useState({});
+  const [expandedBarang, setExpandedBarang]             = useState({});
 
   useEffect(() => {
     loadData();
@@ -45,7 +55,6 @@ const EditEstimasi = () => {
 
       setBarangList(barangData);
 
-      // Cari estimasi berdasarkan id dari URL
       const found = semuaEstimasi.find((e) => String(e.id) === String(id));
       if (!found) {
         toast.error('Estimasi tidak ditemukan!');
@@ -55,20 +64,25 @@ const EditEstimasi = () => {
 
       setEstimasi(found);
       setFormData({
-        namaEstimasi: found.namaEstimasi,
+        namaEstimasi:   found.namaEstimasi || '',
         panjangRuangan: found.panjangRuangan?.toString() || '',
-        lebarRuangan: found.lebarRuangan?.toString() || '',
+        lebarRuangan:   found.lebarRuangan?.toString()   || '',
+        namaClient:     found.namaClient   || '',
+        lokasi:         found.lokasi        || '',
+        kontakPerson:   found.kontakPerson  || '',
       });
+
       setSelectedItems(
         found.items?.map((item) => ({
-          barangId: item.barangId?.toString() ||
+          barangId:
+            item.barangId?.toString() ||
             barangData.find((b) => b.nama === item.namaBarang)?.id?.toString() || '',
-          kodeItem: item.kodeItem || '',
-          panjangJadi: item.isManual ? '' : item.panjangJadi?.toString() || '',
+          kodeItem:        item.kodeItem || '',
+          panjangJadi:     item.isManual ? '' : item.panjangJadi?.toString() || '',
           jumlahKeperluan: item.jumlahKeperluan?.toString() || '',
-          volume: item.volume?.toString() || '',
-          namaManual: item.isManual ? item.namaBarang : '',
-          hargaManual: item.isManual ? item.hargaSatuan?.toString() : '',
+          volume:          item.volume?.toString() || '',
+          namaManual:      item.isManual ? item.namaBarang  : '',
+          hargaManual:     item.isManual ? item.hargaSatuan?.toString() : '',
         }))
       );
     } catch (error) {
@@ -78,7 +92,7 @@ const EditEstimasi = () => {
     }
   };
 
-  // ─── Helpers form (sama persis seperti di Estimasi.jsx) ──────────
+  // ─── Helpers form ─────────────────────────────────────────────────
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -99,7 +113,7 @@ const EditEstimasi = () => {
 
   const addItemRowWithSameBarang = (index) => {
     const newItem = {
-      barangId: selectedItems[index].barangId,
+      barangId:        selectedItems[index].barangId,
       kodeItem: '', panjangJadi: '', jumlahKeperluan: '',
       volume: '', namaManual: '', hargaManual: '',
     };
@@ -116,9 +130,16 @@ const EditEstimasi = () => {
     }
   };
 
+  // ─── Helpers barang (dengan override support) ─────────────────────
+  const getEffectiveBarang = (barangId) => {
+    const base = barangList.find((b) => String(b.id) === String(barangId));
+    if (!base) return null;
+    return { ...base, ...(localBarangOverrides[barangId] || {}) };
+  };
+
   const getSelectedBarangInfo = (barangId) => {
-    if (!barangId) return null;
-    const barang = barangList.find((b) => String(b.id) === String(barangId));
+    if (!barangId || barangId === '__manual__') return null;
+    const barang = getEffectiveBarang(barangId);
     if (!barang) return null;
     return {
       panjangMentah: barang.jenisBentuk === 'plat' ? barang.panjangPlat : barang.panjang,
@@ -129,7 +150,7 @@ const EditEstimasi = () => {
   const getSelectedBarangIds = () => {
     const ids = new Set();
     selectedItems.forEach((item, index) => {
-      if (item.barangId) {
+      if (item.barangId && item.barangId !== '__manual__') {
         const isFirst = selectedItems.findIndex((si) => si.barangId === item.barangId) === index;
         if (isFirst) ids.add(item.barangId);
       }
@@ -147,6 +168,42 @@ const EditEstimasi = () => {
     const updated = [...selectedItems];
     updated[index] = { ...updated[index], barangId, namaManual, hargaManual: '' };
     setSelectedItems(updated);
+  };
+
+  // ─── Helper edit detail barang (sama persis seperti EstimasiForm) ─
+  const handleBarangFieldChange = (barangId, field, value) => {
+    setLocalBarangOverrides((prev) => ({
+      ...prev,
+      [barangId]: { ...(prev[barangId] || {}), [field]: value },
+    }));
+  };
+
+  const saveBarangForEstimasi = (barangId) => {
+    toast.success('Perubahan diterapkan untuk estimasi ini saja.');
+    setExpandedBarang((prev) => ({ ...prev, [barangId]: false }));
+  };
+
+  const saveBarangPermanent = async (barangId) => {
+    const effectiveBarang = getEffectiveBarang(barangId);
+    if (!effectiveBarang) return;
+    try {
+      setSavingBarang((prev) => ({ ...prev, [barangId]: true }));
+      await barangAPI.update(barangId, effectiveBarang);
+      setBarangList((prev) =>
+        prev.map((b) => (String(b.id) === String(barangId) ? { ...b, ...effectiveBarang } : b))
+      );
+      setLocalBarangOverrides((prev) => {
+        const next = { ...prev };
+        delete next[barangId];
+        return next;
+      });
+      toast.success('Barang berhasil disimpan permanen!');
+      setExpandedBarang((prev) => ({ ...prev, [barangId]: false }));
+    } catch (error) {
+      toast.error('Gagal menyimpan permanen: ' + error.message);
+    } finally {
+      setSavingBarang((prev) => ({ ...prev, [barangId]: false }));
+    }
   };
 
   // ─── Kalkulasi & simpan ───────────────────────────────────────────
@@ -177,7 +234,7 @@ const EditEstimasi = () => {
 
     const hasJasa = validItems.some((item) => {
       if (item.barangId === '__manual__') return false;
-      const b = barangList.find((b) => String(b.id) === String(item.barangId));
+      const b = getEffectiveBarang(item.barangId);
       return (parseFloat(b?.hargajasa || 0) || 0) > 0;
     });
 
@@ -189,25 +246,27 @@ const EditEstimasi = () => {
     try {
       setSaving(true);
 
-      // Pakai fungsi kalkulasi yang sama dari Estimasi.jsx
       const { itemDetails, totalEstimasi, totalBeratReal, totalLuasPermukaan, totalTitikWelding } =
         calculateWithWasteReuse(validItems, luasPekerjaan, barangList);
 
       const payload = {
-        namaEstimasi: formData.namaEstimasi,
+        namaEstimasi:   formData.namaEstimasi,
+        namaClient:     formData.namaClient   || null,
+        lokasi:         formData.lokasi        || null,
+        kontakPerson:   formData.kontakPerson  || null,
         panjangRuangan: formData.panjangRuangan ? parseFloat(formData.panjangRuangan) : null,
-        lebarRuangan: formData.lebarRuangan ? parseFloat(formData.lebarRuangan) : null,
-        luasRuangan: luasPekerjaan > 0 ? luasPekerjaan : null,
-        items: itemDetails,
-        totalEstimasi: Math.round(totalEstimasi),
-        totalBeratReal: Math.round(totalBeratReal * 100) / 100,
-        totalLuasPermukaan: Math.round(totalLuasPermukaan * 100) / 100,
+        lebarRuangan:   formData.lebarRuangan  ? parseFloat(formData.lebarRuangan)   : null,
+        luasRuangan:    luasPekerjaan > 0      ? luasPekerjaan                        : null,
+        items:          itemDetails,
+        totalEstimasi:       Math.round(totalEstimasi),
+        totalBeratReal:      Math.round(totalBeratReal * 100) / 100,
+        totalLuasPermukaan:  Math.round(totalLuasPermukaan * 100) / 100,
         totalTitikWelding,
       };
 
       const updated = await estimasiAPI.update(id, payload);
       toast.success(`Estimasi ${updated.nomorEstimasi} berhasil diupdate!`);
-      navigate('/estimasi');           // ← balik ke halaman list
+      navigate('/estimasi');
     } catch (error) {
       toast.error('Gagal update: ' + error.message);
     } finally {
@@ -238,9 +297,7 @@ const EditEstimasi = () => {
           Estimasi
         </button>
         <ChevronRight className="w-4 h-4" />
-        <span className="text-gray-900 font-medium">
-          Edit {estimasi?.nomorEstimasi}
-        </span>
+        <span className="text-gray-900 font-medium">Edit {estimasi?.nomorEstimasi}</span>
       </div>
 
       {/* Header */}
@@ -249,7 +306,7 @@ const EditEstimasi = () => {
         <p className="text-gray-500 text-sm">{estimasi?.nomorEstimasi} · {estimasi?.namaEstimasi}</p>
       </div>
 
-      {/* Card: Nama + Dimensi */}
+      {/* Card: Detail Estimasi */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -257,6 +314,7 @@ const EditEstimasi = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+
           <div className="space-y-2">
             <Label>Nama Estimasi <span className="text-red-500">*</span></Label>
             <Input
@@ -266,6 +324,38 @@ const EditEstimasi = () => {
               placeholder="Contoh: Rangka Kanopi"
             />
           </div>
+
+          <div className="space-y-2">
+            <Label>Nama Client</Label>
+            <Input
+              name="namaClient"
+              value={formData.namaClient}
+              onChange={handleInputChange}
+              placeholder="Contoh: PT. Maju Jaya"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Lokasi Proyek</Label>
+              <Input
+                name="lokasi"
+                value={formData.lokasi}
+                onChange={handleInputChange}
+                placeholder="Contoh: Jakarta Selatan"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Kontak Person</Label>
+              <Input
+                name="kontakPerson"
+                value={formData.kontakPerson}
+                onChange={handleInputChange}
+                placeholder="Contoh: 08123456789 (Budi)"
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>Dimensi Kerja</Label>
             <div className="flex items-center gap-3">
@@ -291,6 +381,7 @@ const EditEstimasi = () => {
               </p>
             )}
           </div>
+
         </CardContent>
       </Card>
 
@@ -306,9 +397,9 @@ const EditEstimasi = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           {selectedItems.map((item, index) => {
-            const barangInfo = getSelectedBarangInfo(item.barangId);
-            const isGroupable = item.barangId && item.barangId !== '__manual__';
-            const isSameAsPrev = isGroupable && index > 0 && item.barangId === selectedItems[index - 1].barangId;
+            const barangInfo     = getSelectedBarangInfo(item.barangId);
+            const isGroupable    = item.barangId && item.barangId !== '__manual__';
+            const isSameAsPrev   = isGroupable && index > 0 && item.barangId === selectedItems[index - 1].barangId;
             if (isSameAsPrev) return null;
 
             const itemsWithSame = [item];
@@ -318,7 +409,7 @@ const EditEstimasi = () => {
                 else break;
               }
             }
-            const lastIdx = index + itemsWithSame.length - 1;
+            const lastIdx  = index + itemsWithSame.length - 1;
             const isManual = item.barangId === '__manual__';
 
             return (
@@ -326,7 +417,9 @@ const EditEstimasi = () => {
                 <div className="flex items-center justify-between">
                   <Label className="font-semibold">Item #{index + 1}</Label>
                   <Button
-                    type="button" variant="outline" size="sm"
+                    type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => addItemRowWithSameBarang(lastIdx)}
                     disabled={!item.barangId}
                   >
@@ -341,6 +434,7 @@ const EditEstimasi = () => {
                   isDisabled={(barangId) => isBarangDisabled(barangId, index)}
                 />
 
+                {/* Form manual (sederhana, hanya nama & harga) */}
                 {isManual && (
                   <div className="grid grid-cols-2 gap-3 p-3 bg-sky-50 rounded-lg border border-sky-200">
                     <div className="space-y-1">
@@ -362,6 +456,7 @@ const EditEstimasi = () => {
                   </div>
                 )}
 
+                {/* Info stok barang database */}
                 {barangInfo && !isManual && (
                   <div className="p-3 bg-blue-50 rounded-lg text-sm">
                     <span className="font-medium">Stok:</span>{' '}
@@ -375,12 +470,16 @@ const EditEstimasi = () => {
                   </div>
                 )}
 
+                {/* Sub-item (kode / panjang jadi / jumlah) */}
                 {itemsWithSame.map((cur, sub) => {
                   const actualIdx = index + sub;
-                  const curInfo = getSelectedBarangInfo(cur.barangId);
+                  const curInfo   = getSelectedBarangInfo(cur.barangId);
                   const curManual = cur.barangId === '__manual__';
                   return (
-                    <div key={actualIdx} className="grid grid-cols-1 lg:grid-cols-3 gap-3 p-3 bg-white rounded-lg border">
+                    <div
+                      key={actualIdx}
+                      className="grid grid-cols-1 lg:grid-cols-3 gap-3 p-3 bg-white rounded-lg border"
+                    >
                       <div className="space-y-1">
                         <Label className="text-xs">Kode</Label>
                         <Input
@@ -421,7 +520,9 @@ const EditEstimasi = () => {
                           />
                           {selectedItems.length > 1 && (
                             <Button
-                              type="button" variant="ghost" size="sm"
+                              type="button"
+                              variant="ghost"
+                              size="sm"
                               onClick={() => removeItemRow(actualIdx)}
                               className="px-3 hover:bg-red-50 hover:text-red-600"
                             >
@@ -433,19 +534,136 @@ const EditEstimasi = () => {
                     </div>
                   );
                 })}
+
+                {/* ── Toggle Lihat & Edit Detail Barang (hanya untuk barang database) ── */}
+                {item.barangId && !isManual && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedBarang((prev) => ({ ...prev, [item.barangId]: !prev[item.barangId] }))
+                      }
+                      className="text-xs text-sky-600 hover:underline flex items-center gap-1 mt-1"
+                    >
+                      <Settings className="w-3 h-3" />
+                      {expandedBarang[item.barangId] ? 'Tutup Detail Barang' : 'Lihat & Edit Detail Barang'}
+                      {localBarangOverrides[item.barangId] && (
+                        <span className="ml-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-medium">
+                          Diubah
+                        </span>
+                      )}
+                    </button>
+
+                    {expandedBarang[item.barangId] && (() => {
+                      const eb = getEffectiveBarang(item.barangId);
+                      if (!eb) return null;
+                      const field = (f) => ({
+                        value: eb[f] ?? '',
+                        onChange: (e) => handleBarangFieldChange(item.barangId, f, e.target.value),
+                        className: 'input-focus',
+                      });
+
+                      return (
+                        <div className="mt-3 p-4 bg-white border border-sky-200 rounded-lg space-y-4">
+                          <h4 className="text-sm font-semibold text-sky-700">Detail & Edit Barang</h4>
+
+                          {/* Dimensi */}
+                          <div className="space-y-2">
+                            <Label className="text-xs text-gray-500 uppercase tracking-wide">Dimensi (mm)</Label>
+                            {eb.jenisBentuk === 'balok' && (
+                              <div className="grid grid-cols-3 gap-2">
+                                <div><Label className="text-xs">Panjang</Label><Input type="number" {...field('panjang')} /></div>
+                                <div><Label className="text-xs">Lebar</Label><Input type="number" {...field('lebar')} /></div>
+                                <div><Label className="text-xs">Tinggi</Label><Input type="number" {...field('tinggi')} /></div>
+                                <div className="col-span-3"><Label className="text-xs">Ketebalan</Label><Input type="number" {...field('ketebalan')} /></div>
+                              </div>
+                            )}
+                            {eb.jenisBentuk === 'tabung' && (
+                              <div className="grid grid-cols-2 gap-2">
+                                <div><Label className="text-xs">Diameter</Label><Input type="number" {...field('diameter')} /></div>
+                                <div><Label className="text-xs">Panjang</Label><Input type="number" {...field('panjang')} /></div>
+                                <div className="col-span-2"><Label className="text-xs">Ketebalan</Label><Input type="number" {...field('ketebalan')} /></div>
+                              </div>
+                            )}
+                            {eb.jenisBentuk === 'wf' && (
+                              <div className="grid grid-cols-2 gap-2">
+                                <div><Label className="text-xs">Tinggi (H)</Label><Input type="number" {...field('tinggiWF')} /></div>
+                                <div><Label className="text-xs">Lebar Flange (B)</Label><Input type="number" {...field('lebarFlange')} /></div>
+                                <div><Label className="text-xs">Tebal Web (tw)</Label><Input type="number" {...field('ketebalanWeb')} /></div>
+                                <div><Label className="text-xs">Tebal Flange (tf)</Label><Input type="number" {...field('ketebalanFlange')} /></div>
+                              </div>
+                            )}
+                            {eb.jenisBentuk === 'plat' && (
+                              <div className="grid grid-cols-3 gap-2">
+                                <div><Label className="text-xs">Panjang</Label><Input type="number" {...field('panjangPlat')} /></div>
+                                <div><Label className="text-xs">Lebar</Label><Input type="number" {...field('lebarPlat')} /></div>
+                                <div><Label className="text-xs">Ketebalan</Label><Input type="number" {...field('ketebalanPlat')} /></div>
+                              </div>
+                            )}
+                            {eb.jenisBentuk === 'custom' && (
+                              <div><Label className="text-xs">Panjang</Label><Input type="number" {...field('panjang')} /></div>
+                            )}
+                          </div>
+
+                          {/* Material */}
+                          <div className="space-y-2">
+                            <Label className="text-xs text-gray-500 uppercase tracking-wide">Material</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div><Label className="text-xs">Jenis Bahan</Label><Input {...field('jenisBahan')} placeholder="Baja ST37" /></div>
+                              <div><Label className="text-xs">Berat Jenis (kg/m³)</Label><Input type="number" {...field('beratJenis')} placeholder="7850" /></div>
+                              <div><Label className="text-xs">Berat/Batang (kg)</Label><Input type="number" {...field('beratbatang')} /></div>
+                              <div><Label className="text-xs">Min. Welding (mm)</Label><Input type="number" {...field('minWelding')} /></div>
+                            </div>
+                          </div>
+
+                          {/* Harga */}
+                          <div className="space-y-2">
+                            <Label className="text-xs text-gray-500 uppercase tracking-wide">Harga</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div><Label className="text-xs">Harga Modal (Rp)</Label><Input type="number" {...field('hargamodal')} /></div>
+                              <div><Label className="text-xs">Harga Jasa (Rp)</Label><Input type="number" {...field('hargajasa')} /></div>
+                            </div>
+                          </div>
+
+                          {/* Tombol aksi */}
+                          <div className="flex gap-2 pt-2 border-t">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 border-sky-300 text-sky-700 hover:bg-sky-50"
+                              onClick={() => saveBarangForEstimasi(item.barangId)}
+                            >
+                              Simpan untuk Estimasi Ini
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                              onClick={() => saveBarangPermanent(item.barangId)}
+                              disabled={savingBarang[item.barangId]}
+                            >
+                              {savingBarang[item.barangId] ? (
+                                <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Menyimpan...</>
+                              ) : (
+                                'Simpan Permanen'
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             );
           })}
         </CardContent>
       </Card>
 
-      {/* Tombol aksi — sticky di bawah */}
+      {/* Tombol aksi sticky */}
       <div className="sticky bottom-4 flex gap-3 justify-end bg-white/80 backdrop-blur-sm p-4 rounded-xl border shadow-md">
-        <Button
-          variant="outline"
-          onClick={() => navigate('/estimasi')}
-          disabled={saving}
-        >
+        <Button variant="outline" onClick={() => navigate('/estimasi')} disabled={saving}>
           <ChevronLeft className="w-4 h-4 mr-1" /> Batal
         </Button>
         <Button

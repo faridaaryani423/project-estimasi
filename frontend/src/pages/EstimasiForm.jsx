@@ -171,9 +171,12 @@ const EstimasiForm = () => {
     const wb = XLSX.utils.book_new();
     const formDataRows = [
       ['TEMPLATE IMPORT ESTIMASI MATERIAL'],
-      ['Petunjuk: Isi kolom putih. Hapus baris contoh (baris 11-13) sebelum import.'],
+      ['Petunjuk: Isi kolom putih. Hapus baris contoh (baris 13-15) sebelum import.'],
       [''],
-      ['Nama Estimasi', '← wajib diisi'],
+      ['Nama Estimasi',     '← wajib diisi'],
+      ['Nama Client',       '← opsional'],     // ← NEW
+      ['Lokasi Proyek',     '← opsional'],     // ← NEW
+      ['Kontak Person',     '← opsional'],     // ← NEW
       ['Panjang Ruangan (m)', '← opsional'],
       ['Lebar Ruangan (m)', '← opsional'],
       [''],
@@ -215,8 +218,11 @@ const EstimasiForm = () => {
         const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
         const namaEstimasi = String(rows[3]?.[1] || '').trim();
-        const panjangRuangan = String(rows[4]?.[1] || '').trim();
-        const lebarRuangan = String(rows[5]?.[1] || '').trim();
+        const namaClient = String(rows[4]?.[1] || '').trim();    // ← NEW
+        const lokasi = String(rows[5]?.[1] || '').trim();       // ← NEW
+        const kontakPerson = String(rows[6]?.[1] || '').trim(); // ← NEW
+        const panjangRuangan = String(rows[7]?.[1] || '').trim();
+        const lebarRuangan = String(rows[8]?.[1] || '').trim();
 
         if (!namaEstimasi) {
           toast.error('Nama Estimasi wajib diisi di template!');
@@ -227,7 +233,7 @@ const EstimasiForm = () => {
         const notFoundNames = [];
         const items = [];
 
-        for (let i = 10; i < rows.length; i++) {
+        for (let i = 13; i < rows.length; i++) {
           const row = rows[i];
           const namaBarang = String(row[1] || '').trim();
           const kodeItem = String(row[2] || '').trim();
@@ -257,7 +263,7 @@ const EstimasiForm = () => {
           return;
         }
 
-        setFormData((prev) => ({ ...prev, namaEstimasi, panjangRuangan, lebarRuangan }));
+        setFormData((prev) => ({ ...prev, namaEstimasi, namaClient, lokasi, kontakPerson, panjangRuangan, lebarRuangan }));
         setSelectedItems(items);
         toast.success(`Berhasil import ${items.length} item!`);
         if (notFoundNames.length > 0) {
