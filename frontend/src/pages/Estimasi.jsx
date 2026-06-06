@@ -84,16 +84,34 @@ const Estimasi = () => {
   // ── Export PDF ────────────────────────────────────────────────────────────────
   const exportEstimasiToPDF = (est) => {
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageWidth  = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const marginL = 10;
     const marginR = 10;
+
+    // ── Lebar kolom bersama (dipakai tabel material + grand total) ──
+    const tableAvailWidth = pageWidth - marginL - marginR;          // 277 mm pada A4 landscape
+    const fixedColsWidth  = 48 + 16 + 12 + 12 + 12 + 14 + 12 + 22 + 22; // 170 mm
+    const potonganWidth   = tableAvailWidth - fixedColsWidth;       // 107 mm (sisa)
+
+    const sharedColStyles = {
+      0: { cellWidth: 48 },
+      1: { cellWidth: 16, halign: 'center' },
+      2: { cellWidth: 12, halign: 'right' },
+      3: { cellWidth: 12, halign: 'right' },
+      4: { cellWidth: 12, halign: 'right' },
+      5: { cellWidth: 14, halign: 'right' },
+      6: { cellWidth: 12, halign: 'right' },
+      7: { cellWidth: 22, halign: 'right' },
+      8: { cellWidth: 22, halign: 'right' },
+      9: { cellWidth: potonganWidth },
+    };
 
     const luasKerja =
       Number(est.luasRuangan || 0) ||
       (parseFloat(est.panjangRuangan || 0) || 0) * (parseFloat(est.lebarRuangan || 0) || 0);
 
-    const fmtN = (v, d = 0) =>
+    const fmtN  = (v, d = 0) =>
       Number(v || 0).toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d });
     const fmtRp = (v) => `Rp. ${fmtN(v)}`;
 
@@ -145,68 +163,71 @@ const Estimasi = () => {
       groups[key].rows.push(item);
     });
 
-    let grandBeratSisa = 0;
-    let grandBeratReal = 0;
+    let grandBeratSisa      = 0;
+    let grandBeratReal      = 0;
     let grandBeratPlusWaste = 0;
     let grandHargaPlusWaste = 0;
-    let grandHargaReal = 0;
+    let grandHargaReal      = 0;
 
     printHeader();
 
     groupOrder.forEach((key) => {
-      const group = groups[key];
-      const repItem = group.rows[0];
+      const group    = groups[key];
+      const repItem  = group.rows[0];
       const lastItem = group.rows[group.rows.length - 1];
-      const summary = lastItem?.breakdown?.summary || {};
-      const panjangMentah = summary.stockLength || 6000;
-      const panjangMentahM = panjangMentah / 1000;
-      const beratStandar = summary.beratStandar || repItem.beratPerBatang || 0;
-      const hargaSatuan = summary.hargaSatuan || repItem.hargaSatuan || 0;
-      const minWelding = summary.minWelding ?? 50;
-      let barAllocations = lastItem?.breakdown?.barAllocations || [];
+      const summary  = lastItem?.breakdown?.summary || {};
+
+      const panjangMentah   = summary.stockLength  || 6000;
+      const panjangMentahM  = panjangMentah / 1000;
+      const beratStandar    = summary.beratStandar  || repItem.beratPerBatang || 0;
+      const hargaSatuan     = summary.hargaSatuan   || repItem.hargaSatuan    || 0;
+      const minWelding      = summary.minWelding    ?? 50;
+      let barAllocations    = lastItem?.breakdown?.barAllocations || [];
 
       if (barAllocations.length === 0) {
         const allGuides = group.rows.flatMap((row) => row.breakdown?.cuttingGuide || []);
         if (allGuides.length > 0) {
           barAllocations = allGuides.map((guide, gIdx) => {
-            const pieces = guide.pieces || [];
+            const pieces          = guide.pieces || [];
             const panjangTerpakaiMm = guide.panjangTerpakai ?? pieces.reduce((s, p) => s + (p.length || 0), 0);
-            const sisaMm = guide.waste ?? guide.sisa ?? 0;
+            const sisaMm          = guide.waste ?? guide.sisa ?? 0;
             return {
-              batangNo: gIdx + 1,
+              batangNo      : gIdx + 1,
               panjangTerpakai: panjangTerpakaiMm,
-              sisa: sisaMm,
-              wasteReusable: guide.wasteReusable ?? sisaMm >= minWelding,
-              items: pieces.length > 0 ? pieces.map((p) => ({
-                label: p.label || guide.label || `Item${p.itemNo ?? gIdx + 1}`,
-                kodeItem: p.kodeItem || null,
-                itemNo: p.itemNo ?? gIdx + 1,
-                length: p.length ?? panjangTerpakaiMm,
-              })) : [{
-                label: group.rows[gIdx % group.rows.length]?.kodeItem || group.rows[gIdx % group.rows.length]?.namaBarang || `Item${gIdx + 1}`,
-                kodeItem: group.rows[gIdx % group.rows.length]?.kodeItem || null,
-                itemNo: gIdx + 1,
-                length: panjangTerpakaiMm,
-              }],
+              sisa          : sisaMm,
+              wasteReusable : guide.wasteReusable ?? sisaMm >= minWelding,
+              items         : pieces.length > 0
+                ? pieces.map((p) => ({
+                    label   : p.label || guide.label || `Item${p.itemNo ?? gIdx + 1}`,
+                    kodeItem: p.kodeItem || null,
+                    itemNo  : p.itemNo ?? gIdx + 1,
+                    length  : p.length ?? panjangTerpakaiMm,
+                  }))
+                : [{
+                    label   : group.rows[gIdx % group.rows.length]?.kodeItem || group.rows[gIdx % group.rows.length]?.namaBarang || `Item${gIdx + 1}`,
+                    kodeItem: group.rows[gIdx % group.rows.length]?.kodeItem || null,
+                    itemNo  : gIdx + 1,
+                    length  : panjangTerpakaiMm,
+                  }],
             };
           });
         } else {
           barAllocations = group.rows.flatMap((row, rIdx) => {
-            const kebutuhan = row.breakdown?.kebutuhanBahan || 1;
-            const panjangReal = row.breakdown?.panjangRealTerpakai || 0;
-            const wasteTotal = row.breakdown?.waste || 0;
-            const panjangPerBatang = kebutuhan > 0 ? panjangReal / kebutuhan : panjangMentah;
-            const sisaPerBatang = kebutuhan > 0 ? wasteTotal / kebutuhan : 0;
+            const kebutuhan      = row.breakdown?.kebutuhanBahan  || 1;
+            const panjangReal    = row.breakdown?.panjangRealTerpakai || 0;
+            const wasteTotal     = row.breakdown?.waste           || 0;
+            const panjangPerBatang = kebutuhan > 0 ? panjangReal / kebutuhan  : panjangMentah;
+            const sisaPerBatang    = kebutuhan > 0 ? wasteTotal  / kebutuhan  : 0;
             return Array.from({ length: kebutuhan }, (_, i) => ({
-              batangNo: rIdx * kebutuhan + i + 1,
+              batangNo      : rIdx * kebutuhan + i + 1,
               panjangTerpakai: panjangPerBatang,
-              sisa: i === kebutuhan - 1 ? sisaPerBatang : 0,
-              wasteReusable: sisaPerBatang >= minWelding,
-              items: [{
-                label: row.kodeItem || row.namaBarang || `Item${rIdx + 1}`,
+              sisa          : i === kebutuhan - 1 ? sisaPerBatang : 0,
+              wasteReusable : sisaPerBatang >= minWelding,
+              items         : [{
+                label   : row.kodeItem || row.namaBarang || `Item${rIdx + 1}`,
                 kodeItem: row.kodeItem || null,
-                itemNo: rIdx + 1,
-                length: panjangPerBatang,
+                itemNo  : rIdx + 1,
+                length  : panjangPerBatang,
               }],
             }));
           });
@@ -234,26 +255,28 @@ const Estimasi = () => {
       doc.text(`${new Date(est.createdAt).toLocaleDateString('id-ID')}   ${est.namaEstimasi}`, marginL, startY);
       startY += 3.5;
 
+      // ── Item manual ──
       if (repItem.isManual) {
-        const qty = group.rows.reduce((s, r) => s + (r.jumlahKeperluan || 0), 0);
-        const subtotal = group.rows.reduce((s, r) => s + (r.subtotal || 0), 0);
+        const qty      = group.rows.reduce((s, r) => s + (r.jumlahKeperluan || 0), 0);
+        const subtotal = group.rows.reduce((s, r) => s + (r.subtotal        || 0), 0);
         autoTable(doc, {
           startY,
-          head: [['No', 'Nama Barang', 'Qty', 'Harga Satuan', 'Subtotal']],
-          body: [[1, repItem.namaBarang, qty, fmtRp(repItem.hargaSatuan), fmtRp(subtotal)]],
+          head : [['No', 'Nama Barang', 'Qty', 'Harga Satuan', 'Subtotal']],
+          body : [[1, repItem.namaBarang, qty, fmtRp(repItem.hargaSatuan), fmtRp(subtotal)]],
           theme: 'grid',
-          headStyles: { fillColor: [220, 220, 220], textColor: [20, 20, 20], fontStyle: 'bold', fontSize: 6.5 },
-          styles: { fontSize: 6.5, cellPadding: 1.5 },
-          margin: { left: marginL, right: marginR },
+          headStyles : { fillColor: [220, 220, 220], textColor: [20, 20, 20], fontStyle: 'bold', fontSize: 6.5 },
+          styles     : { fontSize: 6.5, cellPadding: 1.5 },
+          margin     : { left: marginL, right: marginR },
         });
-        grandHargaReal += subtotal;
+        grandHargaReal      += subtotal;
         grandHargaPlusWaste += subtotal;
         startY = doc.lastAutoTable.finalY + 5;
         return;
       }
 
-      const tableBody = [];
-      const barsByItem = new Map();
+      // ── Bangun baris tabel ──
+      const tableBody    = [];
+      const barsByItem   = new Map();
       barAllocations.forEach((bar) => {
         (bar.items || []).forEach((piece) => {
           const iNo = piece.itemNo;
@@ -266,13 +289,13 @@ const Estimasi = () => {
       const alphaLabel = (i) => String.fromCharCode(97 + i);
 
       group.rows.forEach((row, rowIdx) => {
-        const itemNo = rowIdx + 1;
+        const itemNo      = rowIdx + 1;
         const barsForItem = barsByItem.get(itemNo) || [];
         const panjangJadiM = (row.panjangJadi || 0) / 1000;
-        const qty = row.jumlahKeperluan || 0;
-        const kode = row.kodeItem || row.namaBarang || repItem.namaBarang;
-        const spesLabel = `${alphaLabel(rowIdx)}. ${kode} ( ${fmtN(panjangJadiM, 1)} M, ${qty} Bh. )`;
-        const luasPek = row.luasPekerjaan > 0 ? fmtN(row.luasPekerjaan, 2) : '-';
+        const qty         = row.jumlahKeperluan || 0;
+        const kode        = row.kodeItem || row.namaBarang || repItem.namaBarang;
+        const spesLabel   = `${alphaLabel(rowIdx)}. ${kode} ( ${fmtN(panjangJadiM, 1)} M, ${qty} Bh. )`;
+        const luasPek     = row.luasPekerjaan > 0 ? fmtN(row.luasPekerjaan, 2) : '-';
 
         if (barsForItem.length === 0) {
           tableBody.push([spesLabel, '-', '-', '-', '-', '-', luasPek, fmtRp(row.hargaSatuan), fmtRp(row.hargaSatuan), '-']);
@@ -281,18 +304,18 @@ const Estimasi = () => {
 
         barsForItem.forEach((bar, bIdx) => {
           const panjangTerpakaiMm = bar.panjangTerpakai ?? 0;
-          const sisaMm = bar.sisa ?? 0;
-          const sisaM = sisaMm / 1000;
-          const usageRatio = panjangMentah > 0 ? panjangTerpakaiMm / panjangMentah : 1;
-          const billedRatio = usageRatio <= 0.5 ? 0.5 : usageRatio <= 0.75 ? 0.75 : 1;
-          const hargaPemakaian = billedRatio * hargaSatuan;
-          const beratReal = (panjangTerpakaiMm / panjangMentah) * beratStandar;
-          const beratSisa = beratStandar - beratReal;
-          const pieces = bar.items || [];
-          const potonganStr = pieces
+          const sisaMm            = bar.sisa            ?? 0;
+          const sisaM             = sisaMm / 1000;
+          const usageRatio        = panjangMentah > 0 ? panjangTerpakaiMm / panjangMentah : 1;
+          const billedRatio       = usageRatio <= 0.5 ? 0.5 : usageRatio <= 0.75 ? 0.75 : 1;
+          const hargaPemakaian    = billedRatio * hargaSatuan;
+          const beratReal         = (panjangTerpakaiMm / panjangMentah) * beratStandar;
+          const beratSisa         = beratStandar - beratReal;
+          const pieces            = bar.items || [];
+          const potonganStr       = pieces
             .map((p, pIdx) => {
               const lbl = p.kodeItem || p.label || `Item${p.itemNo}`;
-              const pM = fmtN((p.length || 0) / 1000, 2);
+              const pM  = fmtN((p.length || 0) / 1000, 2);
               return pIdx === 0 ? `${lbl}.(${pM})` : `${lbl} (${pM})`;
             })
             .join(' ');
@@ -312,30 +335,30 @@ const Estimasi = () => {
         });
       });
 
-      const stBeratReal = summary.totalBeratReal || 0;
-      const stBeratWaste = summary.totalBeratWaste || 0;
+      const stBeratReal      = summary.totalBeratReal    || 0;
+      const stBeratWaste     = summary.totalBeratWaste   || 0;
       const stBeratPlusWaste = stBeratReal + stBeratWaste;
-      const stHargaReal = summary.totalHargaReal || 0;
+      const stHargaReal      = summary.totalHargaReal    || 0;
       const stHargaPemakaian = summary.totalHargaPemakaian || 0;
-      const stSisaMm = barAllocations.reduce((s, b) => s + (b.sisa ?? 0), 0);
+      const stSisaMm         = barAllocations.reduce((s, b) => s + (b.sisa ?? 0), 0);
 
-      grandBeratSisa += stBeratWaste;
-      grandBeratReal += stBeratReal;
+      grandBeratSisa      += stBeratWaste;
+      grandBeratReal      += stBeratReal;
       grandBeratPlusWaste += stBeratPlusWaste;
       grandHargaPlusWaste += stHargaReal;
-      grandHargaReal += stHargaPemakaian;
+      grandHargaReal      += stHargaPemakaian;
 
       const subTotalStyle = { fontStyle: 'bold', fillColor: [240, 240, 240] };
       tableBody.push([
         { content: `SUB TOTAL   ${fmtN(barAllocations.length)} Btg`, colSpan: 2, styles: { ...subTotalStyle, halign: 'left' } },
         { content: stSisaMm > 0 ? fmtN(stSisaMm / 1000, 2) : '-', styles: { ...subTotalStyle, halign: 'right' } },
-        { content: fmtN(stBeratWaste, 2), styles: { ...subTotalStyle, halign: 'right' } },
-        { content: fmtN(stBeratReal, 2), styles: { ...subTotalStyle, halign: 'right' } },
-        { content: fmtN(stBeratPlusWaste, 2), styles: { ...subTotalStyle, halign: 'right' } },
-        { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
-        { content: fmtRp(stHargaPemakaian), styles: { ...subTotalStyle, halign: 'right' } },
-        { content: fmtRp(stHargaReal), styles: { ...subTotalStyle, halign: 'right' } },
-        { content: '', styles: subTotalStyle },
+        { content: fmtN(stBeratWaste, 2),      styles: { ...subTotalStyle, halign: 'right' } },
+        { content: fmtN(stBeratReal, 2),       styles: { ...subTotalStyle, halign: 'right' } },
+        { content: fmtN(stBeratPlusWaste, 2),  styles: { ...subTotalStyle, halign: 'right' } },
+        { content: '-',                        styles: { ...subTotalStyle, halign: 'right' } },
+        { content: fmtRp(stHargaPemakaian),    styles: { ...subTotalStyle, halign: 'right' } },
+        { content: fmtRp(stHargaReal),         styles: { ...subTotalStyle, halign: 'right' } },
+        { content: '',                         styles: subTotalStyle },
       ]);
 
       autoTable(doc, {
@@ -345,60 +368,56 @@ const Estimasi = () => {
           'Berat\nReal', 'Berat\n+ Waste', 'Luas\n(M2)',
           'Harga\n+ Waste', 'Harga\nReal', 'Potongan',
         ]],
-        body: tableBody,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [215, 220, 227], textColor: [20, 20, 20],
-          fontStyle: 'bold', fontSize: 6.5, halign: 'center',
-          lineColor: [130, 130, 130], lineWidth: 0.1,
+        body       : tableBody,
+        theme      : 'grid',
+        tableWidth : tableAvailWidth,
+        headStyles : {
+          fillColor : [215, 220, 227], textColor: [20, 20, 20],
+          fontStyle : 'bold', fontSize: 6.5, halign: 'center',
+          lineColor : [130, 130, 130], lineWidth: 0.1,
         },
-        styles: { fontSize: 6.5, cellPadding: 1.3, overflow: 'linebreak', lineColor: [150, 150, 150], lineWidth: 0.08 },
+        styles: {
+          fontSize: 6.5, cellPadding: 1.3, overflow: 'linebreak',
+          lineColor: [150, 150, 150], lineWidth: 0.08,
+        },
         alternateRowStyles: { fillColor: [252, 252, 252] },
-        columnStyles: {
-          0: { cellWidth: 48 },
-          1: { cellWidth: 16, halign: 'center' },
-          2: { cellWidth: 12, halign: 'right' },
-          3: { cellWidth: 12, halign: 'right' },
-          4: { cellWidth: 12, halign: 'right' },
-          5: { cellWidth: 14, halign: 'right' },
-          6: { cellWidth: 12, halign: 'right' },
-          7: { cellWidth: 22, halign: 'right' },
-          8: { cellWidth: 22, halign: 'right' },
-          9: { cellWidth: 'auto' },
-        },
+        columnStyles: sharedColStyles,
         margin: { left: marginL, right: marginR },
       });
 
       startY = doc.lastAutoTable.finalY + 5;
     });
 
+    // ── Grand Total ──────────────────────────────────────────────────────────────
     ensurePageSpace(25);
-    const gtStyle = { fontStyle: 'bold', fillColor: [180, 210, 255], halign: 'right' };
+    const gtStyle = { fontStyle: 'bold', fillColor: [180, 210, 255] };
+
     autoTable(doc, {
       startY,
-      body: [
-        [
-          { content: 'GRAND TOTAL', colSpan: 2, styles: { ...gtStyle, halign: 'right' } },
-          { content: '-', styles: gtStyle },
-          { content: fmtN(grandBeratSisa, 2), styles: gtStyle },
-          { content: fmtN(grandBeratReal, 2), styles: gtStyle },
-          { content: fmtN(grandBeratPlusWaste, 2), styles: gtStyle },
-          { content: '-', styles: gtStyle },
-          { content: fmtRp(grandHargaReal), styles: gtStyle },
-          { content: fmtRp(grandHargaPlusWaste), styles: gtStyle },
-          { content: '', styles: { fillColor: [180, 210, 255] } },
-        ],
-      ],
-      theme: 'grid',
-      styles: { fontSize: 7.5, cellPadding: 1.5 },
-      columnStyles: {
-        0: { cellWidth: 8 }, 1: { cellWidth: 16 }, 2: { cellWidth: 14 },
-        3: { cellWidth: 24 }, 4: { cellWidth: 16 }, 5: { cellWidth: 16 },
-        6: { cellWidth: 18 }, 7: { cellWidth: 24 }, 8: { cellWidth: 'auto' },
-      },
-      margin: { left: marginL, right: marginR },
+      // head dummy tidak ditampilkan — memaksa autoTable mengenali 10 kolom
+      showHead  : 'never',
+      head      : [['Spesifikasi / Uraian','Pemakaian','Panjang\nSisa','Berat\nSisa',
+                    'Berat\nReal','Berat\n+ Waste','Luas\n(M2)','Harga\n+ Waste','Harga\nReal','Potongan']],
+      headStyles: { minCellHeight: 0, cellPadding: 0, fontSize: 0, lineWidth: 0 },
+      body: [[
+        { content: 'GRAND TOTAL',               colSpan: 2, styles: { ...gtStyle, halign: 'left'  } },
+        { content: '-',                                     styles: { ...gtStyle, halign: 'right' } },
+        { content: fmtN(grandBeratSisa, 2),                 styles: { ...gtStyle, halign: 'right' } },
+        { content: fmtN(grandBeratReal, 2),                 styles: { ...gtStyle, halign: 'right' } },
+        { content: fmtN(grandBeratPlusWaste, 2),            styles: { ...gtStyle, halign: 'right' } },
+        { content: '-',                                     styles: { ...gtStyle, halign: 'right' } },
+        { content: fmtRp(grandHargaReal),                   styles: { ...gtStyle, halign: 'right' } },
+        { content: fmtRp(grandHargaPlusWaste),              styles: { ...gtStyle, halign: 'right' } },
+        { content: '',                                      styles: { fillColor: [180, 210, 255]  } },
+      ]],
+      theme      : 'grid',
+      tableWidth : tableAvailWidth,
+      styles     : { fontSize: 7.5, cellPadding: 1.5, lineColor: [130, 130, 130], lineWidth: 0.1 },
+      columnStyles: sharedColStyles,
+      margin     : { left: marginL, right: marginR },
     });
 
+    // ── Nomor halaman ────────────────────────────────────────────────────────────
     const totalPages = doc.internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
@@ -474,11 +493,9 @@ const Estimasi = () => {
                       <TableHead>No</TableHead>
                       <TableHead>Nomor</TableHead>
                       <TableHead>Nama Estimasi</TableHead>
-                      {/* ── KOLOM BARU ── */}
                       <TableHead>Client</TableHead>
                       <TableHead>Lokasi</TableHead>
                       <TableHead>Kontak</TableHead>
-                      {/* ────────────── */}
                       <TableHead>Dibuat Oleh</TableHead>
                       <TableHead>Diupdate Oleh</TableHead>
                       <TableHead>Total</TableHead>
@@ -501,7 +518,7 @@ const Estimasi = () => {
                             </TableCell>
                             <TableCell className="font-medium">{est.namaEstimasi}</TableCell>
 
-                            {/* ── CLIENT ── */}
+                            {/* CLIENT */}
                             <TableCell className="text-sm text-gray-700">
                               {est.namaClient ? (
                                 <div className="flex items-center gap-1">
@@ -513,7 +530,7 @@ const Estimasi = () => {
                               )}
                             </TableCell>
 
-                            {/* ── LOKASI ── */}
+                            {/* LOKASI */}
                             <TableCell className="text-sm text-gray-700">
                               {est.lokasi ? (
                                 <div className="flex items-center gap-1">
@@ -525,7 +542,7 @@ const Estimasi = () => {
                               )}
                             </TableCell>
 
-                            {/* ── KONTAK ── */}
+                            {/* KONTAK */}
                             <TableCell className="text-sm text-gray-700">
                               {est.kontakPerson ? (
                                 <div className="flex items-center gap-1">
@@ -576,8 +593,7 @@ const Estimasi = () => {
                             <TableCell>
                               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                                 <Button
-                                  variant="ghost"
-                                  size="sm"
+                                  variant="ghost" size="sm"
                                   onClick={() => handleViewEstimasi(est)}
                                   className={`h-7 w-7 p-0 ${isViewing ? 'bg-sky-200' : ''}`}
                                   title="Lihat"
@@ -585,8 +601,7 @@ const Estimasi = () => {
                                   <Eye className="w-3 h-3" />
                                 </Button>
                                 <Button
-                                  variant="ghost"
-                                  size="sm"
+                                  variant="ghost" size="sm"
                                   onClick={() => exportEstimasiToPDF(est)}
                                   className="h-7 w-7 p-0 hover:bg-red-100"
                                   title="PDF"
@@ -594,8 +609,7 @@ const Estimasi = () => {
                                   <Download className="w-3 h-3" />
                                 </Button>
                                 <Button
-                                  variant="ghost"
-                                  size="sm"
+                                  variant="ghost" size="sm"
                                   onClick={() => handleEditEstimasi(est)}
                                   className="h-7 w-7 p-0 hover:bg-blue-100"
                                   title="Edit"
@@ -603,8 +617,7 @@ const Estimasi = () => {
                                   <Pencil className="w-3 h-3" />
                                 </Button>
                                 <Button
-                                  variant="ghost"
-                                  size="sm"
+                                  variant="ghost" size="sm"
                                   onClick={() => handleDeleteEstimasi(est.id)}
                                   className="h-7 w-7 p-0 hover:bg-red-100"
                                   title="Hapus"
@@ -641,7 +654,7 @@ const Estimasi = () => {
                 </Button>
               </div>
 
-              {/* ── INFO CLIENT / LOKASI / KONTAK di bawah judul ── */}
+              {/* INFO CLIENT / LOKASI / KONTAK */}
               {(viewingEstimasi.namaClient || viewingEstimasi.lokasi || viewingEstimasi.kontakPerson) && (
                 <div className="flex flex-wrap gap-4 mt-2">
                   {viewingEstimasi.namaClient && (
@@ -670,7 +683,7 @@ const Estimasi = () => {
             </CardHeader>
 
             <CardContent className="space-y-6">
-              {/* ── Summary Cards ── */}
+              {/* Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Berat */}
                 <Card className="bg-emerald-50">
@@ -684,7 +697,7 @@ const Estimasi = () => {
                         {(() => {
                           const totalBeratMaterial = (viewingEstimasi.items || []).reduce((sum, item) => {
                             const beratPerBatang = parseFloat(item.beratPerBatang || 0) || 0;
-                            const totalBarang = parseFloat(item.breakdown?.kebutuhanBahan || 0) || 0;
+                            const totalBarang    = parseFloat(item.breakdown?.kebutuhanBahan || 0) || 0;
                             const fallbackBeratTotal = parseFloat(item.beratTotal || 0) || 0;
                             const rowBerat =
                               beratPerBatang > 0 && totalBarang > 0
@@ -694,8 +707,8 @@ const Estimasi = () => {
                           }, 0);
                           const totalBeratWaste = (viewingEstimasi.items || []).reduce((sum, item) => {
                             const beratPerBatang = parseFloat(item.beratPerBatang || 0) || 0;
-                            const panjangMentah = parseFloat(item.panjangMentah || 0) || 0;
-                            const wastePanjang = parseFloat(item.breakdown?.waste || 0) || 0;
+                            const panjangMentah  = parseFloat(item.panjangMentah  || 0) || 0;
+                            const wastePanjang   = parseFloat(item.breakdown?.waste || 0) || 0;
                             if (beratPerBatang <= 0 || panjangMentah <= 0 || wastePanjang <= 0) return sum;
                             return sum + (beratPerBatang / panjangMentah) * wastePanjang;
                           }, 0);
@@ -779,7 +792,7 @@ const Estimasi = () => {
                 </Card>
               </div>
 
-              {/* ── Tabel Detail Material ── */}
+              {/* Tabel Detail Material */}
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -810,35 +823,35 @@ const Estimasi = () => {
                       if (!groupedItems[groupingKey]) {
                         groupedItems[groupingKey] = {
                           ...item,
-                          totalBahan: 0,
-                          totalJumlah: 0,
-                          finalWaste: 0,
+                          totalBahan          : 0,
+                          totalJumlah         : 0,
+                          finalWaste          : 0,
                           finalWastePercentage: 0,
-                          finalPanjangReal: 0,
-                          finalBeratReal: 0,
-                          finalBeratPlusWaste: 0,
-                          finalHargaReal: 0,
-                          finalHargaPlusWaste: 0,
-                          count: 0,
-                          lastItemIndex: -1,
+                          finalPanjangReal    : 0,
+                          finalBeratReal      : 0,
+                          finalBeratPlusWaste : 0,
+                          finalHargaReal      : 0,
+                          finalHargaPlusWaste : 0,
+                          count               : 0,
+                          lastItemIndex       : -1,
                         };
                       }
                       const group = groupedItems[groupingKey];
-                      group.totalBahan += item.breakdown?.kebutuhanBahan || 0;
-                      group.totalJumlah += item.jumlahKeperluan || 0;
+                      group.totalBahan   += item.breakdown?.kebutuhanBahan || 0;
+                      group.totalJumlah  += item.jumlahKeperluan || 0;
                       if (itemIdx >= group.lastItemIndex) {
-                        group.finalWaste = item.breakdown?.waste || 0;
+                        group.finalWaste           = item.breakdown?.waste           || 0;
                         group.finalWastePercentage = item.breakdown?.wastePercentage || 0;
-                        group.finalPanjangReal = item.breakdown?.panjangRealTerpakai || 0;
-                        const totalBeratReal = parseFloat(item.breakdown?.summary?.totalBeratReal || 0) || 0;
-                        const totalBeratWaste = parseFloat(item.breakdown?.summary?.totalBeratWaste || 0) || 0;
-                        const totalHargaReal = parseFloat(item.breakdown?.summary?.totalHargaPemakaian || 0) || 0;
-                        const totalHargaPlusWaste = parseFloat(item.breakdown?.summary?.totalHargaReal || 0) || 0;
-                        group.finalBeratReal = totalBeratReal;
-                        group.finalBeratPlusWaste = totalBeratReal + totalBeratWaste;
-                        group.finalHargaReal = totalHargaReal;
-                        group.finalHargaPlusWaste = totalHargaPlusWaste;
-                        group.lastItemIndex = itemIdx;
+                        group.finalPanjangReal      = item.breakdown?.panjangRealTerpakai || 0;
+                        const totalBeratReal       = parseFloat(item.breakdown?.summary?.totalBeratReal       || 0) || 0;
+                        const totalBeratWaste      = parseFloat(item.breakdown?.summary?.totalBeratWaste      || 0) || 0;
+                        const totalHargaReal       = parseFloat(item.breakdown?.summary?.totalHargaPemakaian  || 0) || 0;
+                        const totalHargaPlusWaste  = parseFloat(item.breakdown?.summary?.totalHargaReal       || 0) || 0;
+                        group.finalBeratReal       = totalBeratReal;
+                        group.finalBeratPlusWaste  = totalBeratReal + totalBeratWaste;
+                        group.finalHargaReal       = totalHargaReal;
+                        group.finalHargaPlusWaste  = totalHargaPlusWaste;
+                        group.lastItemIndex        = itemIdx;
                       }
                       group.count++;
                     });
@@ -851,21 +864,17 @@ const Estimasi = () => {
                           group.barangId === '__manual__' ||
                           group.jenisBahan === 'Manual';
                         if (!isManualRow) {
-                          acc.panjangReal += Number(group.finalPanjangReal || 0);
-                          acc.panjangWaste += Number(group.finalWaste || 0);
-                          acc.beratReal += Number(group.finalBeratReal || 0);
+                          acc.panjangReal    += Number(group.finalPanjangReal   || 0);
+                          acc.panjangWaste   += Number(group.finalWaste         || 0);
+                          acc.beratReal      += Number(group.finalBeratReal     || 0);
                           acc.beratPlusWaste += Number(group.finalBeratPlusWaste || 0);
-                          acc.beratSisa += Math.max(
+                          acc.beratSisa      += Math.max(
                             Number(group.finalBeratPlusWaste || 0) - Number(group.finalBeratReal || 0),
                             0
                           );
                         }
-                        acc.hargaPlusWaste += Number(
-                          isManualRow ? group.subtotal || 0 : group.finalHargaPlusWaste || 0
-                        );
-                        acc.hargaReal += Number(
-                          isManualRow ? group.subtotal || 0 : group.finalHargaReal || 0
-                        );
+                        acc.hargaPlusWaste += Number(isManualRow ? group.subtotal || 0 : group.finalHargaPlusWaste || 0);
+                        acc.hargaReal      += Number(isManualRow ? group.subtotal || 0 : group.finalHargaReal      || 0);
                         return acc;
                       },
                       { panjangReal: 0, panjangWaste: 0, beratReal: 0, beratPlusWaste: 0, beratSisa: 0, hargaPlusWaste: 0, hargaReal: 0 }
