@@ -11,6 +11,7 @@ import * as XLSX from 'xlsx';
 import BarangCombobox from '@/components/BarangCombobox';
 import { calculateLuasPermukaan, calculateMaterialGroupAllocation } from '@/utils/calculationEngine';
 import { formatNumberWithSeparator } from '@/lib/utils';
+import ManualItemFormComponent from '@/components/ManualItemForm';
 
 // ── Template untuk item kosong ─────────────────────────────────────────────────
 const emptyItem = () => ({
@@ -281,7 +282,7 @@ const EstimasiForm = () => {
   // ── Kalkulasi utama ───────────────────────────────────────────────────────────
   const calculateWithWasteReuse = (validItems, luasPekerjaan) => {
     const materialItems = validItems.filter((item) => item.barangId && item.barangId !== '__manual__');
-    const manualItems = validItems.filter((item) => item.barangId === '__manual__');
+    // const manualItems = validItems.filter((item) => item.barangId === '__manual__');
 
     let totalEstimasi = 0, totalBeratReal = 0, totalLuasPermukaan = 0, totalTitikWelding = 0;
     const itemDetails = [];
@@ -359,49 +360,49 @@ const EstimasiForm = () => {
       });
     });
 
-    const manualDetails = manualItems.map((item) => {
-      const jumlahKeperluan = parseInt(item.jumlahKeperluan) || 0;
-      const hargaJual = parseFloat(item.hargaManual || 0) || 0;
-      const subtotal = hargaJual * jumlahKeperluan;
-      totalEstimasi += subtotal;
+    // const manualDetails = manualItems.map((item) => {
+    //   const jumlahKeperluan = parseInt(item.jumlahKeperluan) || 0;
+    //   const hargaJual = parseFloat(item.hargaManual || 0) || 0;
+    //   const subtotal = hargaJual * jumlahKeperluan;
+    //   totalEstimasi += subtotal;
 
-      return {
-        barangId: '__manual__',
-        kodeItem: item.kodeItem || null,
-        isManual: true,
-        namaBarang: item.namaManual || 'Barang Manual',
-        jenisBentuk: item.jenisBentukManual || 'manual',
-        supplier: item.supplierManual || null,
-        jenisBahan: item.jenisBahanManual || 'Manual',
-        beratJenis: item.beratJenisManual || null,
-        beratbatang: item.beratbatangManual || null,
-        minWelding: item.minWeldingManual || null,
-        ukuranMentah: null,
-        panjangMentah: 0,
-        panjangJadi: 0,
-        jumlahKeperluan,
-        volume: null,
-        hargaSatuan: Math.round(parseFloat(item.hargamodalManual || 0) || 0),
-        hargaJual: Math.round(hargaJual),
-        hargaJasa: Math.round(parseFloat(item.hargajasaManual || 0) || 0),
-        luasPekerjaan: 0,
-        subtotalMaterial: Math.round(subtotal),
-        subtotalMaterialPemakaian: Math.round(subtotal),
-        subtotalMaterialWaste: 0,
-        subtotalJasa: 0,
-        subtotal: Math.round(subtotal),
-        beratPerBatang: 0,
-        beratTotal: 0,
-        beratWaste: 0,
-        luasPermukaan: 0,
-        luasPermukaanTotal: 0,
-        breakdown: {
-          kebutuhanBahan: 0, panjangRealTerpakai: 0, waste: 0, wastePercentage: 0,
-          totalTitikWelding: 0, cuttingGuide: [], itemBreakdown: [], needsWelding: false,
-        },
-        usedExistingWaste: 0,
-      };
-    });
+    //   return {
+    //     barangId: '__manual__',
+    //     kodeItem: item.kodeItem || null,
+    //     isManual: true,
+    //     namaBarang: item.namaManual || 'Barang Manual',
+    //     jenisBentuk: item.jenisBentukManual || 'manual',
+    //     supplier: item.supplierManual || null,
+    //     jenisBahan: item.jenisBahanManual || 'Manual',
+    //     beratJenis: item.beratJenisManual || null,
+    //     beratbatang: item.beratbatangManual || null,
+    //     minWelding: item.minWeldingManual || null,
+    //     ukuranMentah: null,
+    //     panjangMentah: 0,
+    //     panjangJadi: 0,
+    //     jumlahKeperluan,
+    //     volume: null,
+    //     hargaSatuan: Math.round(parseFloat(item.hargamodalManual || 0) || 0),
+    //     hargaJual: Math.round(hargaJual),
+    //     hargaJasa: Math.round(parseFloat(item.hargajasaManual || 0) || 0),
+    //     luasPekerjaan: 0,
+    //     subtotalMaterial: Math.round(subtotal),
+    //     subtotalMaterialPemakaian: Math.round(subtotal),
+    //     subtotalMaterialWaste: 0,
+    //     subtotalJasa: 0,
+    //     subtotal: Math.round(subtotal),
+    //     beratPerBatang: 0,
+    //     beratTotal: 0,
+    //     beratWaste: 0,
+    //     luasPermukaan: 0,
+    //     luasPermukaanTotal: 0,
+    //     breakdown: {
+    //       kebutuhanBahan: 0, panjangRealTerpakai: 0, waste: 0, wastePercentage: 0,
+    //       totalTitikWelding: 0, cuttingGuide: [], itemBreakdown: [], needsWelding: false,
+    //     },
+    //     usedExistingWaste: 0,
+    //   };
+    // });
 
     return { itemDetails: [...itemDetails, ...manualDetails].filter(Boolean), totalEstimasi, totalBeratReal, totalLuasPermukaan, totalTitikWelding };
   };
@@ -551,7 +552,7 @@ const EstimasiForm = () => {
       beratJenis: item.beratJenisManual || null,
       beratbatang: item.beratbatangManual || null,
       minWelding: item.minWeldingManual || '50',
-      hargamodal: item.hargamodalManual || null,
+      hargamodal: item.hargamodalManual || item.hargaManual || null,
       hargajasa: item.hargajasaManual || null,
       supplier: item.supplierManual || null,
       foto: null,
@@ -573,159 +574,159 @@ const EstimasiForm = () => {
 
   // ── Komponen form manual item ────────────────────────────────────────────────
   // Didefinisikan di dalam EstimasiForm agar bisa akses saveManualBarangPermanent & savingManualBarang
-  const ManualItemForm = ({ item, index }) => {
-    const jenisBentuk = item.jenisBentukManual || 'balok';
-    const f = (field) => ({
-      value: item[field] || '',
-      onChange: (e) => handleItemChange(index, field, e.target.value),
-    });
+  // const ManualItemForm = ({ item, index }) => {
+  //   const jenisBentuk = item.jenisBentukManual || 'balok';
+  //   const f = (field) => ({
+  //     value: item[field] || '',
+  //     onChange: (e) => handleItemChange(index, field, e.target.value),
+  //   });
 
-    return (
-      <div className="mt-2 p-4 bg-sky-50 rounded-lg border border-sky-200 space-y-4">
-        <p className="text-xs font-semibold text-sky-700 uppercase tracking-wide">Detail Barang Manual</p>
+  //   return (
+  //     <div className="mt-2 p-4 bg-sky-50 rounded-lg border border-sky-200 space-y-4">
+  //       <p className="text-xs font-semibold text-sky-700 uppercase tracking-wide">Detail Barang Manual</p>
 
-        {/* Baris 1: Nama & Supplier */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Nama Barang <span className="text-red-500">*</span></Label>
-            <Input placeholder="Contoh: Besi UNP 100" {...f('namaManual')} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Supplier</Label>
-            <Input placeholder="Contoh: CV. Besi Jaya" {...f('supplierManual')} />
-          </div>
-        </div>
+  //       {/* Baris 1: Nama & Supplier */}
+  //       <div className="grid grid-cols-2 gap-3">
+  //         <div className="space-y-1">
+  //           <Label className="text-xs">Nama Barang <span className="text-red-500">*</span></Label>
+  //           <Input placeholder="Contoh: Besi UNP 100" {...f('namaManual')} />
+  //         </div>
+  //         <div className="space-y-1">
+  //           <Label className="text-xs">Supplier</Label>
+  //           <Input placeholder="Contoh: CV. Besi Jaya" {...f('supplierManual')} />
+  //         </div>
+  //       </div>
 
-        {/* Jenis Bentuk */}
-        <div className="space-y-1">
-          <Label className="text-xs">Jenis Bentuk</Label>
-          <div className="flex gap-4 flex-wrap">
-            {['balok', 'tabung', 'wf', 'plat', 'custom'].map((bentuk) => (
-              <label key={bentuk} className="flex items-center gap-1.5 cursor-pointer">
-                <input
-                  type="radio"
-                  name={`jenisBentukManual-${index}`}
-                  value={bentuk}
-                  checked={jenisBentuk === bentuk}
-                  onChange={(e) => handleItemChange(index, 'jenisBentukManual', e.target.value)}
-                  className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
-                />
-                <span className="text-xs font-medium text-gray-700 capitalize">{bentuk}</span>
-              </label>
-            ))}
-          </div>
-        </div>
+  //       {/* Jenis Bentuk */}
+  //       <div className="space-y-1">
+  //         <Label className="text-xs">Jenis Bentuk</Label>
+  //         <div className="flex gap-4 flex-wrap">
+  //           {['balok', 'tabung', 'wf', 'plat', 'custom'].map((bentuk) => (
+  //             <label key={bentuk} className="flex items-center gap-1.5 cursor-pointer">
+  //               <input
+  //                 type="radio"
+  //                 name={`jenisBentukManual-${index}`}
+  //                 value={bentuk}
+  //                 checked={jenisBentuk === bentuk}
+  //                 onChange={(e) => handleItemChange(index, 'jenisBentukManual', e.target.value)}
+  //                 className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
+  //               />
+  //               <span className="text-xs font-medium text-gray-700 capitalize">{bentuk}</span>
+  //             </label>
+  //           ))}
+  //         </div>
+  //       </div>
 
-        {/* Dimensi */}
-        <div className="space-y-1">
-          <Label className="text-xs">Dimensi (mm)</Label>
-          {jenisBentuk === 'balok' && (
-            <div className="grid grid-cols-4 gap-2">
-              <Input type="number" placeholder="Panjang" {...f('panjangManual')} />
-              <Input type="number" placeholder="Lebar" {...f('lebarManual')} />
-              <Input type="number" placeholder="Tinggi" {...f('tinggiManual')} />
-              <Input type="number" placeholder="Ketebalan" {...f('ketebalanManual')} />
-            </div>
-          )}
-          {jenisBentuk === 'tabung' && (
-            <div className="grid grid-cols-3 gap-2">
-              <Input type="number" placeholder="Diameter" {...f('diameterManual')} />
-              <Input type="number" placeholder="Panjang" {...f('panjangManual')} />
-              <Input type="number" placeholder="Ketebalan" {...f('ketebalanManual')} />
-            </div>
-          )}
-          {jenisBentuk === 'wf' && (
-            <div className="grid grid-cols-4 gap-2">
-              <div><Label className="text-[10px] text-gray-500">Tinggi (H)</Label><Input type="number" placeholder="200" {...f('tinggiWFManual')} /></div>
-              <div><Label className="text-[10px] text-gray-500">Flange (B)</Label><Input type="number" placeholder="100" {...f('lebarFlangeManual')} /></div>
-              <div><Label className="text-[10px] text-gray-500">Web (tw)</Label><Input type="number" placeholder="5.5" {...f('ketebalanWebManual')} /></div>
-              <div><Label className="text-[10px] text-gray-500">Flange (tf)</Label><Input type="number" placeholder="8" {...f('ketebalanFlangeManual')} /></div>
-            </div>
-          )}
-          {jenisBentuk === 'plat' && (
-            <div className="grid grid-cols-3 gap-2">
-              <Input type="number" placeholder="Panjang" {...f('panjangPlatManual')} />
-              <Input type="number" placeholder="Lebar" {...f('lebarPlatManual')} />
-              <Input type="number" placeholder="Ketebalan" {...f('ketebalanPlatManual')} />
-            </div>
-          )}
-          {jenisBentuk === 'custom' && (
-            <Input type="number" placeholder="Panjang" {...f('panjangManual')} />
-          )}
-        </div>
+  //       {/* Dimensi */}
+  //       <div className="space-y-1">
+  //         <Label className="text-xs">Dimensi (mm)</Label>
+  //         {jenisBentuk === 'balok' && (
+  //           <div className="grid grid-cols-4 gap-2">
+  //             <Input type="number" placeholder="Panjang" {...f('panjangManual')} />
+  //             <Input type="number" placeholder="Lebar" {...f('lebarManual')} />
+  //             <Input type="number" placeholder="Tinggi" {...f('tinggiManual')} />
+  //             <Input type="number" placeholder="Ketebalan" {...f('ketebalanManual')} />
+  //           </div>
+  //         )}
+  //         {jenisBentuk === 'tabung' && (
+  //           <div className="grid grid-cols-3 gap-2">
+  //             <Input type="number" placeholder="Diameter" {...f('diameterManual')} />
+  //             <Input type="number" placeholder="Panjang" {...f('panjangManual')} />
+  //             <Input type="number" placeholder="Ketebalan" {...f('ketebalanManual')} />
+  //           </div>
+  //         )}
+  //         {jenisBentuk === 'wf' && (
+  //           <div className="grid grid-cols-4 gap-2">
+  //             <div><Label className="text-[10px] text-gray-500">Tinggi (H)</Label><Input type="number" placeholder="200" {...f('tinggiWFManual')} /></div>
+  //             <div><Label className="text-[10px] text-gray-500">Flange (B)</Label><Input type="number" placeholder="100" {...f('lebarFlangeManual')} /></div>
+  //             <div><Label className="text-[10px] text-gray-500">Web (tw)</Label><Input type="number" placeholder="5.5" {...f('ketebalanWebManual')} /></div>
+  //             <div><Label className="text-[10px] text-gray-500">Flange (tf)</Label><Input type="number" placeholder="8" {...f('ketebalanFlangeManual')} /></div>
+  //           </div>
+  //         )}
+  //         {jenisBentuk === 'plat' && (
+  //           <div className="grid grid-cols-3 gap-2">
+  //             <Input type="number" placeholder="Panjang" {...f('panjangPlatManual')} />
+  //             <Input type="number" placeholder="Lebar" {...f('lebarPlatManual')} />
+  //             <Input type="number" placeholder="Ketebalan" {...f('ketebalanPlatManual')} />
+  //           </div>
+  //         )}
+  //         {jenisBentuk === 'custom' && (
+  //           <Input type="number" placeholder="Panjang" {...f('panjangManual')} />
+  //         )}
+  //       </div>
 
-        {/* Informasi Material */}
-        {jenisBentuk !== 'custom' && (
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <Label className="text-xs">Jenis Bahan</Label>
-              <Input placeholder="Baja ST37" {...f('jenisBahanManual')} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Berat Jenis (kg/m³)</Label>
-              <Input type="number" placeholder="7850" {...f('beratJenisManual')} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Berat/Batang (kg)</Label>
-              <Input type="number" placeholder="50" {...f('beratbatangManual')} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Min. Welding (mm)</Label>
-              <Input type="number" placeholder="50" {...f('minWeldingManual')} />
-            </div>
-          </div>
-        )}
+  //       {/* Informasi Material */}
+  //       {jenisBentuk !== 'custom' && (
+  //         <div className="grid grid-cols-2 gap-2">
+  //           <div className="space-y-1">
+  //             <Label className="text-xs">Jenis Bahan</Label>
+  //             <Input placeholder="Baja ST37" {...f('jenisBahanManual')} />
+  //           </div>
+  //           <div className="space-y-1">
+  //             <Label className="text-xs">Berat Jenis (kg/m³)</Label>
+  //             <Input type="number" placeholder="7850" {...f('beratJenisManual')} />
+  //           </div>
+  //           <div className="space-y-1">
+  //             <Label className="text-xs">Berat/Batang (kg)</Label>
+  //             <Input type="number" placeholder="50" {...f('beratbatangManual')} />
+  //           </div>
+  //           <div className="space-y-1">
+  //             <Label className="text-xs">Min. Welding (mm)</Label>
+  //             <Input type="number" placeholder="50" {...f('minWeldingManual')} />
+  //           </div>
+  //         </div>
+  //       )}
 
-        {/* Harga */}
-        <div className="grid grid-cols-3 gap-2">
-          <div className="space-y-1">
-            <Label className="text-xs">Harga Modal (Rp)</Label>
-            <Input type="number" placeholder="500000" {...f('hargamodalManual')} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Harga Jual (Rp) <span className="text-red-500">*</span></Label>
-            <Input type="number" placeholder="750000" {...f('hargaManual')} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Harga Jasa (Rp)</Label>
-            <Input type="number" placeholder="100000" {...f('hargajasaManual')} />
-          </div>
-        </div>
+  //       {/* Harga */}
+  //       <div className="grid grid-cols-3 gap-2">
+  //         <div className="space-y-1">
+  //           <Label className="text-xs">Harga Modal (Rp)</Label>
+  //           <Input type="number" placeholder="500000" {...f('hargamodalManual')} />
+  //         </div>
+  //         <div className="space-y-1">
+  //           <Label className="text-xs">Harga Jual (Rp) <span className="text-red-500">*</span></Label>
+  //           <Input type="number" placeholder="750000" {...f('hargaManual')} />
+  //         </div>
+  //         <div className="space-y-1">
+  //           <Label className="text-xs">Harga Jasa (Rp)</Label>
+  //           <Input type="number" placeholder="100000" {...f('hargajasaManual')} />
+  //         </div>
+  //       </div>
 
-        {/* Info kalkulasi */}
-        <div className="text-xs text-amber-600 font-medium flex items-center gap-1.5">
-          <Zap className="w-3 h-3 shrink-0" />
-          Barang manual dihitung berdasarkan Harga Jual × Jumlah. Pastikan nama barang dan harga jual sudah benar.
-        </div>
+  //       {/* Info kalkulasi */}
+  //       <div className="text-xs text-amber-600 font-medium flex items-center gap-1.5">
+  //         <Zap className="w-3 h-3 shrink-0" />
+  //         Barang manual dihitung berdasarkan Harga Jual × Jumlah. Pastikan nama barang dan harga jual sudah benar.
+  //       </div>
 
-        {/* ── DUA TOMBOL AKSI BARANG MANUAL ── */}
-        <div className="flex gap-2 pt-2 border-t border-sky-200">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="flex-1 border-sky-300 text-sky-700 hover:bg-sky-50 text-xs"
-            onClick={() => toast.success('Perubahan diterapkan untuk estimasi ini saja.')}
-          >
-            Gunakan untuk Estimasi Ini
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
-            onClick={() => saveManualBarangPermanent(index)}
-            disabled={savingManualBarang[index]}
-          >
-            {savingManualBarang[index] ? (
-              <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Menyimpan...</>
-            ) : (
-              'Simpan ke Database Barang'
-            )}
-          </Button>
-        </div>
-      </div>
-    );
-  };
+  //       {/* ── DUA TOMBOL AKSI BARANG MANUAL ── */}
+  //       <div className="flex gap-2 pt-2 border-t border-sky-200">
+  //         <Button
+  //           type="button"
+  //           variant="outline"
+  //           size="sm"
+  //           className="flex-1 border-sky-300 text-sky-700 hover:bg-sky-50 text-xs"
+  //           onClick={() => toast.success('Perubahan diterapkan untuk estimasi ini saja.')}
+  //         >
+  //           Gunakan untuk Estimasi Ini
+  //         </Button>
+  //         <Button
+  //           type="button"
+  //           size="sm"
+  //           className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+  //           onClick={() => saveManualBarangPermanent(index)}
+  //           disabled={savingManualBarang[index]}
+  //         >
+  //           {savingManualBarang[index] ? (
+  //             <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Menyimpan...</>
+  //           ) : (
+  //             'Simpan ke Database Barang'
+  //           )}
+  //         </Button>
+  //       </div>
+  //     </div>
+  //   );
+  // };
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
@@ -861,7 +862,15 @@ const EstimasiForm = () => {
                       />
 
                       {/* Form manual dengan dua tombol */}
-                      {isManual && <ManualItemForm item={item} index={index} />}
+                      {isManual && (
+                        <ManualItemForm
+                          item={item}
+                          index={index}
+                          onItemChange={handleItemChange}
+                          onSavePermanent={saveManualBarangPermanent}
+                          saving={savingManualBarang}
+                        />
+                      )}
                     </div>
                   </div>
 

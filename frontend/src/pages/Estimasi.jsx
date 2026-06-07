@@ -294,8 +294,11 @@ const Estimasi = () => {
         const qty         = row.jumlahKeperluan || 0;
         const kode        = row.kodeItem || row.namaBarang || repItem.namaBarang;
         const spesLabel   = `${alphaLabel(rowIdx)}. ${kode} ( ${fmtN(panjangJadiM, 1)} M, ${qty} Bh. )`;
-        const luasPek     = row.luasPekerjaan > 0 ? fmtN(row.luasPekerjaan, 2) : '-';
-
+        const luasPek     = (row.luasPermukaanTotal || 0) > 0
+          ? fmtN(row.luasPermukaanTotal, 2)
+          : (row.luasPermukaan || 0) > 0
+            ? fmtN(row.luasPermukaan, 2)
+            : '-';
         if (barsForItem.length === 0) {
           tableBody.push([spesLabel, '-', '-', '-', '-', '-', luasPek, fmtRp(row.hargaSatuan), fmtRp(row.hargaSatuan), '-']);
           return;
@@ -922,6 +925,8 @@ const Estimasi = () => {
                         group.barangId === '__manual__' ||
                         group.jenisBahan === 'Manual';
                       const wastePercentage = group.finalWastePercentage || 0;
+                      const effectiveLuasKerja = resolvedDimensiKerja > 0 
+                        ? resolvedDimensiKerja : Number(group.luasPekerjaan || 0); // Hindari pembagian dengan nol
 
                       return (
                         <TableRow key={idx}>
@@ -935,9 +940,9 @@ const Estimasi = () => {
                             {isManualRow ? '-' : `${formatNumberWithSeparator(group.panjangMentah)} mm`}
                           </TableCell>
                           <TableCell>
-                            {!isManualRow && resolvedDimensiKerja > 0 ? (
+                            {!isManualRow && effectiveLuasKerja > 0 ? (
                               <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium">
-                                {Number(resolvedDimensiKerja).toFixed(2)} m²
+                                {Number(effectiveLuasKerja).toFixed(2)} m²
                               </span>
                             ) : (
                               <span className="text-gray-400 text-xs">-</span>

@@ -13,6 +13,37 @@ import { barangAPI, estimasiAPI } from '@/services/api';
 import { calculateLuasPermukaan, calculateMaterialGroupAllocation, calculateWithWasteReuse } from '@/utils/calculationEngine';
 import { formatNumberWithSeparator } from '@/lib/utils';
 import BarangCombobox from '@/components/BarangCombobox';
+import ManualItemForm from '@/components/ManualItemForm';
+
+const emptyItem = () => ({
+  barangId: '',
+  kodeItem: '',
+  panjangJadi: '',
+  jumlahKeperluan: '',
+  volume: '',
+  namaManual: '',
+  hargaManual: '',
+  hargamodalManual: '',
+  hargajasaManual: '',
+  jenisBentukManual: 'balok',
+  supplierManual: '',
+  jenisBahanManual: '',
+  beratJenisManual: '',
+  beratbatangManual: '',
+  minWeldingManual: '',
+  panjangManual: '',
+  lebarManual: '',
+  tinggiManual: '',
+  diameterManual: '',
+  ketebalanManual: '',
+  tinggiWFManual: '',
+  lebarFlangeManual: '',
+  ketebalanWebManual: '',
+  ketebalanFlangeManual: '',
+  panjangPlatManual: '',
+  lebarPlatManual: '',
+  ketebalanPlatManual: '',
+});
 
 const EditEstimasi = () => {
   const { id } = useParams();
@@ -32,9 +63,7 @@ const EditEstimasi = () => {
     kontakPerson: '',
   });
 
-  const [selectedItems, setSelectedItems] = useState([
-    { barangId: '', kodeItem: '', panjangJadi: '', jumlahKeperluan: '', volume: '', namaManual: '', hargaManual: '' },
-  ]);
+  const [selectedItems, setSelectedItems] = useState([emptyItem()]);
 
   // ── State untuk edit detail barang (sama seperti EstimasiForm) ────────────────
   const [localBarangOverrides, setLocalBarangOverrides] = useState({});
@@ -73,17 +102,36 @@ const EditEstimasi = () => {
       });
 
       setSelectedItems(
-        found.items?.map((item) => ({
-          barangId:
-            item.barangId?.toString() ||
-            barangData.find((b) => b.nama === item.namaBarang)?.id?.toString() || '',
-          kodeItem:        item.kodeItem || '',
-          panjangJadi:     item.isManual ? '' : item.panjangJadi?.toString() || '',
-          jumlahKeperluan: item.jumlahKeperluan?.toString() || '',
-          volume:          item.volume?.toString() || '',
-          namaManual:      item.isManual ? item.namaBarang  : '',
-          hargaManual:     item.isManual ? item.hargaSatuan?.toString() : '',
-        }))
+        found.items?.map((item) => {
+          const isItemManual = item.isManual || item.barangId === '__manual__';
+          const barangFromDB = !isItemManual
+            ? barangData.find((b) => b.nama === item.namaBarang)
+            : null;
+
+          return {
+            ...emptyItem(),
+            barangId: isItemManual
+              ? '__manual__'
+              : item.barangId?.toString() || barangFromDB?.id?.toString() || '',
+            kodeItem: item.kodeItem || '',
+            panjangJadi: isItemManual ? '' : item.panjangJadi?.toString() || '',
+            jumlahKeperluan: item.jumlahKeperluan?.toString() || '',
+            volume: item.volume?.toString() || '',
+            // Manual fields
+            namaManual: isItemManual ? (item.namaBarang || '') : '',
+            hargaManual: isItemManual ? ((item.hargaJual || item.hargaSatuan) ?? '').toString() : '',
+            hargamodalManual: isItemManual ? (item.hargaSatuan ?? '').toString() : '',
+            hargajasaManual: isItemManual ? (item.hargaJasa ?? '').toString() : '',
+            jenisBentukManual: isItemManual ? (item.jenisBentuk || 'custom') : 'balok',
+            supplierManual: isItemManual ? (item.supplier || '') : '',
+            jenisBahanManual: isItemManual
+              ? (item.jenisBahan !== 'Manual' ? item.jenisBahan || '' : '')
+              : '',
+            beratJenisManual: isItemManual ? (item.beratJenis?.toString() || '') : '',
+            beratbatangManual: isItemManual ? (item.beratbatang?.toString() || '') : '',
+            minWeldingManual: isItemManual ? (item.minWelding?.toString() || '') : '',
+          };
+        }) || [emptyItem()]
       );
     } catch (error) {
       toast.error('Gagal memuat data: ' + error.message);
@@ -205,6 +253,63 @@ const EditEstimasi = () => {
       setSavingBarang((prev) => ({ ...prev, [barangId]: false }));
     }
   };
+
+  const saveManualBarangPermanent = async (index) => {
+    const item = selectedItems[index];
+    if (!item || item.barangId !== '__manual__') return;
+
+    const namaBarang = (item.namaManual || '').trim();
+    const hargaJual = parseFloat(item.hargaManual || 0);
+
+    if (!namaBarang) {
+      toast.error('Nama barang wajib diisi sebelum menyimpan ke database.');
+      return;
+    }
+    if (!hargaJual || hargaJual <= 0) {
+      toast.error('Harga jual wajib diisi sebelum menyimpan ke database.');
+      return;
+    }
+
+    const barangData = {
+      nama: namaBarang,
+      jenisBentuk: item.jenisBentukManual || 'custom',
+      panjang: item.panjangManual || null,
+      lebar: item.lebarManual || null,
+      tinggi: item.tinggiManual || null,
+      diameter: item.diameterManual || null,
+      ketebalan: item.ketebalanManual || null,
+      tinggiWF: item.tinggiWFManual || null,
+      lebarFlange: item.lebarFlangeManual || null,
+      ketebalanWeb: item.ketebalanWebManual || null,
+      ketebalanFlange: item.ketebalanFlangeManual || null,
+      panjangPlat: item.panjangPlatManual || null,
+      lebarPlat: item.lebarPlatManual || null,
+      ketebalanPlat: item.ketebalanPlatManual || null,
+      jenisBahan: item.jenisBahanManual || '-',
+      beratJenis: item.beratJenisManual || '0',
+      hargamodal: item.hargamodalManual || item.hargaManual || '0',
+      beratbatang: item.beratbatangManual || null,
+      minWelding: item.minWeldingManual || '50',
+      hargamodal: item.hargamodalManual || item.hargaManual || null,
+      hargajasa: item.hargajasaManual || null,
+      supplier: item.supplierManual || null,
+      foto: null,
+    };
+
+    try {
+      setSavingManualBarang((prev) => ({ ...prev, [index]: true }));
+      await barangAPI.create(barangData);
+      const data = await barangAPI.getAll();
+      setBarangList(data);
+      toast.success(`Barang "${namaBarang}" berhasil disimpan ke database!`);
+    } catch (error) {
+      toast.error('Gagal menyimpan ke database: ' + error.message);
+    } finally {
+      setSavingManualBarang((prev) => ({ ...prev, [index]: false }));
+    }
+  };
+
+  const [savingManualBarang, setSavingManualBarang] = useState({});
 
   // ─── Kalkulasi & simpan ───────────────────────────────────────────
   const handleUpdate = async () => {
@@ -436,24 +541,13 @@ const EditEstimasi = () => {
 
                 {/* Form manual (sederhana, hanya nama & harga) */}
                 {isManual && (
-                  <div className="grid grid-cols-2 gap-3 p-3 bg-sky-50 rounded-lg border border-sky-200">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Nama Barang</Label>
-                      <Input
-                        value={item.namaManual || ''}
-                        onChange={(e) => handleItemChange(index, 'namaManual', e.target.value)}
-                        placeholder="Contoh: Besi UNP 100"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Harga Jual (Rp)</Label>
-                      <Input
-                        type="number"
-                        value={item.hargaManual || ''}
-                        onChange={(e) => handleItemChange(index, 'hargaManual', e.target.value)}
-                      />
-                    </div>
-                  </div>
+                  <ManualItemForm
+                    item={item}
+                    index={index}
+                    onItemChange={handleItemChange}
+                    onSavePermanent={saveManualBarangPermanent}
+                    saving={savingManualBarang}
+                  />
                 )}
 
                 {/* Info stok barang database */}
@@ -683,4 +777,4 @@ const EditEstimasi = () => {
   );
 };
 
-export default EditEstimasi;
+export default EditEstimasi

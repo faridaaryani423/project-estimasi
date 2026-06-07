@@ -71,8 +71,9 @@ class BarangBase(BaseModel):
     lebarPlat: Optional[str] = None
     ketebalanPlat: Optional[str] = None
     supplier: Optional[str] = None
-    jenisBahan: str
-    beratJenis: str
+    jenisBahan: Optional[str] = None   # ✅ ubah dari str → Optional[str]
+    beratJenis: Optional[str] = None   # ✅ ubah dari str → Optional[str]
+    hargamodal: Optional[str] = None
     beratbatang: Optional[str] = None
     minWelding: Optional[str] = "50"
     hargamodal: str

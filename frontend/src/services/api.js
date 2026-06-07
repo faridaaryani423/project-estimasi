@@ -19,29 +19,34 @@ const getHeaders = () => {
 // Kita baca isinya SEKALI saja sebagai text, baru di-parse.
 // Ini mencegah error "Response body already used".
 const handleResponse = async (response) => {
-  // Baca respon mentah sekali saja
   const text = await response.text();
   let data;
 
   try {
-    // Coba ubah text jadi JSON
     data = text ? JSON.parse(text) : {};
   } catch (err) {
-    // Kalau gagal (misal server error HTML), anggap data kosong
     data = { detail: text || 'Server Error (Non-JSON)' };
   }
 
-  // Cek jika sesi habis (401)
   if (response.status === 401) {
-    localStorage.removeItem('token'); // Hapus token yang benar
+    localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/login';
     throw new Error('Sesi berakhir, silakan login ulang');
   }
   
-  // Cek jika ada error lain dari server
   if (!response.ok) {
-    const errorMsg = data.detail || data.message || 'Terjadi kesalahan pada server';
+    let errorMsg;
+    if (Array.isArray(data.detail)) {
+      errorMsg = data.detail
+        .map(e => {
+          const field = e.loc?.[e.loc.length - 1] ?? '';
+          return field ? `${field}: ${e.msg}` : e.msg;
+        })
+        .join(' | ');
+    } else {
+      errorMsg = data.detail || data.message || 'Terjadi kesalahan pada server';
+    }
     throw new Error(errorMsg);
   }
   
