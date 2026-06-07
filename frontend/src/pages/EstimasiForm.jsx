@@ -11,7 +11,7 @@ import * as XLSX from 'xlsx';
 import BarangCombobox from '@/components/BarangCombobox';
 import { calculateLuasPermukaan, calculateMaterialGroupAllocation } from '@/utils/calculationEngine';
 import { formatNumberWithSeparator } from '@/lib/utils';
-import ManualItemFormComponent from '@/components/ManualItemForm';
+import ManualItemForm from '@/components/ManualItemForm';
 
 // ── Template untuk item kosong ─────────────────────────────────────────────────
 const emptyItem = () => ({
@@ -282,7 +282,7 @@ const EstimasiForm = () => {
   // ── Kalkulasi utama ───────────────────────────────────────────────────────────
   const calculateWithWasteReuse = (validItems, luasPekerjaan) => {
     const materialItems = validItems.filter((item) => item.barangId && item.barangId !== '__manual__');
-    // const manualItems = validItems.filter((item) => item.barangId === '__manual__');
+    const manualItems = validItems.filter((item) => item.barangId === '__manual__');
 
     let totalEstimasi = 0, totalBeratReal = 0, totalLuasPermukaan = 0, totalTitikWelding = 0;
     const itemDetails = [];
@@ -360,51 +360,64 @@ const EstimasiForm = () => {
       });
     });
 
-    // const manualDetails = manualItems.map((item) => {
-    //   const jumlahKeperluan = parseInt(item.jumlahKeperluan) || 0;
-    //   const hargaJual = parseFloat(item.hargaManual || 0) || 0;
-    //   const subtotal = hargaJual * jumlahKeperluan;
-    //   totalEstimasi += subtotal;
+    // ✅ Manual items — tidak ter-comment lagi
+    const manualDetails = manualItems.map((item) => {
+      const jumlahKeperluan = parseInt(item.jumlahKeperluan) || 0;
+      const hargaJual = parseFloat(item.hargaManual || 0) || 0;
+      const subtotal = hargaJual * jumlahKeperluan;
+      totalEstimasi += subtotal;
 
-    //   return {
-    //     barangId: '__manual__',
-    //     kodeItem: item.kodeItem || null,
-    //     isManual: true,
-    //     namaBarang: item.namaManual || 'Barang Manual',
-    //     jenisBentuk: item.jenisBentukManual || 'manual',
-    //     supplier: item.supplierManual || null,
-    //     jenisBahan: item.jenisBahanManual || 'Manual',
-    //     beratJenis: item.beratJenisManual || null,
-    //     beratbatang: item.beratbatangManual || null,
-    //     minWelding: item.minWeldingManual || null,
-    //     ukuranMentah: null,
-    //     panjangMentah: 0,
-    //     panjangJadi: 0,
-    //     jumlahKeperluan,
-    //     volume: null,
-    //     hargaSatuan: Math.round(parseFloat(item.hargamodalManual || 0) || 0),
-    //     hargaJual: Math.round(hargaJual),
-    //     hargaJasa: Math.round(parseFloat(item.hargajasaManual || 0) || 0),
-    //     luasPekerjaan: 0,
-    //     subtotalMaterial: Math.round(subtotal),
-    //     subtotalMaterialPemakaian: Math.round(subtotal),
-    //     subtotalMaterialWaste: 0,
-    //     subtotalJasa: 0,
-    //     subtotal: Math.round(subtotal),
-    //     beratPerBatang: 0,
-    //     beratTotal: 0,
-    //     beratWaste: 0,
-    //     luasPermukaan: 0,
-    //     luasPermukaanTotal: 0,
-    //     breakdown: {
-    //       kebutuhanBahan: 0, panjangRealTerpakai: 0, waste: 0, wastePercentage: 0,
-    //       totalTitikWelding: 0, cuttingGuide: [], itemBreakdown: [], needsWelding: false,
-    //     },
-    //     usedExistingWaste: 0,
-    //   };
-    // });
+      return {
+        barangId: '__manual__',
+        kodeItem: item.kodeItem || null,
+        isManual: true,
+        namaBarang: item.namaManual || 'Barang Manual',
+        jenisBentuk: item.jenisBentukManual || 'manual',
+        supplier: item.supplierManual || null,
+        jenisBahan: item.jenisBahanManual || 'Manual',
+        beratJenis: item.beratJenisManual || null,
+        beratbatang: item.beratbatangManual || null,
+        minWelding: item.minWeldingManual || null,
+        ukuranMentah: null,
+        panjangMentah: 0,
+        panjangJadi: 0,
+        jumlahKeperluan,
+        volume: null,
+        hargaSatuan: Math.round(parseFloat(item.hargamodalManual || 0) || 0),
+        hargaJual: Math.round(hargaJual),
+        hargaJasa: Math.round(parseFloat(item.hargajasaManual || 0) || 0),
+        luasPekerjaan: 0,
+        subtotalMaterial: Math.round(subtotal),
+        subtotalMaterialPemakaian: Math.round(subtotal),
+        subtotalMaterialWaste: 0,
+        subtotalJasa: 0,
+        subtotal: Math.round(subtotal),
+        beratPerBatang: 0,
+        beratTotal: 0,
+        beratWaste: 0,
+        luasPermukaan: 0,
+        luasPermukaanTotal: 0,
+        breakdown: {
+          kebutuhanBahan: 0,
+          panjangRealTerpakai: 0,
+          waste: 0,
+          wastePercentage: 0,
+          totalTitikWelding: 0,
+          cuttingGuide: [],
+          barAllocations: [],
+          needsWelding: false,
+        },
+        usedExistingWaste: 0,
+      };
+    });
 
-    return { itemDetails: [...itemDetails, ...manualDetails].filter(Boolean), totalEstimasi, totalBeratReal, totalLuasPermukaan, totalTitikWelding };
+    return {
+      itemDetails: [...itemDetails, ...manualDetails].filter(Boolean),
+      totalEstimasi,
+      totalBeratReal,
+      totalLuasPermukaan,
+      totalTitikWelding,
+    };
   };
 
   const calculateEstimasi = async () => {
