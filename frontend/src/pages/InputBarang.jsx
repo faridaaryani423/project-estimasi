@@ -47,6 +47,7 @@ const InputBarang = () => {
   const [editId, setEditId] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [fotoPreview, setFotoPreview] = useState(null);
+  const [originalData, setOriginalData] = useState(null); // menyimpan data asli saat edit
 
   useEffect(() => {
     loadBarangData();
@@ -87,12 +88,41 @@ const InputBarang = () => {
     }
   };
 
+  // Field-field yang termasuk "data barang" (bukan harga)
+  const BARANG_FIELDS = [
+    'nama', 'jenisBentuk', 'panjang', 'lebar', 'tinggi', 'diameter', 'ketebalan',
+    'tinggiWF', 'lebarFlange', 'ketebalanWeb', 'ketebalanFlange',
+    'panjangPlat', 'lebarPlat', 'ketebalanPlat',
+    'jenisBahan', 'beratJenis', 'beratbatang', 'minWelding', 'supplier', 'foto'
+  ];
+
+  // Field-field yang termasuk "harga"
+  const HARGA_FIELDS = ['hargamodal', 'hargajasa'];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     try {
       setSaving(true);
-      
+
+      const user = currentUser?.name || currentUser?.username || 'System';
+      const now = new Date().toISOString();
+
+      // Deteksi apakah field barang atau harga yang berubah (hanya saat edit)
+      let updateBarang = !editMode; // kalau tambah baru, update keduanya
+      let updateHarga  = !editMode;
+
+      if (editMode && originalData) {
+        // Cek apakah ada field barang yang berubah
+        updateBarang = BARANG_FIELDS.some(
+          (f) => String(formData[f] ?? '') !== String(originalData[f] ?? '')
+        );
+        // Cek apakah ada field harga yang berubah
+        updateHarga = HARGA_FIELDS.some(
+          (f) => String(formData[f] ?? '') !== String(originalData[f] ?? '')
+        );
+      }
+
       const barangData = {
         nama: formData.nama,
         jenisBentuk: formData.jenisBentuk,
@@ -114,10 +144,18 @@ const InputBarang = () => {
         minWelding: formData.minWelding || '50',
         hargamodal: formData.hargamodal,
         hargajasa: formData.hargajasa || null,
-        supplier: formData.supplier || null,  // ← BARU
+        supplier: formData.supplier || null,
         foto: formData.foto,
-        lastUpdatedBy: currentUser?.name || currentUser?.username || 'System',
-        createdBy: currentUser?.name || currentUser?.username || 'System'
+        createdBy: currentUser?.name || currentUser?.username || 'System',
+        // Update timestamp hanya untuk bagian yang benar-benar berubah
+        ...(updateBarang && {
+          lastUpdatedbarang: now,
+          lastUpdatedBy: user
+        }),
+        ...(updateHarga && {
+          lastUpdatedharga: now,
+          lastUpdatedByHarga: user
+        })
       };
 
       if (editMode) {
@@ -139,7 +177,7 @@ const InputBarang = () => {
   };
 
   const handleEdit = (item) => {
-    setFormData({
+    const data = {
       nama: item.nama,
       jenisBentuk: item.jenisBentuk || 'balok',
       panjang: item.panjang || '',
@@ -160,9 +198,11 @@ const InputBarang = () => {
       minWelding: item.minWelding || '',
       hargamodal: item.hargamodal || '',
       hargajasa: item.hargajasa || '',
-      supplier: item.supplier || '',  // ← BARU
+      supplier: item.supplier || '',
       foto: item.foto
-    });
+    };
+    setFormData(data);
+    setOriginalData(data); // simpan snapshot data awal untuk perbandingan
     setFotoPreview(item.foto);
     setEditMode(true);
     setEditId(item.id);
@@ -204,13 +244,14 @@ const InputBarang = () => {
       minWelding: '',
       hargamodal: '',
       hargajasa: '',
-      supplier: '',  // ← BARU
+      supplier: '',
       foto: null
     });
     setFotoPreview(null);
     setIsHargaJasaEnabled(false);
     setEditMode(false);
     setEditId(null);
+    setOriginalData(null);
   };
 
   const handleDialogClose = () => {
@@ -562,7 +603,7 @@ const InputBarang = () => {
                             {item.lastUpdatedharga ? new Date(item.lastUpdatedharga).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
                           </div>
                           <div className="text-[11px] text-gray-400">
-                            {item.lastUpdatedBy ? `oleh ${item.lastUpdatedBy}` : 'oleh -'}
+                            {item.lastUpdatedByHarga ? `oleh ${item.lastUpdatedByHarga}` : 'oleh -'}
                           </div>
                         </div>
                       </TableCell>

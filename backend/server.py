@@ -82,14 +82,19 @@ class BarangBase(BaseModel):
     foto: Optional[str] = None
     createdBy: Optional[str] = None
     lastUpdatedBy: Optional[str] = None
+    lastUpdatedByHarga: Optional[str] = None
+    lastUpdatedbarang: Optional[str] = None
+    lastUpdatedharga: Optional[str] = None
 
 class BarangCreate(BarangBase):
     pass
 
 class BarangResponse(BarangBase):
     id: str
-    lastUpdatedbarang: str
-    lastUpdatedharga: str
+    lastUpdatedbarang: Optional[str] = None
+    lastUpdatedharga: Optional[str] = None
+    lastUpdatedBy: Optional[str] = None
+    lastUpdatedByHarga: Optional[str] = None
     createdAt: str
 
 class EstimasiItem(BaseModel):
@@ -336,7 +341,6 @@ async def create_barang(data: BarangCreate, current_user: dict = Depends(get_cur
 @api_router.put("/barang/{barang_id}", response_model=BarangResponse)
 async def update_barang(barang_id: str, data: BarangCreate, current_user: dict = Depends(get_current_user)):
     now = datetime.now(timezone.utc).isoformat()
-    updated_by = current_user.get("name") or current_user.get("username") or current_user.get("role") or "System"
     
     # Generate ukuran string
     ukuran = ""
@@ -350,13 +354,20 @@ async def update_barang(barang_id: str, data: BarangCreate, current_user: dict =
         ukuran = f"{data.panjangPlat} × {data.lebarPlat} × t{data.ketebalanPlat} mm"
     elif data.jenisBentuk == "custom":
         ukuran = f"{data.panjang} × t{data.ketebalan} mm"
-    
+
+    data_dict = data.model_dump()
+
     update_data = {
-        **data.model_dump(),
+        **data_dict,
         "ukuran": ukuran,
-        "lastUpdatedBy": updated_by,
-        "lastUpdatedbarang": now
     }
+
+    # Gunakan timestamp dari frontend jika ada, supaya hanya field yang benar-benar berubah yang terupdate.
+    # Jika frontend tidak mengirim timestamp (None), pertahankan nilai existing di DB.
+    fields_to_keep_if_none = ["lastUpdatedbarang", "lastUpdatedharga", "lastUpdatedBy", "lastUpdatedByHarga"]
+    for field in fields_to_keep_if_none:
+        if update_data.get(field) is None:
+            del update_data[field]   # hapus dari $set agar MongoDB tidak menimpa nilai lama
     
     result = await db.barang.find_one_and_update(
         {"id": barang_id},

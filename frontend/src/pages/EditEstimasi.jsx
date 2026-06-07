@@ -178,6 +178,15 @@ const EditEstimasi = () => {
     }
   };
 
+  const removeAllItemsWithSameBarang = (barangId) => {
+    const remaining = selectedItems.filter((item) => item.barangId !== barangId);
+    if (remaining.length === 0) {
+      setSelectedItems([emptyItem()]);
+    } else {
+      setSelectedItems(remaining);
+    }
+  };
+
   // ─── Helpers barang (dengan override support) ─────────────────────
   const getEffectiveBarang = (barangId) => {
     const base = barangList.find((b) => String(b.id) === String(barangId));
@@ -521,15 +530,31 @@ const EditEstimasi = () => {
               <div key={index} className="p-4 border rounded-lg bg-gray-50 space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="font-semibold">Item #{index + 1}</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addItemRowWithSameBarang(lastIdx)}
-                    disabled={!item.barangId}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addItemRowWithSameBarang(lastIdx)}
+                      disabled={!item.barangId}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        isManual
+                          ? removeItemRow(index)
+                          : removeAllItemsWithSameBarang(item.barangId)
+                      }
+                      className="text-red-500 hover:bg-red-50 hover:border-red-300"
+                      title="Hapus barang ini beserta seluruh kodenya"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 <BarangCombobox
