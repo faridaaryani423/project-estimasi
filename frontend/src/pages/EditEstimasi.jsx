@@ -114,7 +114,7 @@ const EditEstimasi = () => {
               ? '__manual__'
               : item.barangId?.toString() || barangFromDB?.id?.toString() || '',
             kodeItem: item.kodeItem || '',
-            panjangJadi: isItemManual ? '' : item.panjangJadi?.toString() || '',
+            panjangJadi: item.panjangJadi?.toString() || '',
             jumlahKeperluan: item.jumlahKeperluan?.toString() || '',
             volume: item.volume?.toString() || '',
             // Manual fields
@@ -148,7 +148,26 @@ const EditEstimasi = () => {
 
   const handleItemChange = (index, field, value) => {
     const updated = [...selectedItems];
-    updated[index] = { ...updated[index], [field]: value };
+    const targetItem = updated[index];
+    
+    if (
+      targetItem &&
+      targetItem.barangId === '__manual__' && 
+      field !== 'kodeItem' && 
+      field !== 'jumlahKeperluan' &&
+      field !== 'panjangJadi' &&
+      targetItem.namaManual &&
+      targetItem.namaManual.trim() !== ''
+    ) {
+      const oldName = targetItem.namaManual;
+      updated.forEach((item, idx) => {
+        if (item.barangId === '__manual__' && item.namaManual === oldName) {
+          updated[idx] = { ...item, [field]: value };
+        }
+      });
+    } else {
+      updated[index] = { ...updated[index], [field]: value };
+    }
     setSelectedItems(updated);
   };
 
@@ -160,10 +179,34 @@ const EditEstimasi = () => {
   };
 
   const addItemRowWithSameBarang = (index) => {
+    const currentItem = selectedItems[index];
     const newItem = {
-      barangId:        selectedItems[index].barangId,
-      kodeItem: '', panjangJadi: '', jumlahKeperluan: '',
-      volume: '', namaManual: '', hargaManual: '',
+      ...emptyItem(),
+      barangId: currentItem.barangId,
+      ...(currentItem.barangId === '__manual__' ? {
+        namaManual: currentItem.namaManual,
+        hargaManual: currentItem.hargaManual,
+        supplierManual: currentItem.supplierManual,
+        jenisBentukManual: currentItem.jenisBentukManual,
+        panjangManual: currentItem.panjangManual,
+        lebarManual: currentItem.lebarManual,
+        tinggiManual: currentItem.tinggiManual,
+        diameterManual: currentItem.diameterManual,
+        ketebalanManual: currentItem.ketebalanManual,
+        tinggiWFManual: currentItem.tinggiWFManual,
+        lebarFlangeManual: currentItem.lebarFlangeManual,
+        ketebalanWebManual: currentItem.ketebalanWebManual,
+        ketebalanFlangeManual: currentItem.ketebalanFlangeManual,
+        panjangPlatManual: currentItem.panjangPlatManual,
+        lebarPlatManual: currentItem.lebarPlatManual,
+        ketebalanPlatManual: currentItem.ketebalanPlatManual,
+        jenisBahanManual: currentItem.jenisBahanManual,
+        beratJenisManual: currentItem.beratJenisManual,
+        beratbatangManual: currentItem.beratbatangManual,
+        minWeldingManual: currentItem.minWeldingManual,
+        hargamodalManual: currentItem.hargamodalManual,
+        hargajasaManual: currentItem.hargajasaManual,
+      } : {})
     };
     setSelectedItems([
       ...selectedItems.slice(0, index + 1),
@@ -185,6 +228,32 @@ const EditEstimasi = () => {
     } else {
       setSelectedItems(remaining);
     }
+  };
+
+  const removeAllItemsWithSameManualName = (namaManual, index) => {
+    if (!namaManual || namaManual.trim() === '') {
+      removeItemRow(index);
+      return;
+    }
+    const remaining = selectedItems.filter(
+      (item) => !(item.barangId === '__manual__' && (item.namaManual || '').trim().toLowerCase() === namaManual.trim().toLowerCase())
+    );
+    if (remaining.length === 0) {
+      setSelectedItems([emptyItem()]);
+    } else {
+      setSelectedItems(remaining);
+    }
+  };
+
+  const isSameBarang = (itemA, itemB) => {
+    if (!itemA || !itemB) return false;
+    if (!itemA.barangId || !itemB.barangId) return false;
+    if (itemA.barangId === '__manual__' && itemB.barangId === '__manual__') {
+      const nameA = (itemA.namaManual || '').trim().toLowerCase();
+      const nameB = (itemB.namaManual || '').trim().toLowerCase();
+      return nameA !== '' && nameA === nameB;
+    }
+    return itemA.barangId !== '__manual__' && itemA.barangId === itemB.barangId;
   };
 
   // ─── Helpers barang (dengan override support) ─────────────────────
@@ -512,14 +581,14 @@ const EditEstimasi = () => {
         <CardContent className="space-y-4">
           {selectedItems.map((item, index) => {
             const barangInfo     = getSelectedBarangInfo(item.barangId);
-            const isGroupable    = item.barangId && item.barangId !== '__manual__';
-            const isSameAsPrev   = isGroupable && index > 0 && item.barangId === selectedItems[index - 1].barangId;
+            const isGroupable    = item.barangId && (item.barangId !== '__manual__' || (item.namaManual || '').trim() !== '');
+            const isSameAsPrev   = isGroupable && index > 0 && isSameBarang(item, selectedItems[index - 1]);
             if (isSameAsPrev) return null;
 
             const itemsWithSame = [item];
             if (isGroupable) {
               for (let i = index + 1; i < selectedItems.length; i++) {
-                if (selectedItems[i].barangId === item.barangId) itemsWithSame.push(selectedItems[i]);
+                if (isSameBarang(selectedItems[i], item)) itemsWithSame.push(selectedItems[i]);
                 else break;
               }
             }
@@ -546,7 +615,7 @@ const EditEstimasi = () => {
                       size="sm"
                       onClick={() =>
                         isManual
-                          ? removeItemRow(index)
+                          ? removeAllItemsWithSameManualName(item.namaManual, index)
                           : removeAllItemsWithSameBarang(item.barangId)
                       }
                       className="text-red-500 hover:bg-red-50 hover:border-red-300"
@@ -607,24 +676,22 @@ const EditEstimasi = () => {
                           placeholder="A-01"
                         />
                       </div>
-                      {!curManual && (
-                        <div className="space-y-1">
-                          <Label className="text-xs">
-                            Panjang Jadi (mm) <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            type="number"
-                            value={cur.panjangJadi}
-                            onChange={(e) => handleItemChange(actualIdx, 'panjangJadi', e.target.value)}
-                            placeholder="600"
-                          />
-                          {curInfo && parseFloat(cur.panjangJadi) > parseFloat(curInfo.panjangMentah) && (
-                            <p className="text-xs text-amber-600 flex items-center gap-1">
-                              <Zap className="w-3 h-3" /> Perlu welding
-                            </p>
-                          )}
-                        </div>
-                      )}
+                      <div className="space-y-1">
+                        <Label className="text-xs">
+                          Panjang Jadi (mm){!curManual && <span className="text-red-500"> *</span>}
+                        </Label>
+                        <Input
+                          type="number"
+                          value={cur.panjangJadi}
+                          onChange={(e) => handleItemChange(actualIdx, 'panjangJadi', e.target.value)}
+                          placeholder="600"
+                        />
+                        {curInfo && parseFloat(cur.panjangJadi) > parseFloat(curInfo.panjangMentah) && (
+                          <p className="text-xs text-amber-600 flex items-center gap-1">
+                            <Zap className="w-3 h-3" /> Perlu welding
+                          </p>
+                        )}
+                      </div>
                       <div className="space-y-1">
                         <Label className="text-xs">
                           Jumlah <span className="text-red-500">*</span>

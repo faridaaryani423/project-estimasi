@@ -846,7 +846,8 @@ const Estimasi = () => {
                         (parseFloat(viewingEstimasi.lebarRuangan || 0) || 0);
 
                     viewingEstimasi.items?.forEach((item, itemIdx) => {
-                      const groupingKey = item.isManual ? `manual-${itemIdx}` : item.barangId;
+                      const isManualItem = !!item.isManual || item.barangId === '__manual__' || item.jenisBahan === 'Manual';
+                      const groupingKey = isManualItem ? `manual-${item.namaBarang}` : item.barangId;
                       if (!groupedItems[groupingKey]) {
                         groupedItems[groupingKey] = {
                           ...item,
@@ -868,6 +869,10 @@ const Estimasi = () => {
                       group.totalBahan          += item.breakdown?.kebutuhanBahan || 0;
                       group.totalJumlah         += item.jumlahKeperluan || 0;
                       group.finalLuasPermukaan  += parseFloat(item.luasPermukaanTotal || 0) || 0; // ← BARU
+                      // Akumulasi subtotal untuk manual items yang digabung
+                      if (isManualItem && group.count > 0) {
+                        group.subtotal = (group.subtotal || 0) + (item.subtotal || 0);
+                      }
                       if (itemIdx >= group.lastItemIndex) {
                         group.finalWaste           = item.breakdown?.waste           || 0;
                         group.finalWastePercentage = item.breakdown?.wastePercentage || 0;

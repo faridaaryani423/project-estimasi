@@ -100,20 +100,31 @@ class BarangResponse(BarangBase):
 class EstimasiItem(BaseModel):
     barangId: str
     kodeItem: Optional[str] = None
+    isManual: Optional[bool] = None
     namaBarang: str
     jenisBentuk: Optional[str] = None
+    supplier: Optional[str] = None
     ukuranMentah: Optional[str] = None
     panjangMentah: float
     panjangJadi: float
     jenisBahan: Optional[str] = None
     beratJenis: Optional[str] = None
+    beratbatang: Optional[str] = None
     minWelding: Optional[str] = None
     jumlahKeperluan: int
     volume: Optional[str] = None
     hargaSatuan: float
+    hargaJual: Optional[float] = None
+    hargaJasa: Optional[float] = None
+    luasPekerjaan: Optional[float] = None
+    subtotalMaterial: Optional[float] = None
+    subtotalMaterialPemakaian: Optional[float] = None
+    subtotalMaterialWaste: Optional[float] = None
+    subtotalJasa: Optional[float] = None
     subtotal: float
     beratPerBatang: Optional[float] = None
     beratTotal: Optional[float] = None
+    beratWaste: Optional[float] = None
     luasPermukaan: Optional[float] = None
     luasPermukaanTotal: Optional[float] = None
     breakdown: Optional[dict] = None

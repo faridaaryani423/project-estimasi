@@ -52,6 +52,56 @@ const emptyItem = () => ({
   hargajasaManual: '',
 });
 
+const isSameBarang = (itemA, itemB) => {
+  if (!itemA || !itemB) return false;
+  if (!itemA.barangId || !itemB.barangId) return false;
+
+  if (itemA.barangId === '__manual__' && itemB.barangId === '__manual__') {
+    const nameA = (itemA.namaManual || '').trim().toLowerCase();
+    const nameB = (itemB.namaManual || '').trim().toLowerCase();
+    return nameA !== '' && nameA === nameB;
+  }
+
+  return itemA.barangId !== '__manual__' && itemA.barangId === itemB.barangId;
+};
+
+const groupAdjacentItems = (items) => {
+  const grouped = [];
+  const visited = new Set();
+
+  items.forEach((item) => {
+    const key = item.barangId === '__manual__'
+      ? `manual_${(item.namaManual || '').trim().toLowerCase()}`
+      : `db_${item.barangId}`;
+
+    if (visited.has(key)) return;
+
+    items.forEach((subItem) => {
+      const subKey = subItem.barangId === '__manual__'
+        ? `manual_${(subItem.namaManual || '').trim().toLowerCase()}`
+        : `db_${subItem.barangId}`;
+      if (subKey === key) {
+        grouped.push(subItem);
+      }
+    });
+
+    if (key && key !== 'manual_' && key !== 'db_') {
+      visited.add(key);
+    }
+  });
+
+  items.forEach((item) => {
+    const key = item.barangId === '__manual__'
+      ? `manual_${(item.namaManual || '').trim().toLowerCase()}`
+      : `db_${item.barangId}`;
+    if (!key || key === 'manual_' || key === 'db_') {
+      grouped.push(item);
+    }
+  });
+
+  return grouped;
+};
+
 const EstimasiForm = () => {
   const navigate = useNavigate();
   const importFileRef = useRef(null);
@@ -100,7 +150,25 @@ const EstimasiForm = () => {
 
   const handleItemChange = (index, field, value) => {
     const updated = [...selectedItems];
-    updated[index] = { ...updated[index], [field]: value };
+    const targetItem = updated[index];
+
+    if (
+      targetItem &&
+      targetItem.barangId === '__manual__' &&
+      field !== 'kodeItem' &&
+      field !== 'jumlahKeperluan' &&
+      targetItem.namaManual &&
+      targetItem.namaManual.trim() !== ''
+    ) {
+      const oldName = targetItem.namaManual;
+      updated.forEach((item, idx) => {
+        if (item.barangId === '__manual__' && item.namaManual === oldName) {
+          updated[idx] = { ...item, [field]: value };
+        }
+      });
+    } else {
+      updated[index] = { ...updated[index], [field]: value };
+    }
     setSelectedItems(updated);
   };
 
@@ -113,6 +181,30 @@ const EstimasiForm = () => {
     const newItem = {
       ...emptyItem(),
       barangId: currentItem.barangId,
+      ...(currentItem.barangId === '__manual__' ? {
+        namaManual: currentItem.namaManual,
+        hargaManual: currentItem.hargaManual,
+        supplierManual: currentItem.supplierManual,
+        jenisBentukManual: currentItem.jenisBentukManual,
+        panjangManual: currentItem.panjangManual,
+        lebarManual: currentItem.lebarManual,
+        tinggiManual: currentItem.tinggiManual,
+        diameterManual: currentItem.diameterManual,
+        ketebalanManual: currentItem.ketebalanManual,
+        tinggiWFManual: currentItem.tinggiWFManual,
+        lebarFlangeManual: currentItem.lebarFlangeManual,
+        ketebalanWebManual: currentItem.ketebalanWebManual,
+        ketebalanFlangeManual: currentItem.ketebalanFlangeManual,
+        panjangPlatManual: currentItem.panjangPlatManual,
+        lebarPlatManual: currentItem.lebarPlatManual,
+        ketebalanPlatManual: currentItem.ketebalanPlatManual,
+        jenisBahanManual: currentItem.jenisBahanManual,
+        beratJenisManual: currentItem.beratJenisManual,
+        beratbatangManual: currentItem.beratbatangManual,
+        minWeldingManual: currentItem.minWeldingManual,
+        hargamodalManual: currentItem.hargamodalManual,
+        hargajasaManual: currentItem.hargajasaManual,
+      } : {})
     };
     const updatedItems = [
       ...selectedItems.slice(0, index + 1),
@@ -132,6 +224,21 @@ const EstimasiForm = () => {
     const remaining = selectedItems.filter((item) => item.barangId !== barangId);
     if (remaining.length === 0) {
       // Jangan sampai list kosong, biarkan minimal 1 baris
+      setSelectedItems([emptyItem()]);
+    } else {
+      setSelectedItems(remaining);
+    }
+  };
+
+  const removeAllItemsWithSameManualName = (namaManual, index) => {
+    if (!namaManual || namaManual.trim() === '') {
+      removeItemRow(index);
+      return;
+    }
+    const remaining = selectedItems.filter(
+      (item) => !(item.barangId === '__manual__' && (item.namaManual || '').trim().toLowerCase() === namaManual.trim().toLowerCase())
+    );
+    if (remaining.length === 0) {
       setSelectedItems([emptyItem()]);
     } else {
       setSelectedItems(remaining);
@@ -184,10 +291,10 @@ const EstimasiForm = () => {
       ['TEMPLATE IMPORT ESTIMASI MATERIAL'],
       ['Petunjuk: Isi kolom putih. Hapus baris contoh (baris 13-15) sebelum import.'],
       [''],
-      ['Nama Estimasi',     '← wajib diisi'],
-      ['Nama Client',       '← opsional'],     // ← NEW
-      ['Lokasi Proyek',     '← opsional'],     // ← NEW
-      ['Kontak Person',     '← opsional'],     // ← NEW
+      ['Nama Estimasi', '← wajib diisi'],
+      ['Nama Client', '← opsional'],     // ← NEW
+      ['Lokasi Proyek', '← opsional'],     // ← NEW
+      ['Kontak Person', '← opsional'],     // ← NEW
       ['Panjang Ruangan (m)', '← opsional'],
       ['Lebar Ruangan (m)', '← opsional'],
       [''],
@@ -244,7 +351,7 @@ const EstimasiForm = () => {
         const notFoundNames = [];
         const items = [];
 
-        for (let i = 13; i < rows.length; i++) {
+        for (let i = 12; i < rows.length; i++) {
           const row = rows[i];
           const namaBarang = String(row[1] || '').trim();
           const kodeItem = String(row[2] || '').trim();
@@ -264,7 +371,7 @@ const EstimasiForm = () => {
             items.push({ ...emptyItem(), barangId: String(matched.id), kodeItem, panjangJadi, jumlahKeperluan: jumlah });
           } else {
             notFoundNames.push(namaBarang);
-            items.push({ ...emptyItem(), barangId: '__manual__', kodeItem, jumlahKeperluan: jumlah, namaManual: namaBarang, hargaManual });
+            items.push({ ...emptyItem(), barangId: '__manual__', kodeItem, panjangJadi, jumlahKeperluan: jumlah, namaManual: namaBarang, hargaManual });
           }
         }
 
@@ -275,7 +382,7 @@ const EstimasiForm = () => {
         }
 
         setFormData((prev) => ({ ...prev, namaEstimasi, namaClient, lokasi, kontakPerson, panjangRuangan, lebarRuangan }));
-        setSelectedItems(items);
+        setSelectedItems(groupAdjacentItems(items));
         toast.success(`Berhasil import ${items.length} item!`);
         if (notFoundNames.length > 0) {
           toast.warning(`${notFoundNames.length} barang tidak ditemukan di daftar, dijadikan manual: ${[...new Set(notFoundNames)].join(', ')}`);
@@ -390,7 +497,7 @@ const EstimasiForm = () => {
         minWelding: item.minWeldingManual || null,
         ukuranMentah: null,
         panjangMentah: 0,
-        panjangJadi: 0,
+        panjangJadi: parseFloat(item.panjangJadi) || 0,
         jumlahKeperluan,
         volume: null,
         hargaSatuan: Math.round(parseFloat(item.hargamodalManual || 0) || 0),
@@ -835,20 +942,22 @@ const EstimasiForm = () => {
 
             {selectedItems.map((item, index) => {
               const barangInfo = getSelectedBarangInfo(item.barangId);
-              const isGroupableBarang = item.barangId && item.barangId !== '__manual__';
-              const isSameBarangAsPrevious = isGroupableBarang && index > 0 && item.barangId === selectedItems[index - 1].barangId;
+              const isGroupable = item.barangId && (item.barangId !== '__manual__' || (item.namaManual || '').trim() !== '');
+              const isSameAsPrevious = isGroupable && index > 0 && isSameBarang(item, selectedItems[index - 1]);
 
-              if (isSameBarangAsPrevious) return null;
+              if (isSameAsPrevious) return null;
 
               let itemNumber = 1;
-              for (let i = 0; i < index; i++) {
-                if (i === 0 || selectedItems[i].barangId !== selectedItems[i - 1].barangId) itemNumber++;
+              for (let i = 1; i <= index; i++) {
+                if (!isSameBarang(selectedItems[i], selectedItems[i - 1])) {
+                  itemNumber++;
+                }
               }
 
               const itemsWithSameBarang = [item];
-              if (isGroupableBarang) {
+              if (isGroupable) {
                 for (let i = index + 1; i < selectedItems.length; i++) {
-                  if (selectedItems[i].barangId === item.barangId && item.barangId !== '') {
+                  if (isSameBarang(selectedItems[i], item)) {
                     itemsWithSameBarang.push(selectedItems[i]);
                   } else {
                     break;
@@ -879,7 +988,7 @@ const EstimasiForm = () => {
                         size="sm"
                         onClick={() =>
                           isManual
-                            ? removeItemRow(index)
+                            ? removeAllItemsWithSameManualName(item.namaManual, index)
                             : removeAllItemsWithSameBarang(item.barangId)
                         }
                         className="px-3 text-red-500 hover:bg-red-50 hover:border-red-300"
@@ -973,27 +1082,52 @@ const EstimasiForm = () => {
                   })}
 
                   {/* Kode item + jumlah untuk barang manual */}
-                  {isManual && (
-                    <div className="grid grid-cols-2 gap-3 items-end">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Kode Item</Label>
-                        <Input
-                          placeholder="C-01"
-                          value={item.kodeItem || ''}
-                          onChange={(e) => handleItemChange(index, 'kodeItem', e.target.value)}
-                        />
+                  {isManual && itemsWithSameBarang.map((subItem, subIdx) => {
+                    const actualIndex = index + subIdx;
+                    return (
+                      <div key={actualIndex} className="grid grid-cols-3 gap-3 items-end">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Kode Item</Label>
+                          <Input
+                            placeholder="C-01"
+                            value={subItem.kodeItem || ''}
+                            onChange={(e) => handleItemChange(actualIndex, 'kodeItem', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Panjang Jadi (mm)</Label>
+                          <Input
+                            type="number"
+                            placeholder="600"
+                            value={subItem.panjangJadi || ''}
+                            onChange={(e) => handleItemChange(actualIndex, 'panjangJadi', e.target.value)}
+                          />
+                        </div>
+                        <div className="flex gap-2 items-end">
+                          <div className="flex-1 space-y-1">
+                            <Label className="text-xs">Jumlah <span className="text-red-500">*</span></Label>
+                            <Input
+                              type="number"
+                              placeholder="3"
+                              value={subItem.jumlahKeperluan || ''}
+                              onChange={(e) => handleItemChange(actualIndex, 'jumlahKeperluan', e.target.value)}
+                            />
+                          </div>
+                          {itemsWithSameBarang.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="text-red-500 hover:bg-red-50 shrink-0"
+                              onClick={() => removeItemRow(actualIndex)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Jumlah <span className="text-red-500">*</span></Label>
-                        <Input
-                          type="number"
-                          placeholder="3"
-                          value={item.jumlahKeperluan || ''}
-                          onChange={(e) => handleItemChange(index, 'jumlahKeperluan', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })}
 
                   {/* Toggle edit detail barang dari database */}
                   {item.barangId && !isManual && (
