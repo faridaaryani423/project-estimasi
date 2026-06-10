@@ -646,7 +646,7 @@ const EditEstimasi = () => {
 
                 {/* Info stok barang database */}
                 {barangInfo && !isManual && (
-                  <div className="p-3 bg-blue-50 rounded-lg text-sm">
+                  <div className="p-3 bg-blue-50 rounded-lg text-sm mt-2">
                     <span className="font-medium">Stok:</span>{' '}
                     {formatNumberWithSeparator(barangInfo.panjangMentah)} mm
                     {barangInfo.minWelding > 0 && (
@@ -658,72 +658,9 @@ const EditEstimasi = () => {
                   </div>
                 )}
 
-                {/* Sub-item (kode / panjang jadi / jumlah) */}
-                {itemsWithSame.map((cur, sub) => {
-                  const actualIdx = index + sub;
-                  const curInfo   = getSelectedBarangInfo(cur.barangId);
-                  const curManual = cur.barangId === '__manual__';
-                  return (
-                    <div
-                      key={actualIdx}
-                      className="grid grid-cols-1 lg:grid-cols-3 gap-3 p-3 bg-white rounded-lg border"
-                    >
-                      <div className="space-y-1">
-                        <Label className="text-xs">Kode</Label>
-                        <Input
-                          value={cur.kodeItem || ''}
-                          onChange={(e) => handleItemChange(actualIdx, 'kodeItem', e.target.value)}
-                          placeholder="A-01"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">
-                          Panjang Jadi (mm){!curManual && <span className="text-red-500"> *</span>}
-                        </Label>
-                        <Input
-                          type="number"
-                          value={cur.panjangJadi}
-                          onChange={(e) => handleItemChange(actualIdx, 'panjangJadi', e.target.value)}
-                          placeholder="600"
-                        />
-                        {curInfo && parseFloat(cur.panjangJadi) > parseFloat(curInfo.panjangMentah) && (
-                          <p className="text-xs text-amber-600 flex items-center gap-1">
-                            <Zap className="w-3 h-3" /> Perlu welding
-                          </p>
-                        )}
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">
-                          Jumlah <span className="text-red-500">*</span>
-                        </Label>
-                        <div className="flex gap-2">
-                          <Input
-                            type="number"
-                            value={cur.jumlahKeperluan}
-                            onChange={(e) => handleItemChange(actualIdx, 'jumlahKeperluan', e.target.value)}
-                            placeholder="15"
-                            className="flex-1"
-                          />
-                          {selectedItems.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeItemRow(actualIdx)}
-                              className="px-3 hover:bg-red-50 hover:text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-
                 {/* ── Toggle Lihat & Edit Detail Barang (hanya untuk barang database) ── */}
                 {item.barangId && !isManual && (
-                  <div>
+                  <div className="mt-2">
                     <button
                       type="button"
                       onClick={() =>
@@ -841,6 +778,71 @@ const EditEstimasi = () => {
                     })()}
                   </div>
                 )}
+
+                {/* Sub-item (kode / panjang jadi / jumlah) */}
+                {itemsWithSame.map((cur, sub) => {
+                  const actualIdx = index + sub;
+                  const curInfo   = getSelectedBarangInfo(cur.barangId);
+                  const curManual = cur.barangId === '__manual__';
+                  return (
+                    <div
+                      key={actualIdx}
+                      className="grid grid-cols-1 lg:grid-cols-3 gap-3 p-3 bg-white rounded-lg border"
+                    >
+                      <div className="space-y-1">
+                        <Label className="text-xs">Kode</Label>
+                        <Input
+                          value={cur.kodeItem || ''}
+                          onChange={(e) => handleItemChange(actualIdx, 'kodeItem', e.target.value)}
+                          placeholder="A-01"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">
+                          Panjang Jadi (mm){!curManual && <span className="text-red-500"> *</span>}
+                        </Label>
+                        <Input
+                          type="number"
+                          value={cur.panjangJadi}
+                          onChange={(e) => handleItemChange(actualIdx, 'panjangJadi', e.target.value)}
+                          placeholder="600"
+                        />
+                        {curInfo && parseFloat(cur.panjangJadi) > parseFloat(curInfo.panjangMentah) && (
+                          <p className="text-xs text-amber-600 flex items-center gap-1">
+                            <Zap className="w-3 h-3" /> Perlu welding
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">
+                          Jumlah <span className="text-red-500">*</span>
+                        </Label>
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            value={cur.jumlahKeperluan}
+                            onChange={(e) => handleItemChange(actualIdx, 'jumlahKeperluan', e.target.value)}
+                            placeholder="15"
+                            className="flex-1"
+                          />
+                          {selectedItems.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeItemRow(actualIdx)}
+                              className="px-3 hover:bg-red-50 hover:text-red-600"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+
               </div>
             );
           })}

@@ -436,6 +436,45 @@ const Estimasi = () => {
     toast.success('PDF berhasil diexport!');
   };
 
+  const calculateCorrectTotal = (estimasi) => {
+    if (!estimasi || !estimasi.items) return Math.round(estimasi?.totalEstimasi || 0);
+    
+    const groupedItems = {};
+    estimasi.items.forEach((item, itemIdx) => {
+      const isManualItem = !!item.isManual || item.barangId === '__manual__' || item.jenisBahan === 'Manual';
+      const groupingKey = isManualItem ? `manual-${item.namaBarang}` : item.barangId;
+      
+      if (!groupedItems[groupingKey]) {
+        groupedItems[groupingKey] = {
+          ...item,
+          finalHargaPlusWaste: 0,
+          count: 0,
+          lastItemIndex: -1,
+        };
+      }
+      
+      const group = groupedItems[groupingKey];
+      
+      if (isManualItem && group.count > 0) {
+        group.subtotal = (group.subtotal || 0) + (item.subtotal || 0);
+      }
+      
+      if (itemIdx >= group.lastItemIndex) {
+        group.finalHargaPlusWaste = parseFloat(item.breakdown?.summary?.totalHargaReal || 0) || 0;
+        group.lastItemIndex = itemIdx;
+      }
+      
+      group.count++;
+    });
+
+    const total = Object.values(groupedItems).reduce((acc, group) => {
+      const isManualRow = !!group.isManual || group.barangId === '__manual__' || group.jenisBahan === 'Manual';
+      return acc + Number(isManualRow ? group.subtotal || 0 : group.finalHargaPlusWaste || 0);
+    }, 0);
+    
+    return Math.round(total);
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6 fade-in" data-testid="estimasi-container">
@@ -588,7 +627,7 @@ const Estimasi = () => {
                             </TableCell>
 
                             <TableCell className="font-semibold text-emerald-600">
-                              Rp {(est.totalEstimasi || 0).toLocaleString('id-ID')}
+                              Rp {calculateCorrectTotal(est).toLocaleString('id-ID')}
                             </TableCell>
 
                             <TableCell>
@@ -777,7 +816,7 @@ const Estimasi = () => {
                     <div>
                       <p className="text-xs text-gray-600">Total</p>
                       <p className="text-lg font-bold text-emerald-600">
-                        Rp {(viewingEstimasi.totalEstimasi || 0).toLocaleString('id-ID')}
+                        Rp {calculateCorrectTotal(viewingEstimasi).toLocaleString('id-ID')}
                       </p>
                     </div>
                   </CardContent>

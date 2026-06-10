@@ -1019,19 +1019,135 @@ const EstimasiForm = () => {
                           saving={savingManualBarang}
                         />
                       )}
-                    </div>
-                  </div>
 
-                  {barangInfo && !isManual && (
-                    <div className="p-3 bg-blue-50 rounded-lg text-sm">
-                      <span className="font-medium">Stok:</span> {formatNumberWithSeparator(barangInfo.panjangMentah)} mm
-                      {barangInfo.minWelding > 0 && (
-                        <span className="ml-3">
-                          <span className="font-medium">Min Welding:</span> {formatNumberWithSeparator(barangInfo.minWelding)} mm
-                        </span>
+                      {/* Info stok barang database */}
+                      {barangInfo && !isManual && (
+                        <div className="p-3 bg-blue-50 rounded-lg text-sm mt-2">
+                          <span className="font-medium">Stok:</span> {formatNumberWithSeparator(barangInfo.panjangMentah)} mm
+                          {barangInfo.minWelding > 0 && (
+                            <span className="ml-3">
+                              <span className="font-medium">Min Welding:</span> {formatNumberWithSeparator(barangInfo.minWelding)} mm
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Toggle edit detail barang dari database */}
+                      {item.barangId && !isManual && (
+                        <div className="mt-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedBarang((prev) => ({ ...prev, [item.barangId]: !prev[item.barangId] }))
+                            }
+                            className="text-xs text-sky-600 hover:underline flex items-center gap-1 mt-1"
+                          >
+                            <Settings className="w-3 h-3" />
+                            {expandedBarang[item.barangId] ? 'Tutup Detail Barang' : 'Lihat & Edit Detail Barang'}
+                            {localBarangOverrides[item.barangId] && (
+                              <span className="ml-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-medium">Diubah</span>
+                            )}
+                          </button>
+
+                          {expandedBarang[item.barangId] && (() => {
+                            const eb = getEffectiveBarang(item.barangId);
+                            if (!eb) return null;
+                            const field = (f) => ({
+                              value: eb[f] ?? '',
+                              onChange: (e) => handleBarangFieldChange(item.barangId, f, e.target.value),
+                              className: 'input-focus',
+                            });
+
+                            return (
+                              <div className="mt-3 p-4 bg-white border border-sky-200 rounded-lg space-y-4">
+                                <h4 className="text-sm font-semibold text-sky-700">Detail & Edit Barang</h4>
+
+                                <div className="space-y-2">
+                                  <Label className="text-xs text-gray-500 uppercase tracking-wide">Dimensi (mm)</Label>
+                                  {eb.jenisBentuk === 'balok' && (
+                                    <div className="grid grid-cols-3 gap-2">
+                                      <div><Label className="text-xs">Panjang</Label><Input type="number" {...field('panjang')} /></div>
+                                      <div><Label className="text-xs">Lebar</Label><Input type="number" {...field('lebar')} /></div>
+                                      <div><Label className="text-xs">Tinggi</Label><Input type="number" {...field('tinggi')} /></div>
+                                      <div className="col-span-3"><Label className="text-xs">Ketebalan</Label><Input type="number" {...field('ketebalan')} /></div>
+                                    </div>
+                                  )}
+                                  {eb.jenisBentuk === 'tabung' && (
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div><Label className="text-xs">Diameter</Label><Input type="number" {...field('diameter')} /></div>
+                                      <div><Label className="text-xs">Panjang</Label><Input type="number" {...field('panjang')} /></div>
+                                      <div className="col-span-2"><Label className="text-xs">Ketebalan</Label><Input type="number" {...field('ketebalan')} /></div>
+                                    </div>
+                                  )}
+                                  {eb.jenisBentuk === 'wf' && (
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div><Label className="text-xs">Tinggi (H)</Label><Input type="number" {...field('tinggiWF')} /></div>
+                                      <div><Label className="text-xs">Lebar Flange (B)</Label><Input type="number" {...field('lebarFlange')} /></div>
+                                      <div><Label className="text-xs">Tebal Web (tw)</Label><Input type="number" {...field('ketebalanWeb')} /></div>
+                                      <div><Label className="text-xs">Tebal Flange (tf)</Label><Input type="number" {...field('ketebalanFlange')} /></div>
+                                    </div>
+                                  )}
+                                  {eb.jenisBentuk === 'plat' && (
+                                    <div className="grid grid-cols-3 gap-2">
+                                      <div><Label className="text-xs">Panjang</Label><Input type="number" {...field('panjangPlat')} /></div>
+                                      <div><Label className="text-xs">Lebar</Label><Input type="number" {...field('lebarPlat')} /></div>
+                                      <div><Label className="text-xs">Ketebalan</Label><Input type="number" {...field('ketebalanPlat')} /></div>
+                                    </div>
+                                  )}
+                                  {eb.jenisBentuk === 'custom' && (
+                                    <div><Label className="text-xs">Panjang</Label><Input type="number" {...field('panjang')} /></div>
+                                  )}
+                                </div>
+
+                                <div className="space-y-2">
+                                  <Label className="text-xs text-gray-500 uppercase tracking-wide">Material</Label>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div><Label className="text-xs">Jenis Bahan</Label><Input {...field('jenisBahan')} placeholder="Baja ST37" /></div>
+                                    <div><Label className="text-xs">Berat Jenis (kg/m³)</Label><Input type="number" {...field('beratJenis')} placeholder="7850" /></div>
+                                    <div><Label className="text-xs">Berat/Batang (kg)</Label><Input type="number" {...field('beratbatang')} /></div>
+                                    <div><Label className="text-xs">Min. Welding (mm)</Label><Input type="number" {...field('minWelding')} /></div>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                  <Label className="text-xs text-gray-500 uppercase tracking-wide">Harga</Label>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div><Label className="text-xs">Harga Modal (Rp)</Label><Input type="number" {...field('hargamodal')} /></div>
+                                    <div><Label className="text-xs">Harga Jasa (Rp)</Label><Input type="number" {...field('hargajasa')} /></div>
+                                  </div>
+                                </div>
+
+                                <div className="flex gap-2 pt-2 border-t">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1 border-sky-300 text-sky-700 hover:bg-sky-50"
+                                    onClick={() => saveBarangForEstimasi(item.barangId)}
+                                  >
+                                    Simpan untuk Estimasi Ini
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    onClick={() => saveBarangPermanent(item.barangId)}
+                                    disabled={savingBarang[item.barangId]}
+                                  >
+                                    {savingBarang[item.barangId] ? (
+                                      <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Menyimpan...</>
+                                    ) : (
+                                      'Simpan Permanen'
+                                    )}
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
                       )}
                     </div>
-                  )}
+                  </div>
 
                   {/* Sub-item (panjang jadi + jumlah) untuk barang dari database */}
                   {!isManual && itemsWithSameBarang.map((subItem, subIdx) => {
@@ -1129,120 +1245,7 @@ const EstimasiForm = () => {
                     );
                   })}
 
-                  {/* Toggle edit detail barang dari database */}
-                  {item.barangId && !isManual && (
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpandedBarang((prev) => ({ ...prev, [item.barangId]: !prev[item.barangId] }))
-                        }
-                        className="text-xs text-sky-600 hover:underline flex items-center gap-1 mt-1"
-                      >
-                        <Settings className="w-3 h-3" />
-                        {expandedBarang[item.barangId] ? 'Tutup Detail Barang' : 'Lihat & Edit Detail Barang'}
-                        {localBarangOverrides[item.barangId] && (
-                          <span className="ml-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-medium">Diubah</span>
-                        )}
-                      </button>
 
-                      {expandedBarang[item.barangId] && (() => {
-                        const eb = getEffectiveBarang(item.barangId);
-                        if (!eb) return null;
-                        const field = (f) => ({
-                          value: eb[f] ?? '',
-                          onChange: (e) => handleBarangFieldChange(item.barangId, f, e.target.value),
-                          className: 'input-focus',
-                        });
-
-                        return (
-                          <div className="mt-3 p-4 bg-white border border-sky-200 rounded-lg space-y-4">
-                            <h4 className="text-sm font-semibold text-sky-700">Detail & Edit Barang</h4>
-
-                            <div className="space-y-2">
-                              <Label className="text-xs text-gray-500 uppercase tracking-wide">Dimensi (mm)</Label>
-                              {eb.jenisBentuk === 'balok' && (
-                                <div className="grid grid-cols-3 gap-2">
-                                  <div><Label className="text-xs">Panjang</Label><Input type="number" {...field('panjang')} /></div>
-                                  <div><Label className="text-xs">Lebar</Label><Input type="number" {...field('lebar')} /></div>
-                                  <div><Label className="text-xs">Tinggi</Label><Input type="number" {...field('tinggi')} /></div>
-                                  <div className="col-span-3"><Label className="text-xs">Ketebalan</Label><Input type="number" {...field('ketebalan')} /></div>
-                                </div>
-                              )}
-                              {eb.jenisBentuk === 'tabung' && (
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div><Label className="text-xs">Diameter</Label><Input type="number" {...field('diameter')} /></div>
-                                  <div><Label className="text-xs">Panjang</Label><Input type="number" {...field('panjang')} /></div>
-                                  <div className="col-span-2"><Label className="text-xs">Ketebalan</Label><Input type="number" {...field('ketebalan')} /></div>
-                                </div>
-                              )}
-                              {eb.jenisBentuk === 'wf' && (
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div><Label className="text-xs">Tinggi (H)</Label><Input type="number" {...field('tinggiWF')} /></div>
-                                  <div><Label className="text-xs">Lebar Flange (B)</Label><Input type="number" {...field('lebarFlange')} /></div>
-                                  <div><Label className="text-xs">Tebal Web (tw)</Label><Input type="number" {...field('ketebalanWeb')} /></div>
-                                  <div><Label className="text-xs">Tebal Flange (tf)</Label><Input type="number" {...field('ketebalanFlange')} /></div>
-                                </div>
-                              )}
-                              {eb.jenisBentuk === 'plat' && (
-                                <div className="grid grid-cols-3 gap-2">
-                                  <div><Label className="text-xs">Panjang</Label><Input type="number" {...field('panjangPlat')} /></div>
-                                  <div><Label className="text-xs">Lebar</Label><Input type="number" {...field('lebarPlat')} /></div>
-                                  <div><Label className="text-xs">Ketebalan</Label><Input type="number" {...field('ketebalanPlat')} /></div>
-                                </div>
-                              )}
-                              {eb.jenisBentuk === 'custom' && (
-                                <div><Label className="text-xs">Panjang</Label><Input type="number" {...field('panjang')} /></div>
-                              )}
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label className="text-xs text-gray-500 uppercase tracking-wide">Material</Label>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div><Label className="text-xs">Jenis Bahan</Label><Input {...field('jenisBahan')} placeholder="Baja ST37" /></div>
-                                <div><Label className="text-xs">Berat Jenis (kg/m³)</Label><Input type="number" {...field('beratJenis')} placeholder="7850" /></div>
-                                <div><Label className="text-xs">Berat/Batang (kg)</Label><Input type="number" {...field('beratbatang')} /></div>
-                                <div><Label className="text-xs">Min. Welding (mm)</Label><Input type="number" {...field('minWelding')} /></div>
-                              </div>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label className="text-xs text-gray-500 uppercase tracking-wide">Harga</Label>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div><Label className="text-xs">Harga Modal (Rp)</Label><Input type="number" {...field('hargamodal')} /></div>
-                                <div><Label className="text-xs">Harga Jasa (Rp)</Label><Input type="number" {...field('hargajasa')} /></div>
-                              </div>
-                            </div>
-
-                            <div className="flex gap-2 pt-2 border-t">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 border-sky-300 text-sky-700 hover:bg-sky-50"
-                                onClick={() => saveBarangForEstimasi(item.barangId)}
-                              >
-                                Simpan untuk Estimasi Ini
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-                                onClick={() => saveBarangPermanent(item.barangId)}
-                                disabled={savingBarang[item.barangId]}
-                              >
-                                {savingBarang[item.barangId] ? (
-                                  <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Menyimpan...</>
-                                ) : (
-                                  'Simpan Permanen'
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  )}
                 </div>
               );
             })}
