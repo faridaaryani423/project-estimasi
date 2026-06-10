@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,13 +7,15 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import {
   Calculator, Plus, Trash2, Send, Zap,
-  Loader2, ChevronLeft, ChevronRight, Settings
+  Loader2, ChevronLeft, ChevronRight, Settings,
+  Download, FileUp
 } from 'lucide-react';
 import { barangAPI, estimasiAPI } from '@/services/api';
 import { calculateLuasPermukaan, calculateMaterialGroupAllocation, calculateWithWasteReuse } from '@/utils/calculationEngine';
 import { formatNumberWithSeparator } from '@/lib/utils';
 import BarangCombobox from '@/components/BarangCombobox';
 import ManualItemForm from '@/components/ManualItemForm';
+import * as XLSX from 'xlsx';
 
 const emptyItem = () => ({
   barangId: '',
@@ -45,6 +47,33 @@ const emptyItem = () => ({
   ketebalanPlatManual: '',
 });
 
+const groupAdjacentItems = (items) => {
+  const grouped = [];
+  const visited = new Set();
+
+  items.forEach((item) => {
+    const key = item.barangId === '__manual__'
+      ? `manual_${(item.namaManual || '').trim().toLowerCase()}`
+      : `db_${item.barangId}`;
+
+    if (visited.has(key)) return;
+
+    items.forEach((subItem) => {
+      const subKey = subItem.barangId === '__manual__'
+        ? `manual_${(subItem.namaManual || '').trim().toLowerCase()}`
+        : `db_${subItem.barangId}`;
+
+      if (key === subKey) {
+        grouped.push(subItem);
+      }
+    });
+
+    visited.add(key);
+  });
+
+  return grouped;
+};
+
 const EditEstimasi = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -69,6 +98,119 @@ const EditEstimasi = () => {
   const [localBarangOverrides, setLocalBarangOverrides] = useState({});
   const [savingBarang, setSavingBarang]                 = useState({});
   const [expandedBarang, setExpandedBarang]             = useState({});
+  const importFileRef                                   = useRef(null);
+
+  // ── Download & Import Excel ───────────────────────────────────────────────────
+  const downloadTemplate = () => {
+    const wb = XLSX.utils.book_new();
+    const formDataRows = [
+      ['TEMPLATE IMPORT ESTIMASI MATERIAL'],
+      ['Petunjuk: Isi kolom putih. Hapus baris contoh (baris 13-15) sebelum import.'],
+      [''],
+      ['Nama Estimasi', '← wajib diisi'],
+      ['Nama Client', '← opsional'],
+      ['Lokasi Proyek', '← opsional'],
+      ['Kontak Person', '← opsional'],
+      ['Panjang Ruangan (m)', '← opsional'],
+      ['Lebar Ruangan (m)', '← opsional'],
+      [''],
+      ['No', 'Nama Barang *', 'Kode Item', 'Panjang Jadi (mm)', 'Jumlah *', 'Harga Manual (Rp)'],
+      ['', '(lihat sheet Daftar Barang)', '(bebas, misal A-01)', '(kosongkan jika barang manual)', '', '(isi jika barang tidak ada di Daftar Barang)'],
+      ['1', 'Hollow 40x40x1.8', 'A-01', '600', '15', ''],
+      ['2', 'Hollow 40x40x1.8', 'A-02', '800', '10', ''],
+      ['3', 'Barang Tidak Ada Di Daftar', 'C-01', '', '3', '750000'],
+    ];
+    const ws1 = XLSX.utils.aoa_to_sheet(formDataRows);
+    ws1['!cols'] = [{ wch: 5 }, { wch: 35 }, { wch: 15 }, { wch: 22 }, { wch: 10 }, { wch: 25 }];
+
+    const daftarHeader = [
+      ['DAFTAR BARANG TERSEDIA'],
+      ['Salin nama barang persis seperti di kolom "Nama Barang" pada sheet Form Estimasi'],
+      [''],
+      ['No', 'Nama Barang', 'Jenis Bahan', 'Panjang Stok (mm)', 'Min Welding (mm)'],
+    ];
+    const daftarRows = barangList.map((b, i) => [
+      i + 1, b.nama, b.jenisBahan || '-', b.jenisBentuk === 'plat' ? b.panjangPlat : b.panjang, b.minWelding || 0,
+    ]);
+    const ws2 = XLSX.utils.aoa_to_sheet([...daftarHeader, ...daftarRows]);
+    ws2['!cols'] = [{ wch: 5 }, { wch: 35 }, { wch: 20 }, { wch: 20 }, { wch: 18 }];
+
+    XLSX.utils.book_append_sheet(wb, ws1, 'Form Estimasi');
+    XLSX.utils.book_append_sheet(wb, ws2, 'Daftar Barang');
+    XLSX.writeFile(wb, 'Template_Import_Estimasi.xlsx');
+    toast.success('Template berhasil didownload!');
+  };
+
+  const importFromExcel = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const wb = XLSX.read(evt.target.result, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+        const namaEstimasi = String(rows[3]?.[1] || '').trim();
+        const namaClient = String(rows[4]?.[1] || '').trim();
+        const lokasi = String(rows[5]?.[1] || '').trim();
+        const kontakPerson = String(rows[6]?.[1] || '').trim();
+        const panjangRuangan = String(rows[7]?.[1] || '').trim();
+        const lebarRuangan = String(rows[8]?.[1] || '').trim();
+
+        if (!namaEstimasi) {
+          toast.error('Nama Estimasi wajib diisi di template!');
+          e.target.value = '';
+          return;
+        }
+
+        const notFoundNames = [];
+        const items = [];
+
+        for (let i = 12; i < rows.length; i++) {
+          const row = rows[i];
+          const namaBarang = String(row[1] || '').trim();
+          const kodeItem = String(row[2] || '').trim();
+          const panjangJadi = String(row[3] || '').trim();
+          const jumlah = String(row[4] || '').trim();
+          const hargaManual = String(row[5] || '').trim();
+
+          if (!namaBarang || !jumlah || parseInt(jumlah) <= 0) continue;
+
+          const matched = barangList.find((b) => b.nama.toLowerCase() === namaBarang.toLowerCase());
+
+          if (matched) {
+            if (!panjangJadi || parseFloat(panjangJadi) <= 0) {
+              toast.warning(`Baris ${i + 1}: "${namaBarang}" butuh Panjang Jadi (mm).`);
+              continue;
+            }
+            items.push({ ...emptyItem(), barangId: String(matched.id), kodeItem, panjangJadi, jumlahKeperluan: jumlah });
+          } else {
+            notFoundNames.push(namaBarang);
+            items.push({ ...emptyItem(), barangId: '__manual__', kodeItem, panjangJadi, jumlahKeperluan: jumlah, namaManual: namaBarang, hargaManual });
+          }
+        }
+
+        if (items.length === 0) {
+          toast.error('Tidak ada item valid yang bisa diimport!');
+          e.target.value = '';
+          return;
+        }
+
+        setFormData((prev) => ({ ...prev, namaEstimasi, namaClient, lokasi, kontakPerson, panjangRuangan, lebarRuangan }));
+        setSelectedItems(groupAdjacentItems(items));
+        toast.success(`Berhasil import ${items.length} item!`);
+        if (notFoundNames.length > 0) {
+          toast.warning(`${notFoundNames.length} barang tidak ditemukan di daftar, dijadikan manual: ${[...new Set(notFoundNames)].join(', ')}`);
+        }
+      } catch (err) {
+        toast.error('Gagal membaca file: ' + err.message);
+      } finally {
+        e.target.value = '';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
 
   useEffect(() => {
     loadData();
@@ -492,9 +634,25 @@ const EditEstimasi = () => {
       {/* Card: Detail Estimasi */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="w-5 h-5" /> Detail Estimasi
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Calculator className="w-5 h-5" /> Detail Estimasi
+            </CardTitle>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={downloadTemplate}>
+                <Download className="w-4 h-4 mr-1" /> Download Template
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => importFileRef.current?.click()}
+                className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+              >
+                <FileUp className="w-4 h-4 mr-1" /> Import Excel
+              </Button>
+              <input ref={importFileRef} type="file" accept=".xlsx, .xls" className="hidden" onChange={importFromExcel} />
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
 
