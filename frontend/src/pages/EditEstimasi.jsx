@@ -114,26 +114,26 @@ const EditEstimasi = () => {
       ['Panjang Ruangan (m)', '← opsional'],
       ['Lebar Ruangan (m)', '← opsional'],
       [''],
-      ['No', 'Nama Barang *', 'Kode Item', 'Panjang Jadi (mm)', 'Jumlah *', 'Harga Manual (Rp)'],
-      ['', '(lihat sheet Daftar Barang)', '(bebas, misal A-01)', '(kosongkan jika barang manual)', '', '(isi jika barang tidak ada di Daftar Barang)'],
-      ['1', 'Hollow 40x40x1.8', 'A-01', '600', '15', ''],
-      ['2', 'Hollow 40x40x1.8', 'A-02', '800', '10', ''],
-      ['3', 'Barang Tidak Ada Di Daftar', 'C-01', '', '3', '750000'],
+      ['Nama Barang *', 'Kode Item', 'Panjang Jadi (mm)', 'Jumlah *', 'Harga Manual (Rp)'],
+      ['(lihat sheet Daftar Barang)', '(bebas, misal A-01)', '(kosongkan jika barang manual)', '', '(isi jika barang tidak ada di Daftar Barang)'],
+      ['Hollow 40x40x1.8', 'A-01', '600', '15', ''],
+      ['Hollow 40x40x1.8', 'A-02', '800', '10', ''],
+      ['Barang Tidak Ada Di Daftar', 'C-01', '', '3', '750000'],
     ];
     const ws1 = XLSX.utils.aoa_to_sheet(formDataRows);
-    ws1['!cols'] = [{ wch: 5 }, { wch: 35 }, { wch: 15 }, { wch: 22 }, { wch: 10 }, { wch: 25 }];
+    ws1['!cols'] = [{ wch: 35 }, { wch: 15 }, { wch: 22 }, { wch: 10 }, { wch: 25 }];
 
     const daftarHeader = [
       ['DAFTAR BARANG TERSEDIA'],
       ['Salin nama barang persis seperti di kolom "Nama Barang" pada sheet Form Estimasi'],
       [''],
-      ['No', 'Nama Barang', 'Jenis Bahan', 'Panjang Stok (mm)', 'Min Welding (mm)'],
+      ['Nama Barang', 'Jenis Bahan', 'Panjang Stok (mm)', 'Min Welding (mm)'],
     ];
-    const daftarRows = barangList.map((b, i) => [
-      i + 1, b.nama, b.jenisBahan || '-', b.jenisBentuk === 'plat' ? b.panjangPlat : b.panjang, b.minWelding || 0,
+    const daftarRows = barangList.map((b) => [
+      b.nama, b.jenisBahan || '-', b.jenisBentuk === 'plat' ? b.panjangPlat : b.panjang, b.minWelding || 0,
     ]);
     const ws2 = XLSX.utils.aoa_to_sheet([...daftarHeader, ...daftarRows]);
-    ws2['!cols'] = [{ wch: 5 }, { wch: 35 }, { wch: 20 }, { wch: 20 }, { wch: 18 }];
+    ws2['!cols'] = [{ wch: 35 }, { wch: 20 }, { wch: 20 }, { wch: 18 }];
 
     XLSX.utils.book_append_sheet(wb, ws1, 'Form Estimasi');
     XLSX.utils.book_append_sheet(wb, ws2, 'Daftar Barang');
@@ -169,11 +169,11 @@ const EditEstimasi = () => {
 
         for (let i = 12; i < rows.length; i++) {
           const row = rows[i];
-          const namaBarang = String(row[1] || '').trim();
-          const kodeItem = String(row[2] || '').trim();
-          const panjangJadi = String(row[3] || '').trim();
-          const jumlah = String(row[4] || '').trim();
-          const hargaManual = String(row[5] || '').trim();
+          const namaBarang = String(row[0] || '').trim();
+          const kodeItem = String(row[1] || '').trim();
+          const panjangJadi = String(row[2] || '').trim();
+          const jumlah = String(row[3] || '').trim();
+          const hargaManual = String(row[4] || '').trim();
 
           if (!namaBarang || !jumlah || parseInt(jumlah) <= 0) continue;
 
