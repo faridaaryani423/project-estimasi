@@ -258,17 +258,42 @@ const Estimasi = () => {
       if (repItem.isManual) {
         const qty      = group.rows.reduce((s, r) => s + (r.jumlahKeperluan || 0), 0);
         const subtotal = group.rows.reduce((s, r) => s + (r.subtotal        || 0), 0);
+        const beratTot = group.rows.reduce((s, r) => s + (r.beratTotal || 0), 0);
+        
+        const spek = [];
+        if (repItem.jenisBentuk && repItem.jenisBentuk !== 'manual') spek.push(`Bentuk: ${repItem.jenisBentuk}`);
+        if (repItem.jenisBahan && repItem.jenisBahan !== 'Manual') spek.push(`Bahan: ${repItem.jenisBahan}`);
+        if (repItem.panjangMentah) spek.push(`Dim: ${repItem.panjangMentah}mm`);
+        if (repItem.beratPerBatang) spek.push(`Brt/Btg: ${repItem.beratPerBatang}kg`);
+        const spekStr = spek.length > 0 ? spek.join(' | ') : '-';
+        
+        const satuanHrgModal = repItem.breakdown?.satuanHargaModal === 'kg' ? 'Kg' : 'Btg';
+        const modalStr = `${fmtRp(repItem.hargaSatuan)} / ${satuanHrgModal}`;
+        const beratStr = beratTot > 0 ? `${fmtN(beratTot, 2)} kg` : '-';
+
         autoTable(doc, {
           startY,
-          head : [['No', 'Nama Barang', 'Qty', 'Harga Satuan', 'Subtotal']],
-          body : [[1, repItem.namaBarang, qty, fmtRp(repItem.hargaSatuan), fmtRp(subtotal)]],
+          head : [['Nama Barang', 'Spesifikasi', 'Supplier', 'Berat Total', 'Harga Modal', 'Harga Jasa', 'Harga Jual', 'Qty', 'Subtotal']],
+          body : [[
+            repItem.namaBarang, 
+            spekStr, 
+            repItem.supplier || '-', 
+            beratStr,
+            modalStr, 
+            fmtRp(repItem.hargaJasa), 
+            fmtRp(repItem.hargaJual), 
+            qty, 
+            fmtRp(subtotal)
+          ]],
           theme: 'grid',
-          headStyles : { fillColor: [220, 220, 220], textColor: [20, 20, 20], fontStyle: 'bold', fontSize: 6.5 },
+          headStyles : { fillColor: [220, 220, 220], textColor: [20, 20, 20], fontStyle: 'bold', fontSize: 6.5, halign: 'center' },
           styles     : { fontSize: 6.5, cellPadding: 1.5 },
           margin     : { left: marginL, right: marginR },
         });
         grandHargaReal      += subtotal;
         grandHargaPlusWaste += subtotal;
+        grandBeratReal      += beratTot;
+        grandBeratPlusWaste += beratTot;
         startY = doc.lastAutoTable.finalY + 5;
         return;
       }
@@ -908,23 +933,30 @@ const Estimasi = () => {
                       group.totalBahan          += item.breakdown?.kebutuhanBahan || 0;
                       group.totalJumlah         += item.jumlahKeperluan || 0;
                       group.finalLuasPermukaan  += parseFloat(item.luasPermukaanTotal || 0) || 0; // ← BARU
-                      // Akumulasi subtotal untuk manual items yang digabung
-                      if (isManualItem && group.count > 0) {
-                        group.subtotal = (group.subtotal || 0) + (item.subtotal || 0);
-                      }
-                      if (itemIdx >= group.lastItemIndex) {
-                        group.finalWaste           = item.breakdown?.waste           || 0;
-                        group.finalWastePercentage = item.breakdown?.wastePercentage || 0;
-                        group.finalPanjangReal      = item.breakdown?.panjangRealTerpakai || 0;
-                        const totalBeratReal       = parseFloat(item.breakdown?.summary?.totalBeratReal       || 0) || 0;
-                        const totalBeratWaste      = parseFloat(item.breakdown?.summary?.totalBeratWaste      || 0) || 0;
-                        const totalHargaReal       = parseFloat(item.breakdown?.summary?.totalHargaPemakaian  || 0) || 0;
-                        const totalHargaPlusWaste  = parseFloat(item.breakdown?.summary?.totalHargaReal       || 0) || 0;
-                        group.finalBeratReal       = totalBeratReal;
-                        group.finalBeratPlusWaste  = totalBeratReal + totalBeratWaste;
-                        group.finalHargaReal       = totalHargaReal;
-                        group.finalHargaPlusWaste  = totalHargaPlusWaste;
-                        group.lastItemIndex        = itemIdx;
+                      if (isManualItem) {
+                        if (group.count > 0) {
+                          group.subtotal = (group.subtotal || 0) + (item.subtotal || 0);
+                          group.finalBeratReal = (group.finalBeratReal || 0) + (item.beratTotal || 0);
+                        } else {
+                          group.subtotal = item.subtotal || 0;
+                          group.finalBeratReal = item.beratTotal || 0;
+                        }
+                        group.finalBeratPlusWaste = group.finalBeratReal;
+                      } else {
+                        if (itemIdx >= group.lastItemIndex) {
+                          group.finalWaste           = item.breakdown?.waste           || 0;
+                          group.finalWastePercentage = item.breakdown?.wastePercentage || 0;
+                          group.finalPanjangReal      = item.breakdown?.panjangRealTerpakai || 0;
+                          const totalBeratReal       = parseFloat(item.breakdown?.summary?.totalBeratReal       || 0) || 0;
+                          const totalBeratWaste      = parseFloat(item.breakdown?.summary?.totalBeratWaste      || 0) || 0;
+                          const totalHargaReal       = parseFloat(item.breakdown?.summary?.totalHargaPemakaian  || 0) || 0;
+                          const totalHargaPlusWaste  = parseFloat(item.breakdown?.summary?.totalHargaReal       || 0) || 0;
+                          group.finalBeratReal       = totalBeratReal;
+                          group.finalBeratPlusWaste  = totalBeratReal + totalBeratWaste;
+                          group.finalHargaReal       = totalHargaReal;
+                          group.finalHargaPlusWaste  = totalHargaPlusWaste;
+                          group.lastItemIndex        = itemIdx;
+                        }
                       }
                       group.count++;
                     });
@@ -939,14 +971,15 @@ const Estimasi = () => {
                         if (!isManualRow) {
                           acc.panjangReal    += Number(group.finalPanjangReal    || 0);
                           acc.panjangWaste   += Number(group.finalWaste          || 0);
-                          acc.beratReal      += Number(group.finalBeratReal      || 0);
-                          acc.beratPlusWaste += Number(group.finalBeratPlusWaste || 0);
-                          acc.beratSisa      += Math.max(
-                            Number(group.finalBeratPlusWaste || 0) - Number(group.finalBeratReal || 0),
-                            0
-                          );
-                          acc.luasPermukaan  += Number(group.finalLuasPermukaan || 0); // ← BARU
                         }
+                        
+                        acc.beratReal      += Number(group.finalBeratReal      || 0);
+                        acc.beratPlusWaste += Number(group.finalBeratPlusWaste || 0);
+                        acc.beratSisa      += Math.max(
+                          Number(group.finalBeratPlusWaste || 0) - Number(group.finalBeratReal || 0),
+                          0
+                        );
+                        acc.luasPermukaan  += Number(group.finalLuasPermukaan || 0); // ← BARU
                         acc.hargaPlusWaste += Number(isManualRow ? group.subtotal || 0 : group.finalHargaPlusWaste || 0);
                         acc.hargaReal      += Number(isManualRow ? group.subtotal || 0 : group.finalHargaReal      || 0);
                         return acc;
@@ -1011,17 +1044,15 @@ const Estimasi = () => {
                               : `${Number(Math.max((group.finalBeratPlusWaste || 0) - (group.finalBeratReal || 0), 0)).toFixed(2)} kg`}
                           </TableCell>
                           <TableCell className="font-semibold text-blue-700">
-                            {isManualRow ? '-' : `${Number(group.finalBeratReal || 0).toFixed(2)} kg`}
+                            {Number(group.finalBeratReal || 0) > 0 ? `${Number(group.finalBeratReal).toFixed(2)} kg` : '-'}
                           </TableCell>
                           <TableCell className="font-semibold text-indigo-700">
-                            {isManualRow ? '-' : `${Number(group.finalBeratPlusWaste || 0).toFixed(2)} kg`}
+                            {Number(group.finalBeratPlusWaste || 0) > 0 ? `${Number(group.finalBeratPlusWaste).toFixed(2)} kg` : '-'}
                           </TableCell>
 
                           {/* ── LUAS PERMUKAAN CELL (BARU) ── */}
                           <TableCell className="font-semibold text-violet-700">
-                            {isManualRow
-                              ? '-'
-                              : group.finalLuasPermukaan > 0
+                            {group.finalLuasPermukaan > 0
                                 ? `${Number(group.finalLuasPermukaan).toFixed(2)} m²`
                                 : <span className="text-gray-400 text-xs">-</span>}
                           </TableCell>

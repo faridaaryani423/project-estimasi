@@ -26,6 +26,7 @@ const emptyItem = () => ({
   namaManual: '',
   hargaManual: '',
   hargamodalManual: '',
+  satuanHargaModalManual: 'batang',
   hargajasaManual: '',
   jenisBentukManual: 'balok',
   supplierManual: '',
@@ -261,8 +262,9 @@ const EditEstimasi = () => {
             volume: item.volume?.toString() || '',
             // Manual fields
             namaManual: isItemManual ? (item.namaBarang || '') : '',
-            hargaManual: isItemManual ? ((item.hargaJual || item.hargaSatuan) ?? '').toString() : '',
+            hargaManual: '', // No longer used
             hargamodalManual: isItemManual ? (item.hargaSatuan ?? '').toString() : '',
+            satuanHargaModalManual: isItemManual ? (item.breakdown?.satuanHargaModal || 'batang') : 'batang',
             hargajasaManual: isItemManual ? (item.hargaJasa ?? '').toString() : '',
             jenisBentukManual: isItemManual ? (item.jenisBentuk || 'custom') : 'balok',
             supplierManual: isItemManual ? (item.supplier || '') : '',
@@ -272,6 +274,8 @@ const EditEstimasi = () => {
             beratJenisManual: isItemManual ? (item.beratJenis?.toString() || '') : '',
             beratbatangManual: isItemManual ? (item.beratbatang?.toString() || '') : '',
             minWeldingManual: isItemManual ? (item.minWelding?.toString() || '') : '',
+            panjangManual: isItemManual ? (item.panjangMentah?.toString() || '') : '',
+            panjangPlatManual: isItemManual ? (item.panjangMentah?.toString() || '') : '',
           };
         }) || [emptyItem()]
       );
@@ -347,6 +351,7 @@ const EditEstimasi = () => {
         beratbatangManual: currentItem.beratbatangManual,
         minWeldingManual: currentItem.minWeldingManual,
         hargamodalManual: currentItem.hargamodalManual,
+        satuanHargaModalManual: currentItem.satuanHargaModalManual,
         hargajasaManual: currentItem.hargajasaManual,
       } : {})
     };
@@ -507,10 +512,9 @@ const EditEstimasi = () => {
       ketebalanPlat: item.ketebalanPlatManual || null,
       jenisBahan: item.jenisBahanManual || '-',
       beratJenis: item.beratJenisManual || '0',
-      hargamodal: item.hargamodalManual || item.hargaManual || '0',
+      hargamodal: item.hargamodalManual || '0',
       beratbatang: item.beratbatangManual || null,
       minWelding: item.minWeldingManual || '50',
-      hargamodal: item.hargamodalManual || item.hargaManual || null,
       hargajasa: item.hargajasaManual || null,
       supplier: item.supplierManual || null,
       foto: null,
@@ -538,14 +542,50 @@ const EditEstimasi = () => {
       return;
     }
 
-    const validItems = selectedItems.filter((item) => {
+    const validItems = [];
+    let hasInvalid = false;
+    let errorMessage = '';
+
+    for (let i = 0; i < selectedItems.length; i++) {
+      const item = selectedItems[i];
+      if (!item.barangId) continue;
+      
       const jumlahValid = item.jumlahKeperluan && parseInt(item.jumlahKeperluan) > 0;
-      if (!item.barangId || !jumlahValid) return false;
-      if (item.barangId === '__manual__') {
-        return (item.namaManual || '').trim().length > 0 && parseFloat(item.hargaManual || 0) > 0;
+      if (!jumlahValid) {
+        hasInvalid = true;
+        errorMessage = `Baris ${i + 1}: Jumlah keperluan harus lebih dari 0.`;
+        break;
       }
-      return item.panjangJadi && parseFloat(item.panjangJadi) > 0;
-    });
+
+      if (item.barangId === '__manual__') {
+        const namaValid = (item.namaManual || '').trim().length > 0;
+        const hargaValid = parseFloat(item.hargamodalManual || 0) > 0 || parseFloat(item.hargajasaManual || 0) > 0;
+        
+        if (!namaValid) {
+          hasInvalid = true;
+          errorMessage = `Baris ${i + 1} (Manual): Nama barang wajib diisi.`;
+          break;
+        }
+        if (!hargaValid) {
+          hasInvalid = true;
+          errorMessage = `Baris ${i + 1} (Manual): Harga modal atau harga jasa wajib diisi lebih dari 0.`;
+          break;
+        }
+        validItems.push(item);
+      } else {
+        if (!item.panjangJadi || parseFloat(item.panjangJadi) <= 0) {
+          hasInvalid = true;
+          errorMessage = `Baris ${i + 1}: Panjang Jadi wajib diisi lebih dari 0.`;
+          break;
+        }
+        validItems.push(item);
+      }
+    }
+
+    if (hasInvalid) {
+      toast.error(errorMessage);
+      return;
+    }
 
     if (validItems.length === 0) {
       toast.error('Mohon lengkapi item terlebih dahulu!');
@@ -937,11 +977,10 @@ const EditEstimasi = () => {
                   </div>
                 )}
 
-                {/* Sub-item (kode / panjang jadi / jumlah) */}
-                {itemsWithSame.map((cur, sub) => {
+                {/* Sub-item (panjang jadi + jumlah) untuk barang dari database */}
+                {!isManual && itemsWithSame.map((cur, sub) => {
                   const actualIdx = index + sub;
                   const curInfo   = getSelectedBarangInfo(cur.barangId);
-                  const curManual = cur.barangId === '__manual__';
                   return (
                     <div
                       key={actualIdx}
@@ -957,7 +996,7 @@ const EditEstimasi = () => {
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">
-                          Panjang Jadi (mm){!curManual && <span className="text-red-500"> *</span>}
+                          Panjang Jadi (mm) <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           type="number"
@@ -1000,6 +1039,44 @@ const EditEstimasi = () => {
                   );
                 })}
 
+                {/* Kode item + jumlah untuk barang manual */}
+                {isManual && itemsWithSame.map((cur, sub) => {
+                  const actualIdx = index + sub;
+                  return (
+                    <div key={actualIdx} className="grid grid-cols-3 gap-3 items-end p-3 bg-white rounded-lg border">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Kode Item</Label>
+                        <Input
+                          placeholder="C-01"
+                          value={cur.kodeItem || ''}
+                          onChange={(e) => handleItemChange(actualIdx, 'kodeItem', e.target.value)}
+                        />
+                      </div>
+                      <div className="col-span-2 flex gap-2 items-end">
+                        <div className="flex-1 space-y-1">
+                          <Label className="text-xs">Jumlah <span className="text-red-500">*</span></Label>
+                          <Input
+                            type="number"
+                            placeholder="5"
+                            value={cur.jumlahKeperluan || ''}
+                            onChange={(e) => handleItemChange(actualIdx, 'jumlahKeperluan', e.target.value)}
+                          />
+                        </div>
+                        {itemsWithSame.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeItemRow(actualIdx)}
+                            className="text-red-500 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
 
               </div>
             );

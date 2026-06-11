@@ -9,7 +9,7 @@ import { Calculator, Plus, Trash2, Send, Zap, Download, Loader2, FileUp, Setting
 import { barangAPI, estimasiAPI } from '@/services/api';
 import * as XLSX from 'xlsx';
 import BarangCombobox from '@/components/BarangCombobox';
-import { calculateLuasPermukaan, calculateMaterialGroupAllocation } from '@/utils/calculationEngine';
+import { calculateLuasPermukaan, calculateMaterialGroupAllocation, calculateBerat } from '@/utils/calculationEngine';
 import { formatNumberWithSeparator } from '@/lib/utils';
 import ManualItemForm from '@/components/ManualItemForm';
 
@@ -49,6 +49,7 @@ const emptyItem = () => ({
   minWeldingManual: '',
   // harga lanjutan
   hargamodalManual: '',
+  satuanHargaModalManual: 'batang',
   hargajasaManual: '',
 });
 
@@ -203,6 +204,7 @@ const EstimasiForm = () => {
         beratbatangManual: currentItem.beratbatangManual,
         minWeldingManual: currentItem.minWeldingManual,
         hargamodalManual: currentItem.hargamodalManual,
+        satuanHargaModalManual: currentItem.satuanHargaModalManual,
         hargajasaManual: currentItem.hargajasaManual,
       } : {})
     };
@@ -480,11 +482,50 @@ const EstimasiForm = () => {
     // ✅ Manual items — tidak ter-comment lagi
     const manualDetails = manualItems.map((item) => {
       const jumlahKeperluan = parseInt(item.jumlahKeperluan) || 0;
-      const hargaJual = parseFloat(item.hargaManual || 0) || 0;
-      const subtotal = hargaJual * jumlahKeperluan;
+      const hargaModal = parseFloat(item.hargamodalManual || 0) || 0;
+      const satuanHargaModal = item.satuanHargaModalManual || 'batang';
+      const hargaJasa = parseFloat(item.hargajasaManual || 0) || 0;
+
+      // Mock barang untuk hitung berat & luas permukaan
+      const mockBarang = {
+        jenisBentuk: item.jenisBentukManual || 'custom',
+        panjang: item.panjangManual,
+        lebar: item.lebarManual,
+        tinggi: item.tinggiManual,
+        diameter: item.diameterManual,
+        ketebalan: item.ketebalanManual,
+        tinggiWF: item.tinggiWFManual,
+        lebarFlange: item.lebarFlangeManual,
+        ketebalanWeb: item.ketebalanWebManual,
+        ketebalanFlange: item.ketebalanFlangeManual,
+        panjangPlat: item.panjangPlatManual,
+        lebarPlat: item.lebarPlatManual,
+        ketebalanPlat: item.ketebalanPlatManual,
+        beratJenis: item.beratJenisManual,
+      };
+
+      const beratPerBatang = parseFloat(item.beratbatangManual || 0) > 0 ? parseFloat(item.beratbatangManual) : calculateBerat(mockBarang);
+      const beratTotal = beratPerBatang * jumlahKeperluan;
+
+      const luasPermukaan = calculateLuasPermukaan(mockBarang);
+      const luasPermukaanTotal = luasPermukaan * jumlahKeperluan;
+
+      let subtotalMaterial = 0;
+      if (satuanHargaModal === 'kg') {
+         subtotalMaterial = hargaModal * beratTotal;
+      } else {
+         subtotalMaterial = hargaModal * jumlahKeperluan;
+      }
+
+      const subtotalJasaVal = hargaJasa > 0 && luasPekerjaan > 0 ? hargaJasa * luasPekerjaan : 0;
+      const subtotal = subtotalMaterial + subtotalJasaVal;
+
       totalEstimasi += subtotal;
+      totalBeratReal += beratTotal;
+      totalLuasPermukaan += luasPermukaanTotal;
 
       return {
+        ...item,
         barangId: '__manual__',
         kodeItem: item.kodeItem || null,
         isManual: true,
@@ -496,26 +537,26 @@ const EstimasiForm = () => {
         beratbatang: item.beratbatangManual || null,
         minWelding: item.minWeldingManual || null,
         ukuranMentah: null,
-        panjangMentah: 0,
+        panjangMentah: parseFloat(item.panjangManual || item.panjangPlatManual || 0),
         panjangJadi: parseFloat(item.panjangJadi) || 0,
         jumlahKeperluan,
         volume: null,
-        hargaSatuan: Math.round(parseFloat(item.hargamodalManual || 0) || 0),
-        hargaJual: Math.round(hargaJual),
-        hargaJasa: Math.round(parseFloat(item.hargajasaManual || 0) || 0),
-        luasPekerjaan: 0,
-        subtotalMaterial: Math.round(subtotal),
-        subtotalMaterialPemakaian: Math.round(subtotal),
+        hargaSatuan: Math.round(hargaModal),
+        hargaJual: Math.round(hargaModal),
+        hargaJasa: Math.round(hargaJasa),
+        luasPekerjaan: luasPekerjaan,
+        subtotalMaterial: Math.round(subtotalMaterial),
+        subtotalMaterialPemakaian: Math.round(subtotalMaterial),
         subtotalMaterialWaste: 0,
-        subtotalJasa: 0,
+        subtotalJasa: Math.round(subtotalJasaVal),
         subtotal: Math.round(subtotal),
-        beratPerBatang: 0,
-        beratTotal: 0,
+        beratPerBatang: beratPerBatang,
+        beratTotal: beratTotal,
         beratWaste: 0,
-        luasPermukaan: 0,
-        luasPermukaanTotal: 0,
+        luasPermukaan: luasPermukaan,
+        luasPermukaanTotal: luasPermukaanTotal,
         breakdown: {
-          kebutuhanBahan: 0,
+          kebutuhanBahan: jumlahKeperluan,
           panjangRealTerpakai: 0,
           waste: 0,
           wastePercentage: 0,
@@ -523,6 +564,7 @@ const EstimasiForm = () => {
           cuttingGuide: [],
           barAllocations: [],
           needsWelding: false,
+          satuanHargaModal: satuanHargaModal,
         },
         usedExistingWaste: 0,
       };
@@ -543,19 +585,53 @@ const EstimasiForm = () => {
       return;
     }
 
-    const validItems = selectedItems.filter((item) => {
+    const validItems = [];
+    let hasInvalid = false;
+    let errorMessage = '';
+
+    for (let i = 0; i < selectedItems.length; i++) {
+      const item = selectedItems[i];
+      if (!item.barangId) continue; // Skip completely empty rows that user hasn't touched
+      
       const jumlahValid = item.jumlahKeperluan && parseInt(item.jumlahKeperluan) > 0;
-      if (!item.barangId || !jumlahValid) return false;
+      if (!jumlahValid) {
+        hasInvalid = true;
+        errorMessage = `Baris ${i + 1}: Jumlah keperluan harus lebih dari 0.`;
+        break;
+      }
+
       if (item.barangId === '__manual__') {
         const namaValid = (item.namaManual || '').trim().length > 0;
-        const hargaValid = parseFloat(item.hargaManual || 0) > 0;
-        return namaValid && hargaValid;
+        const hargaValid = parseFloat(item.hargamodalManual || 0) > 0 || parseFloat(item.hargajasaManual || 0) > 0;
+        
+        if (!namaValid) {
+          hasInvalid = true;
+          errorMessage = `Baris ${i + 1} (Manual): Nama barang wajib diisi.`;
+          break;
+        }
+        if (!hargaValid) {
+          hasInvalid = true;
+          errorMessage = `Baris ${i + 1} (Manual): Harga modal atau harga jasa wajib diisi lebih dari 0.`;
+          break;
+        }
+        validItems.push(item);
+      } else {
+        if (!item.panjangJadi || parseFloat(item.panjangJadi) <= 0) {
+          hasInvalid = true;
+          errorMessage = `Baris ${i + 1}: Panjang Jadi wajib diisi lebih dari 0.`;
+          break;
+        }
+        validItems.push(item);
       }
-      return item.panjangJadi && parseFloat(item.panjangJadi) > 0;
-    });
+    }
+
+    if (hasInvalid) {
+      toast.error(errorMessage);
+      return;
+    }
 
     if (validItems.length === 0) {
-      toast.error('Mohon lengkapi item. Untuk barang manual: nama barang, harga jual, dan jumlah wajib diisi.');
+      toast.error('Mohon lengkapi minimal 1 item.');
       return;
     }
 

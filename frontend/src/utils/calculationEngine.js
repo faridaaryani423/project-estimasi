@@ -808,11 +808,51 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
     });
   });
 
+  // ✅ Manual items
   const manualDetails = manualItems.map((item) => {
     const jumlahKeperluan = parseInt(item.jumlahKeperluan) || 0;
-    const hargaJual = parseFloat(item.hargaManual || 0) || 0;
-    const subtotal = hargaJual * jumlahKeperluan;
+    const hargaModal = parseFloat(item.hargamodalManual || 0) || 0;
+    const satuanHargaModal = item.satuanHargaModalManual || 'batang';
+    const hargaJasa = parseFloat(item.hargajasaManual || 0) || 0;
+
+    // Mock barang untuk hitung berat & luas permukaan
+    const mockBarang = {
+      jenisBentuk: item.jenisBentukManual || 'custom',
+      panjang: item.panjangManual,
+      lebar: item.lebarManual,
+      tinggi: item.tinggiManual,
+      diameter: item.diameterManual,
+      ketebalan: item.ketebalanManual,
+      tinggiWF: item.tinggiWFManual,
+      lebarFlange: item.lebarFlangeManual,
+      ketebalanWeb: item.ketebalanWebManual,
+      ketebalanFlange: item.ketebalanFlangeManual,
+      panjangPlat: item.panjangPlatManual,
+      lebarPlat: item.lebarPlatManual,
+      ketebalanPlat: item.ketebalanPlatManual,
+      beratJenis: item.beratJenisManual,
+    };
+
+    const beratPerBatang = parseFloat(item.beratbatangManual || 0) > 0 ? parseFloat(item.beratbatangManual) : calculateBerat(mockBarang);
+    const beratTotal = beratPerBatang * jumlahKeperluan;
+
+    const luasPermukaan = calculateLuasPermukaan(mockBarang);
+    const luasPermukaanTotal = luasPermukaan * jumlahKeperluan;
+
+    let subtotalMaterial = 0;
+    if (satuanHargaModal === 'kg') {
+       subtotalMaterial = hargaModal * beratTotal;
+    } else {
+       subtotalMaterial = hargaModal * jumlahKeperluan;
+    }
+
+    const subtotalJasaVal = hargaJasa > 0 && luasPekerjaan > 0 ? hargaJasa * luasPekerjaan : 0;
+    const subtotal = subtotalMaterial + subtotalJasaVal;
+
     totalEstimasi += subtotal;
+    totalBeratReal += beratTotal;
+    totalLuasPermukaan += luasPermukaanTotal;
+
     return {
       barangId: '__manual__',
       kodeItem: item.kodeItem || null,
@@ -825,36 +865,34 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
       beratbatang: item.beratbatangManual || null,
       minWelding: item.minWeldingManual || null,
       ukuranMentah: null,
-      panjangMentah: 0,
+      panjangMentah: parseFloat(item.panjangManual || item.panjangPlatManual || 0),
       panjangJadi: parseFloat(item.panjangJadi) || 0,
-      jenisBahan: item.jenisBahanManual || 'Manual',
-      beratJenis: item.beratJenisManual || null,
-      minWelding: item.minWeldingManual || null,
       jumlahKeperluan,
       volume: null,
-      hargaSatuan: Math.round(hargaJual),
-      hargaJual: Math.round(hargaJual),
-      hargaJasa: Math.round(parseFloat(item.hargajasaManual || 0) || 0),
-      luasPekerjaan: 0,
-      subtotalMaterial: Math.round(subtotal),
-      subtotalMaterialPemakaian: Math.round(subtotal),
+      hargaSatuan: Math.round(hargaModal),
+      hargaJual: Math.round(parseFloat(item.hargaManual || 0) || 0),
+      hargaJasa: Math.round(hargaJasa),
+      luasPekerjaan: luasPekerjaan,
+      subtotalMaterial: Math.round(subtotalMaterial),
+      subtotalMaterialPemakaian: Math.round(subtotalMaterial),
       subtotalMaterialWaste: 0,
-      subtotalJasa: 0,
+      subtotalJasa: Math.round(subtotalJasaVal),
       subtotal: Math.round(subtotal),
-      beratPerBatang: 0,
-      beratTotal: 0,
+      beratPerBatang: beratPerBatang,
+      beratTotal: beratTotal,
       beratWaste: 0,
-      luasPermukaan: 0,
-      luasPermukaanTotal: 0,
+      luasPermukaan: luasPermukaan,
+      luasPermukaanTotal: luasPermukaanTotal,
       breakdown: {
-        kebutuhanBahan: 0,
+        kebutuhanBahan: jumlahKeperluan,
         panjangRealTerpakai: 0,
         waste: 0,
         wastePercentage: 0,
         totalTitikWelding: 0,
         cuttingGuide: [],
-        itemBreakdown: [],
+        barAllocations: [],
         needsWelding: false,
+        satuanHargaModal: satuanHargaModal,
       },
       usedExistingWaste: 0,
     };

@@ -19,28 +19,30 @@ const ManualItemForm = ({
     onChange: (e) => onItemChange(index, field, e.target.value),
   });
 
+  const [isHargaJasaEnabled, setIsHargaJasaEnabled] = React.useState(!!item.hargajasaManual);
+
   return (
     <div className="mt-2 p-4 bg-sky-50 rounded-lg border border-sky-200 space-y-4">
       <p className="text-xs font-semibold text-sky-700 uppercase tracking-wide">Detail Barang Manual</p>
 
-      {/* Nama & Supplier */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <Label className="text-xs">Nama Barang <span className="text-red-500">*</span></Label>
-          <Input placeholder="Contoh: Besi UNP 100" {...f('namaManual')} />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Supplier</Label>
-          <Input placeholder="Contoh: CV. Besi Jaya" {...f('supplierManual')} />
-        </div>
+      {/* Nama Barang */}
+      <div className="space-y-1">
+        <Label className="text-xs">Nama Barang <span className="text-red-500">*</span></Label>
+        <Input placeholder="Contoh: Besi UNP 100" {...f('namaManual')} />
+      </div>
+
+      {/* Supplier */}
+      <div className="space-y-1">
+        <Label className="text-xs">Supplier</Label>
+        <Input placeholder="Contoh: CV. Besi Jaya" {...f('supplierManual')} />
       </div>
 
       {/* Jenis Bentuk */}
-      <div className="space-y-1">
-        <Label className="text-xs">Jenis Bentuk</Label>
-        <div className="flex gap-4 flex-wrap">
+      <div className="space-y-2">
+        <Label className="text-xs">Jenis Bentuk Barang <span className="text-red-500">*</span></Label>
+        <div className="grid grid-cols-5 gap-2">
           {['balok', 'tabung', 'wf', 'plat', 'custom'].map((bentuk) => (
-            <label key={bentuk} className="flex items-center gap-1.5 cursor-pointer">
+            <label key={bentuk} className="flex items-center gap-1 cursor-pointer">
               <input
                 type="radio"
                 name={`jenisBentukManual-${index}`}
@@ -56,84 +58,140 @@ const ManualItemForm = ({
       </div>
 
       {/* Dimensi */}
-      <div className="space-y-1">
-        <Label className="text-xs">Dimensi (mm)</Label>
+      <div className="space-y-2">
+        <Label className="text-xs">Ukuran Barang (mm) <span className="text-red-500">*</span></Label>
         {jenisBentuk === 'balok' && (
-          <div className="grid grid-cols-4 gap-2">
-            <Input type="number" placeholder="Panjang" {...f('panjangManual')} />
-            <Input type="number" placeholder="Lebar" {...f('lebarManual')} />
-            <Input type="number" placeholder="Tinggi" {...f('tinggiManual')} />
-            <Input type="number" placeholder="Ketebalan" {...f('ketebalanManual')} />
+          <div className="grid grid-cols-3 gap-2">
+            <div><Label className="text-[10px] text-gray-500">Panjang</Label><Input type="number" placeholder="1000" {...f('panjangManual')} /></div>
+            <div><Label className="text-[10px] text-gray-500">Lebar</Label><Input type="number" placeholder="600" {...f('lebarManual')} /></div>
+            <div><Label className="text-[10px] text-gray-500">Tinggi</Label><Input type="number" placeholder="750" {...f('tinggiManual')} /></div>
           </div>
         )}
         {jenisBentuk === 'tabung' && (
-          <div className="grid grid-cols-3 gap-2">
-            <Input type="number" placeholder="Diameter" {...f('diameterManual')} />
-            <Input type="number" placeholder="Panjang" {...f('panjangManual')} />
-            <Input type="number" placeholder="Ketebalan" {...f('ketebalanManual')} />
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label className="text-[10px] text-gray-500">Diameter</Label><Input type="number" placeholder="500" {...f('diameterManual')} /></div>
+            <div><Label className="text-[10px] text-gray-500">Panjang</Label><Input type="number" placeholder="1000" {...f('panjangManual')} /></div>
           </div>
         )}
+        {jenisBentuk === 'custom' && (
+          <div><Label className="text-[10px] text-gray-500">Panjang</Label><Input type="number" placeholder="1000" {...f('panjangManual')} /></div>
+        )}
         {jenisBentuk === 'wf' && (
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <div><Label className="text-[10px] text-gray-500">Tinggi (H)</Label><Input type="number" placeholder="200" {...f('tinggiWFManual')} /></div>
-            <div><Label className="text-[10px] text-gray-500">Flange (B)</Label><Input type="number" placeholder="100" {...f('lebarFlangeManual')} /></div>
-            <div><Label className="text-[10px] text-gray-500">Web (tw)</Label><Input type="number" placeholder="5.5" {...f('ketebalanWebManual')} /></div>
-            <div><Label className="text-[10px] text-gray-500">Flange (tf)</Label><Input type="number" placeholder="8" {...f('ketebalanFlangeManual')} /></div>
+            <div><Label className="text-[10px] text-gray-500">Lebar Flange (B)</Label><Input type="number" placeholder="100" {...f('lebarFlangeManual')} /></div>
+            <div><Label className="text-[10px] text-gray-500">Tebal Web (tw)</Label><Input type="number" placeholder="5.5" {...f('ketebalanWebManual')} /></div>
+            <div><Label className="text-[10px] text-gray-500">Tebal Flange (tf)</Label><Input type="number" placeholder="8" {...f('ketebalanFlangeManual')} /></div>
           </div>
         )}
         {jenisBentuk === 'plat' && (
           <div className="grid grid-cols-3 gap-2">
-            <Input type="number" placeholder="Panjang" {...f('panjangPlatManual')} />
-            <Input type="number" placeholder="Lebar" {...f('lebarPlatManual')} />
-            <Input type="number" placeholder="Ketebalan" {...f('ketebalanPlatManual')} />
+            <div><Label className="text-[10px] text-gray-500">Panjang</Label><Input type="number" placeholder="6000" {...f('panjangPlatManual')} /></div>
+            <div><Label className="text-[10px] text-gray-500">Lebar</Label><Input type="number" placeholder="1500" {...f('lebarPlatManual')} /></div>
+            <div><Label className="text-[10px] text-gray-500">Ketebalan</Label><Input type="number" placeholder="6" {...f('ketebalanPlatManual')} /></div>
           </div>
-        )}
-        {jenisBentuk === 'custom' && (
-          <Input type="number" placeholder="Panjang" {...f('panjangManual')} />
         )}
       </div>
 
-      {/* Informasi Material */}
-      {jenisBentuk !== 'custom' && (
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <Label className="text-xs">Jenis Bahan</Label>
-            <Input placeholder="Baja ST37" {...f('jenisBahanManual')} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Berat Jenis (kg/m³)</Label>
-            <Input type="number" placeholder="7850" {...f('beratJenisManual')} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Berat/Batang (kg)</Label>
-            <Input type="number" placeholder="50" {...f('beratbatangManual')} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Min. Welding (mm)</Label>
-            <Input type="number" placeholder="50" {...f('minWeldingManual')} />
-          </div>
+      {/* Ketebalan */}
+      {!['wf', 'plat', 'custom'].includes(jenisBentuk) && (
+        <div className="space-y-1">
+          <Label className="text-xs">Ketebalan Barang (mm) <span className="text-red-500">*</span></Label>
+          <Input type="number" placeholder="5" {...f('ketebalanManual')} />
         </div>
       )}
 
-      {/* Harga */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="space-y-1">
-          <Label className="text-xs">Harga Modal (Rp)</Label>
-          <Input type="number" placeholder="500000" {...f('hargamodalManual')} />
+      {/* Informasi Material */}
+      <div className="border-t border-sky-200 pt-3 space-y-3">
+        <h3 className="text-xs font-semibold text-gray-900">Informasi Material</h3>
+        <div className="grid grid-cols-2 gap-3">
+          {jenisBentuk !== 'custom' && (
+            <div className="space-y-1">
+              <Label className="text-xs">Jenis Bahan <span className="text-red-500">*</span></Label>
+              <Input placeholder="Contoh: Baja ST37" {...f('jenisBahanManual')} />
+            </div>
+          )}
+          {jenisBentuk !== 'custom' && (
+            <div className="space-y-1">
+              <Label className="text-xs">Berat Jenis (kg/m³) <span className="text-red-500">*</span></Label>
+              <Input type="number" placeholder="7850" {...f('beratJenisManual')} />
+            </div>
+          )}
         </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Harga Jual (Rp) <span className="text-red-500">*</span></Label>
-          <Input type="number" placeholder="750000" {...f('hargaManual')} />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Harga Jasa (Rp)</Label>
-          <Input type="number" placeholder="100000" {...f('hargajasaManual')} />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Berat per Batang (kg) <span className="text-red-500">*</span></Label>
+            <Input type="number" placeholder="50" {...f('beratbatangManual')} />
+          </div>
+          {jenisBentuk !== 'custom' && (
+            <div className="space-y-1">
+              <Label className="text-xs">Min. Ukuran Welding (mm)</Label>
+              <Input type="number" placeholder="50" {...f('minWeldingManual')} />
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="text-xs text-amber-600 font-medium flex items-center gap-1.5">
-        <Zap className="w-3 h-3 shrink-0" />
-        Barang manual dihitung berdasarkan Harga Jual × Jumlah.
+      {/* Harga */}
+      <div className="border-t border-sky-200 pt-3 space-y-3">
+        {/* Satuan Harga Modal Custom per user request */}
+        <div className="space-y-1">
+          <Label className="text-xs">Satuan Harga Modal</Label>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="radio"
+                name={`satuanHargaModalManual-${index}`}
+                value="batang"
+                checked={item.satuanHargaModalManual !== 'kg'}
+                onChange={(e) => onItemChange(index, 'satuanHargaModalManual', e.target.value)}
+                className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
+              />
+              <span className="text-xs font-medium text-gray-700">Per Batang</span>
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="radio"
+                name={`satuanHargaModalManual-${index}`}
+                value="kg"
+                checked={item.satuanHargaModalManual === 'kg'}
+                onChange={(e) => onItemChange(index, 'satuanHargaModalManual', e.target.value)}
+                className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
+              />
+              <span className="text-xs font-medium text-gray-700">Per Kg</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Harga Modal (Rp) <span className="text-red-500">*</span></Label>
+            <Input type="number" placeholder="500000" {...f('hargamodalManual')} />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 mb-1">
+              <input
+                type="checkbox"
+                id={`hargaJasaCheckbox-${index}`}
+                checked={isHargaJasaEnabled}
+                onChange={(e) => {
+                  setIsHargaJasaEnabled(e.target.checked);
+                  if (!e.target.checked) onItemChange(index, 'hargajasaManual', '');
+                }}
+                className="w-3.5 h-3.5 text-sky-600 rounded focus:ring-sky-500"
+              />
+              <Label htmlFor={`hargaJasaCheckbox-${index}`} className="text-xs cursor-pointer">Harga Jasa (Rp)</Label>
+            </div>
+            <Input
+              type="number"
+              placeholder="500000"
+              {...f('hargajasaManual')}
+              disabled={!isHargaJasaEnabled}
+              required={isHargaJasaEnabled}
+              className="disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Tombol aksi */}
