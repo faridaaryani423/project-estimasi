@@ -74,6 +74,7 @@ class BarangBase(BaseModel):
     jenisBahan: Optional[str] = None   # ✅ ubah dari str → Optional[str]
     beratJenis: Optional[str] = None   # ✅ ubah dari str → Optional[str]
     hargamodal: Optional[str] = None
+    satuanHargaModal: Optional[str] = "batang"
     beratbatang: Optional[str] = None
     minWelding: Optional[str] = "50"
     hargamodal: str

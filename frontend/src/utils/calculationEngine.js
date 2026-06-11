@@ -324,12 +324,14 @@ const getUsageBasedBarPrice = (usedLength, stockLength, hargaSatuan) => {
  */
 export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPekerjaan = 0) => {
   const stockLength = 6000;
-  const hargaSatuan = parseFloat(barang?.hargamodal || 0) || 0;
+  const baseHargaModal = parseFloat(barang?.hargamodal || 0) || 0;
+  const satuanHargaModal = barang?.satuanHargaModal || 'batang';
   const parsedMinWelding = parseFloat(barang?.minWelding);
   const minWelding = Number.isFinite(parsedMinWelding) && parsedMinWelding >= 0 ? parsedMinWelding : 50;
   const beratStandar = parseFloat(barang?.beratbatang || 0) > 0
     ? parseFloat(barang.beratbatang)
     : calculateBerat(barang);
+  const hargaSatuan = satuanHargaModal === 'kg' ? baseHargaModal * beratStandar : baseHargaModal;
   const hargaJasa = parseFloat(barang?.hargajasa || 0) || 0;
   const namaBarang = barang?.nama || 'Barang';
 

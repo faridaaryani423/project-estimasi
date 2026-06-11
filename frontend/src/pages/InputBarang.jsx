@@ -39,6 +39,7 @@ const InputBarang = () => {
     beratbatang: '', // kg per batang
     minWelding: '', // minimum panjang untuk welding (mm)
     hargamodal: '',
+    satuanHargaModal: 'batang',
     hargajasa: '',
     supplier: '',   // ← BARU
     foto: null
@@ -97,7 +98,7 @@ const InputBarang = () => {
   ];
 
   // Field-field yang termasuk "harga"
-  const HARGA_FIELDS = ['hargamodal', 'hargajasa'];
+  const HARGA_FIELDS = ['hargamodal', 'satuanHargaModal', 'hargajasa'];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -463,7 +464,33 @@ const InputBarang = () => {
               {/* Harga */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="hargamodal">Harga Modal (Rp)</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="hargamodal">Harga Modal (Rp)</Label>
+                    <div className="flex gap-3">
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="satuanHargaModal"
+                          value="batang"
+                          checked={formData.satuanHargaModal !== 'kg'}
+                          onChange={handleInputChange}
+                          className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
+                        />
+                        <span className="text-xs text-gray-600">Per Batang</span>
+                      </label>
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="satuanHargaModal"
+                          value="kg"
+                          checked={formData.satuanHargaModal === 'kg'}
+                          onChange={handleInputChange}
+                          className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
+                        />
+                        <span className="text-xs text-gray-600">Per Kg</span>
+                      </label>
+                    </div>
+                  </div>
                   <Input id="hargamodal" name="hargamodal" type="number" value={formData.hargamodal} onChange={handleInputChange} placeholder="500000" required className="input-focus" />
                 </div>
                 <div className="space-y-2">

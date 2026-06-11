@@ -188,7 +188,7 @@ const EditEstimasi = () => {
             items.push({ ...emptyItem(), barangId: String(matched.id), kodeItem, panjangJadi, jumlahKeperluan: jumlah });
           } else {
             notFoundNames.push(namaBarang);
-            items.push({ ...emptyItem(), barangId: '__manual__', kodeItem, panjangJadi, jumlahKeperluan: jumlah, namaManual: namaBarang, hargaManual });
+            items.push({ ...emptyItem(), barangId: '__manual__', kodeItem, panjangJadi, jumlahKeperluan: jumlah, namaManual: namaBarang, hargamodalManual: hargaManual });
           }
         }
 
@@ -940,6 +940,33 @@ const EditEstimasi = () => {
                           {/* Harga */}
                           <div className="space-y-2">
                             <Label className="text-xs text-gray-500 uppercase tracking-wide">Harga</Label>
+                            <div className="space-y-1 mb-2">
+                              <Label className="text-xs">Satuan Harga Modal</Label>
+                              <div className="flex gap-4">
+                                <label className="flex items-center gap-1.5 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`satuanHargaModal-${item.barangId}`}
+                                    value="batang"
+                                    checked={eb.satuanHargaModal !== 'kg'}
+                                    onChange={(e) => handleBarangFieldChange(item.barangId, 'satuanHargaModal', e.target.value)}
+                                    className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
+                                  />
+                                  <span className="text-xs font-medium text-gray-700">Per Batang</span>
+                                </label>
+                                <label className="flex items-center gap-1.5 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`satuanHargaModal-${item.barangId}`}
+                                    value="kg"
+                                    checked={eb.satuanHargaModal === 'kg'}
+                                    onChange={(e) => handleBarangFieldChange(item.barangId, 'satuanHargaModal', e.target.value)}
+                                    className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
+                                  />
+                                  <span className="text-xs font-medium text-gray-700">Per Kg</span>
+                                </label>
+                              </div>
+                            </div>
                             <div className="grid grid-cols-2 gap-2">
                               <div><Label className="text-xs">Harga Modal (Rp)</Label><Input type="number" {...field('hargamodal')} /></div>
                               <div><Label className="text-xs">Harga Jasa (Rp)</Label><Input type="number" {...field('hargajasa')} /></div>
