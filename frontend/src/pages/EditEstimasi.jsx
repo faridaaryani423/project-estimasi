@@ -152,12 +152,18 @@ const EditEstimasi = () => {
         const ws = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-        const namaEstimasi = String(rows[3]?.[1] || '').trim();
-        const namaClient = String(rows[4]?.[1] || '').trim();
-        const lokasi = String(rows[5]?.[1] || '').trim();
-        const kontakPerson = String(rows[6]?.[1] || '').trim();
-        const panjangRuangan = String(rows[7]?.[1] || '').trim();
-        const lebarRuangan = String(rows[8]?.[1] || '').trim();
+        const cleanExcelVal = (val) => {
+          const str = String(val || '').trim();
+          if (str.toLowerCase().includes('wajib diisi') || str.toLowerCase().includes('opsional')) return '';
+          return str;
+        };
+
+        const namaEstimasi = cleanExcelVal(rows[3]?.[1]);
+        const namaClient = cleanExcelVal(rows[4]?.[1]);
+        const lokasi = cleanExcelVal(rows[5]?.[1]);
+        const kontakPerson = cleanExcelVal(rows[6]?.[1]);
+        const panjangRuangan = cleanExcelVal(rows[7]?.[1]);
+        const lebarRuangan = cleanExcelVal(rows[8]?.[1]);
 
         if (!namaEstimasi) {
           toast.error('Nama Estimasi wajib diisi di template!');

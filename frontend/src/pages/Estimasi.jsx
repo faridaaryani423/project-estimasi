@@ -114,6 +114,13 @@ const Estimasi = () => {
       Number(v || 0).toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d });
     const fmtRp = (v) => `Rp. ${fmtN(v)}`;
 
+    const cleanText = (txt) => {
+      if (!txt) return '';
+      const lower = txt.toLowerCase();
+      if (lower.includes('wajib diisi') || lower.includes('opsional')) return '';
+      return txt;
+    };
+
     const printHeader = () => {
       doc.setFillColor(246, 248, 251);
       doc.rect(marginL, 7, pageWidth - marginL - marginR, 20, 'F');
@@ -126,8 +133,8 @@ const Estimasi = () => {
       doc.setFontSize(8);
       doc.text(`Tanggal : ${new Date(est.createdAt).toLocaleDateString('id-ID')}`, pageWidth - marginR, 12, { align: 'right' });
       doc.text(`No. Bukti : ${est.nomorEstimasi}`, pageWidth - marginR, 17, { align: 'right' });
-      doc.text(`Nama Proyek : ${est.namaEstimasi}`, marginL + 2, 17);
-      if (est.namaClient) doc.text(`Client : ${est.namaClient}`, marginL + 2, 22);
+      doc.text(`Nama Proyek : ${cleanText(est.namaEstimasi)}`, marginL + 2, 17);
+      if (cleanText(est.namaClient)) doc.text(`Client : ${cleanText(est.namaClient)}`, marginL + 2, 22);
       if (luasKerja > 0) {
         doc.text(
           `Dimensi Kerja : ${est.panjangRuangan || '-'} × ${est.lebarRuangan || '-'} m  (${Number(luasKerja).toFixed(2)} m²)`,
@@ -212,15 +219,29 @@ const Estimasi = () => {
           });
         } else {
           barAllocations = group.rows.flatMap((row, rIdx) => {
-            const kebutuhan      = row.breakdown?.kebutuhanBahan  || 1;
-            const panjangReal    = row.breakdown?.panjangRealTerpakai || 0;
-            const wasteTotal     = row.breakdown?.waste           || 0;
+            let kebutuhan      = row.breakdown?.kebutuhanBahan  || 1;
+            let panjangReal    = row.breakdown?.panjangRealTerpakai || 0;
+            let wasteTotal     = row.breakdown?.waste           || 0;
+
+            if (row.isManual) {
+              const pJadi = parseFloat(row.panjangJadi) || 0;
+              const qty = parseInt(row.jumlahKeperluan) || 0;
+              panjangReal = pJadi * qty;
+              if (panjangMentah > 0 && panjangReal > 0) {
+                kebutuhan = Math.ceil(panjangReal / panjangMentah);
+                wasteTotal = (kebutuhan * panjangMentah) - panjangReal;
+              } else {
+                kebutuhan = qty || 1;
+                wasteTotal = 0;
+              }
+            }
+
             const panjangPerBatang = kebutuhan > 0 ? panjangReal / kebutuhan  : panjangMentah;
             const sisaPerBatang    = kebutuhan > 0 ? wasteTotal  / kebutuhan  : 0;
-            return Array.from({ length: kebutuhan }, (_, i) => ({
-              batangNo      : rIdx * kebutuhan + i + 1,
+            return Array.from({ length: Math.max(1, kebutuhan) }, (_, i) => ({
+              batangNo      : rIdx * Math.max(1, kebutuhan) + i + 1,
               panjangTerpakai: panjangPerBatang,
-              sisa          : i === kebutuhan - 1 ? sisaPerBatang : 0,
+              sisa          : sisaPerBatang,
               wasteReusable : sisaPerBatang >= minWelding,
               items         : [{
                 label   : row.kodeItem || row.namaBarang || `Item${rIdx + 1}`,
@@ -251,52 +272,10 @@ const Estimasi = () => {
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
-      doc.text(`${new Date(est.createdAt).toLocaleDateString('id-ID')}   ${est.namaEstimasi}`, marginL, startY);
+      doc.text(`${new Date(est.createdAt).toLocaleDateString('id-ID')}   ${cleanText(est.namaEstimasi)}`, marginL, startY);
       startY += 3.5;
 
-      // ── Item manual ──
-      if (repItem.isManual) {
-        const qty      = group.rows.reduce((s, r) => s + (r.jumlahKeperluan || 0), 0);
-        const subtotal = group.rows.reduce((s, r) => s + (r.subtotal        || 0), 0);
-        const beratTot = group.rows.reduce((s, r) => s + (r.beratTotal || 0), 0);
-        
-        const spek = [];
-        if (repItem.jenisBentuk && repItem.jenisBentuk !== 'manual') spek.push(`Bentuk: ${repItem.jenisBentuk}`);
-        if (repItem.jenisBahan && repItem.jenisBahan !== 'Manual') spek.push(`Bahan: ${repItem.jenisBahan}`);
-        if (repItem.panjangMentah) spek.push(`Dim: ${repItem.panjangMentah}mm`);
-        if (repItem.beratPerBatang) spek.push(`Brt/Btg: ${repItem.beratPerBatang}kg`);
-        const spekStr = spek.length > 0 ? spek.join(' | ') : '-';
-        
-        const satuanHrgModal = repItem.breakdown?.satuanHargaModal === 'kg' ? 'Kg' : 'Btg';
-        const modalStr = `${fmtRp(repItem.hargaSatuan)} / ${satuanHrgModal}`;
-        const beratStr = beratTot > 0 ? `${fmtN(beratTot, 2)} kg` : '-';
-
-        autoTable(doc, {
-          startY,
-          head : [['Nama Barang', 'Spesifikasi', 'Supplier', 'Berat Total', 'Harga Modal', 'Harga Jasa', 'Harga Jual', 'Qty', 'Subtotal']],
-          body : [[
-            repItem.namaBarang, 
-            spekStr, 
-            repItem.supplier || '-', 
-            beratStr,
-            modalStr, 
-            fmtRp(repItem.hargaJasa), 
-            fmtRp(repItem.hargaJual), 
-            qty, 
-            fmtRp(subtotal)
-          ]],
-          theme: 'grid',
-          headStyles : { fillColor: [220, 220, 220], textColor: [20, 20, 20], fontStyle: 'bold', fontSize: 6.5, halign: 'center' },
-          styles     : { fontSize: 6.5, cellPadding: 1.5 },
-          margin     : { left: marginL, right: marginR },
-        });
-        grandHargaReal      += subtotal;
-        grandHargaPlusWaste += subtotal;
-        grandBeratReal      += beratTot;
-        grandBeratPlusWaste += beratTot;
-        startY = doc.lastAutoTable.finalY + 5;
-        return;
-      }
+      // ── Manual items now use the standard table format ──
 
       // ── Bangun baris tabel ──
       const tableBody    = [];
@@ -319,9 +298,9 @@ const Estimasi = () => {
         const qty         = row.jumlahKeperluan || 0;
         const kode        = row.kodeItem || row.namaBarang || repItem.namaBarang;
         const spesLabel   = `${alphaLabel(rowIdx)}. ${kode} ( ${fmtN(panjangJadiM, 1)} M, ${qty} Bh. )`;
-        const luasPek     = (row.luasPermukaanTotal || 0) > 0
+        const luasPek     = typeof row.luasPermukaanTotal === 'number'
           ? fmtN(row.luasPermukaanTotal, 2)
-          : (row.luasPermukaan || 0) > 0
+          : typeof row.luasPermukaan === 'number'
             ? fmtN(row.luasPermukaan, 2)
             : '-';
         if (barsForItem.length === 0) {
@@ -349,8 +328,8 @@ const Estimasi = () => {
 
           tableBody.push([
             bIdx === 0 ? spesLabel : '',
-            `${bIdx + 1} .  ${fmtN(panjangTerpakaiMm / 1000, 0)}`,
-            sisaM > 0 ? fmtN(sisaM, 2) : '-',
+            `${bIdx + 1} .  ${fmtN(panjangTerpakaiMm / 1000, 2)}`,
+            typeof sisaM === 'number' ? fmtN(sisaM, 2) : '-',
             fmtN(beratSisa, 2),
             fmtN(beratReal, 2),
             fmtN(beratStandar, 2),
@@ -362,11 +341,28 @@ const Estimasi = () => {
         });
       });
 
-      const stBeratReal      = summary.totalBeratReal    || 0;
-      const stBeratWaste     = summary.totalBeratWaste   || 0;
+      let stBeratReal      = summary.totalBeratReal    || 0;
+      let stBeratWaste     = summary.totalBeratWaste   || 0;
+      let stHargaReal      = summary.totalHargaReal    || 0;
+      let stHargaPemakaian = summary.totalHargaPemakaian || 0;
+
+      if (repItem.isManual) {
+        stBeratReal = group.rows.reduce((s, r) => s + (r.beratTotal || 0), 0);
+        stHargaReal = group.rows.reduce((s, r) => s + (r.subtotal || 0), 0);
+        stHargaPemakaian = stHargaReal;
+        
+        let totalPanjangReal = 0;
+        group.rows.forEach(r => {
+          totalPanjangReal += (parseFloat(r.panjangJadi) || 0) * (parseInt(r.jumlahKeperluan) || 0);
+        });
+        
+        if (panjangMentah > 0 && totalPanjangReal > 0) {
+           const totalBahan = Math.ceil(totalPanjangReal / panjangMentah);
+           stBeratWaste = stBeratReal * (((totalBahan * panjangMentah) - totalPanjangReal) / totalPanjangReal);
+        }
+      }
+
       const stBeratPlusWaste = stBeratReal + stBeratWaste;
-      const stHargaReal      = summary.totalHargaReal    || 0;
-      const stHargaPemakaian = summary.totalHargaPemakaian || 0;
       const stSisaMm         = barAllocations.reduce((s, b) => s + (b.sisa ?? 0), 0);
 
       grandBeratSisa      += stBeratWaste;
@@ -378,7 +374,7 @@ const Estimasi = () => {
       const subTotalStyle = { fontStyle: 'bold', fillColor: [240, 240, 240] };
       tableBody.push([
         { content: `SUB TOTAL   ${fmtN(barAllocations.length)} Btg`, colSpan: 2, styles: { ...subTotalStyle, halign: 'left' } },
-        { content: stSisaMm > 0 ? fmtN(stSisaMm / 1000, 2) : '-', styles: { ...subTotalStyle, halign: 'right' } },
+        { content: typeof stSisaMm === 'number' ? fmtN(stSisaMm / 1000, 2) : '-', styles: { ...subTotalStyle, halign: 'right' } },
         { content: fmtN(stBeratWaste, 2),      styles: { ...subTotalStyle, halign: 'right' } },
         { content: fmtN(stBeratReal, 2),       styles: { ...subTotalStyle, halign: 'right' } },
         { content: fmtN(stBeratPlusWaste, 2),  styles: { ...subTotalStyle, halign: 'right' } },
@@ -934,14 +930,29 @@ const Estimasi = () => {
                       group.totalJumlah         += item.jumlahKeperluan || 0;
                       group.finalLuasPermukaan  += parseFloat(item.luasPermukaanTotal || 0) || 0; // ← BARU
                       if (isManualItem) {
+                        const curPanjang = (parseFloat(item.panjangJadi) || 0) * (parseFloat(item.jumlahKeperluan) || 0);
                         if (group.count > 0) {
                           group.subtotal = (group.subtotal || 0) + (item.subtotal || 0);
                           group.finalBeratReal = (group.finalBeratReal || 0) + (item.beratTotal || 0);
+                          group.finalPanjangReal = (group.finalPanjangReal || 0) + curPanjang;
                         } else {
                           group.subtotal = item.subtotal || 0;
                           group.finalBeratReal = item.beratTotal || 0;
+                          group.finalPanjangReal = curPanjang;
                         }
-                        group.finalBeratPlusWaste = group.finalBeratReal;
+
+                        const pMentah = parseFloat(group.panjangMentah) || 0;
+                        if (pMentah > 0 && group.finalPanjangReal > 0) {
+                          group.totalBahan = Math.ceil(group.finalPanjangReal / pMentah);
+                          group.finalWaste = (group.totalBahan * pMentah) - group.finalPanjangReal;
+                          group.finalWastePercentage = (group.finalWaste / (group.totalBahan * pMentah)) * 100;
+                          group.finalBeratPlusWaste = group.finalBeratReal * ((group.totalBahan * pMentah) / group.finalPanjangReal);
+                        } else {
+                          group.totalBahan = 0; // Use totalJumlah later
+                          group.finalWaste = 0;
+                          group.finalWastePercentage = 0;
+                          group.finalBeratPlusWaste = group.finalBeratReal;
+                        }
                       } else {
                         if (itemIdx >= group.lastItemIndex) {
                           group.finalWaste           = item.breakdown?.waste           || 0;
@@ -968,10 +979,9 @@ const Estimasi = () => {
                           !!group.isManual ||
                           group.barangId === '__manual__' ||
                           group.jenisBahan === 'Manual';
-                        if (!isManualRow) {
-                          acc.panjangReal    += Number(group.finalPanjangReal    || 0);
-                          acc.panjangWaste   += Number(group.finalWaste          || 0);
-                        }
+
+                        acc.panjangReal    += Number(group.finalPanjangReal    || 0);
+                        acc.panjangWaste   += Number(group.finalWaste          || 0);
                         
                         acc.beratReal      += Number(group.finalBeratReal      || 0);
                         acc.beratPlusWaste += Number(group.finalBeratPlusWaste || 0);
@@ -1014,10 +1024,10 @@ const Estimasi = () => {
                             <span className="text-xs text-gray-500">{group.jenisBahan}</span>
                           </TableCell>
                           <TableCell>
-                            {isManualRow ? '-' : `${formatNumberWithSeparator(group.panjangMentah)} mm`}
+                            {Number(group.panjangMentah) > 0 ? `${formatNumberWithSeparator(group.panjangMentah)} mm` : '-'}
                           </TableCell>
                           <TableCell>
-                            {!isManualRow && effectiveLuasKerja > 0 ? (
+                            {effectiveLuasKerja > 0 ? (
                               <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium">
                                 {Number(effectiveLuasKerja).toFixed(2)} m²
                               </span>
@@ -1026,46 +1036,50 @@ const Estimasi = () => {
                             )}
                           </TableCell>
                           <TableCell className="font-semibold text-purple-600">
-                            {isManualRow ? group.totalJumlah : group.totalBahan}
+                            {isManualRow && group.totalBahan === 0 ? group.totalJumlah : group.totalBahan}
                           </TableCell>
                           <TableCell className="font-semibold text-emerald-700">
-                            {isManualRow
-                              ? '-'
-                              : `${formatNumberWithSeparator(Math.round(group.finalPanjangReal || 0))} mm`}
+                            {typeof group.finalPanjangReal === 'number'
+                              ? `${formatNumberWithSeparator(Math.round(group.finalPanjangReal))} mm`
+                              : '-'}
                           </TableCell>
                           <TableCell className="text-red-600">
-                            {isManualRow
-                              ? '-'
-                              : `${formatNumberWithSeparator(Math.round(group.finalWaste))} mm (${Math.round(wastePercentage)}%)`}
+                            {typeof group.finalWaste === 'number'
+                              ? `${formatNumberWithSeparator(Math.round(group.finalWaste))} mm (${Math.round(wastePercentage || 0)}%)`
+                              : '-'}
                           </TableCell>
                           <TableCell className="font-semibold text-cyan-700">
-                            {isManualRow
-                              ? '-'
-                              : `${Number(Math.max((group.finalBeratPlusWaste || 0) - (group.finalBeratReal || 0), 0)).toFixed(2)} kg`}
+                            {typeof group.finalBeratPlusWaste === 'number' && typeof group.finalBeratReal === 'number'
+                              ? `${Number(Math.max((group.finalBeratPlusWaste || 0) - (group.finalBeratReal || 0), 0)).toFixed(2)} kg`
+                              : '-'}
                           </TableCell>
                           <TableCell className="font-semibold text-blue-700">
-                            {Number(group.finalBeratReal || 0) > 0 ? `${Number(group.finalBeratReal).toFixed(2)} kg` : '-'}
+                            {typeof group.finalBeratReal === 'number' ? `${Number(group.finalBeratReal).toFixed(2)} kg` : '-'}
                           </TableCell>
                           <TableCell className="font-semibold text-indigo-700">
-                            {Number(group.finalBeratPlusWaste || 0) > 0 ? `${Number(group.finalBeratPlusWaste).toFixed(2)} kg` : '-'}
+                            {typeof group.finalBeratPlusWaste === 'number' ? `${Number(group.finalBeratPlusWaste).toFixed(2)} kg` : '-'}
                           </TableCell>
 
                           {/* ── LUAS PERMUKAAN CELL (BARU) ── */}
                           <TableCell className="font-semibold text-violet-700">
-                            {group.finalLuasPermukaan > 0
+                            {typeof group.finalLuasPermukaan === 'number'
                                 ? `${Number(group.finalLuasPermukaan).toFixed(2)} m²`
                                 : <span className="text-gray-400 text-xs">-</span>}
                           </TableCell>
 
                           <TableCell className="font-semibold text-emerald-600">
-                            {isManualRow
+                            {isManualRow && Number(group.subtotal || 0) > 0
                               ? `Rp ${(group.subtotal || 0).toLocaleString('id-ID')}`
-                              : `Rp ${Number(group.finalHargaPlusWaste || 0).toLocaleString('id-ID')}`}
+                              : Number(group.finalHargaPlusWaste || 0) > 0
+                                ? `Rp ${Number(group.finalHargaPlusWaste || 0).toLocaleString('id-ID')}`
+                                : '-'}
                           </TableCell>
                           <TableCell className="font-semibold text-amber-700">
-                            {isManualRow
+                            {isManualRow && Number(group.subtotal || 0) > 0
                               ? `Rp ${(group.subtotal || 0).toLocaleString('id-ID')}`
-                              : `Rp ${Number(group.finalHargaReal || 0).toLocaleString('id-ID')}`}
+                              : Number(group.finalHargaReal || 0) > 0
+                                ? `Rp ${Number(group.finalHargaReal || 0).toLocaleString('id-ID')}`
+                                : '-'}
                           </TableCell>
                         </TableRow>
                       );
