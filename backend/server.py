@@ -130,6 +130,18 @@ class EstimasiItem(BaseModel):
     luasPermukaanTotal: Optional[float] = None
     breakdown: Optional[dict] = None
     usedExistingWaste: Optional[float] = 0
+    panjangManual: Optional[str] = None
+    lebarManual: Optional[str] = None
+    tinggiManual: Optional[str] = None
+    diameterManual: Optional[str] = None
+    ketebalanManual: Optional[str] = None
+    tinggiWFManual: Optional[str] = None
+    lebarFlangeManual: Optional[str] = None
+    ketebalanWebManual: Optional[str] = None
+    ketebalanFlangeManual: Optional[str] = None
+    panjangPlatManual: Optional[str] = None
+    lebarPlatManual: Optional[str] = None
+    ketebalanPlatManual: Optional[str] = None
 
 class EstimasiCreate(BaseModel):
     namaClient: Optional[str] = None

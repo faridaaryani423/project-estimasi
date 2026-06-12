@@ -274,8 +274,18 @@ const EditEstimasi = () => {
             beratJenisManual: isItemManual ? (item.beratJenis?.toString() || '') : '',
             beratbatangManual: isItemManual ? (item.beratbatang?.toString() || '') : '',
             minWeldingManual: isItemManual ? (item.minWelding?.toString() || '') : '',
-            panjangManual: isItemManual ? (item.panjangMentah?.toString() || '') : '',
-            panjangPlatManual: isItemManual ? (item.panjangMentah?.toString() || '') : '',
+            panjangManual: isItemManual ? (item.panjangManual?.toString() || item.panjangMentah?.toString() || '') : '',
+            lebarManual: isItemManual ? (item.lebarManual?.toString() || '') : '',
+            tinggiManual: isItemManual ? (item.tinggiManual?.toString() || '') : '',
+            diameterManual: isItemManual ? (item.diameterManual?.toString() || '') : '',
+            ketebalanManual: isItemManual ? (item.ketebalanManual?.toString() || '') : '',
+            tinggiWFManual: isItemManual ? (item.tinggiWFManual?.toString() || '') : '',
+            lebarFlangeManual: isItemManual ? (item.lebarFlangeManual?.toString() || '') : '',
+            ketebalanWebManual: isItemManual ? (item.ketebalanWebManual?.toString() || '') : '',
+            ketebalanFlangeManual: isItemManual ? (item.ketebalanFlangeManual?.toString() || '') : '',
+            panjangPlatManual: isItemManual ? (item.panjangPlatManual?.toString() || item.panjangMentah?.toString() || '') : '',
+            lebarPlatManual: isItemManual ? (item.lebarPlatManual?.toString() || '') : '',
+            ketebalanPlatManual: isItemManual ? (item.ketebalanPlatManual?.toString() || '') : '',
           };
         }) || [emptyItem()]
       );
@@ -1079,7 +1089,16 @@ const EditEstimasi = () => {
                           onChange={(e) => handleItemChange(actualIdx, 'kodeItem', e.target.value)}
                         />
                       </div>
-                      <div className="col-span-2 flex gap-2 items-end">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Panjang Jadi (mm)</Label>
+                        <Input
+                          type="number"
+                          placeholder="600"
+                          value={cur.panjangJadi || ''}
+                          onChange={(e) => handleItemChange(actualIdx, 'panjangJadi', e.target.value)}
+                        />
+                      </div>
+                      <div className="flex gap-2 items-end">
                         <div className="flex-1 space-y-1">
                           <Label className="text-xs">Jumlah <span className="text-red-500">*</span></Label>
                           <Input
@@ -1092,10 +1111,10 @@ const EditEstimasi = () => {
                         {itemsWithSame.length > 1 && (
                           <Button
                             type="button"
-                            variant="ghost"
+                            variant="outline"
                             size="icon"
                             onClick={() => removeItemRow(actualIdx)}
-                            className="text-red-500 hover:bg-red-50"
+                            className="text-red-500 hover:bg-red-50 shrink-0"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
