@@ -607,19 +607,32 @@ const EstimasiForm = () => {
       }
 
       if (item.barangId === '__manual__') {
-        const namaValid = (item.namaManual || '').trim().length > 0;
-        const hargaValid = parseFloat(item.hargamodalManual || 0) > 0 || parseFloat(item.hargajasaManual || 0) > 0;
+        const jb = item.jenisBentukManual || 'custom';
+        const check = (val) => val !== undefined && val !== null && String(val).trim() !== '';
+
+        if (!check(item.namaManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Nama barang wajib diisi.`; break; }
         
-        if (!namaValid) {
-          hasInvalid = true;
-          errorMessage = `Baris ${i + 1} (Manual): Nama barang wajib diisi.`;
-          break;
+        if (jb === 'balok') {
+          if (!check(item.panjangManual) || !check(item.lebarManual) || !check(item.tinggiManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Panjang, Lebar, Tinggi wajib diisi.`; break; }
+        } else if (jb === 'tabung') {
+          if (!check(item.diameterManual) || !check(item.panjangManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Diameter dan Panjang wajib diisi.`; break; }
+        } else if (jb === 'custom') {
+          if (!check(item.panjangManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Panjang wajib diisi.`; break; }
+        } else if (jb === 'wf') {
+          if (!check(item.tinggiWFManual) || !check(item.lebarFlangeManual) || !check(item.ketebalanWebManual) || !check(item.ketebalanFlangeManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Dimensi WF wajib diisi lengkap.`; break; }
+        } else if (jb === 'plat') {
+          if (!check(item.panjangPlatManual) || !check(item.lebarPlatManual) || !check(item.ketebalanPlatManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Dimensi Plat wajib diisi lengkap.`; break; }
         }
-        if (!hargaValid) {
-          hasInvalid = true;
-          errorMessage = `Baris ${i + 1} (Manual): Harga modal atau harga jasa wajib diisi lebih dari 0.`;
-          break;
+
+        if (!['wf', 'plat', 'custom'].includes(jb) && !check(item.ketebalanManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Ketebalan wajib diisi.`; break; }
+
+        if (jb !== 'custom') {
+          if (!check(item.jenisBahanManual) || !check(item.beratJenisManual) || !check(item.minWeldingManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Jenis Bahan, Berat Jenis, Min Welding wajib diisi.`; break; }
         }
+
+        if (!check(item.beratbatangManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Berat per Batang wajib diisi.`; break; }
+        if (!check(item.hargamodalManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Harga Modal wajib diisi.`; break; }
+
         validItems.push(item);
       } else {
         if (!item.panjangJadi || parseFloat(item.panjangJadi) <= 0) {
@@ -734,16 +747,44 @@ const EstimasiForm = () => {
     if (!item || item.barangId !== '__manual__') return;
 
     const namaBarang = (item.namaManual || '').trim();
-    const hargaJual = parseFloat(item.hargaManual || 0);
+    const jb = item.jenisBentukManual || 'custom';
+    
+    const check = (val) => val !== undefined && val !== null && String(val).trim() !== '';
 
-    if (!namaBarang) {
-      toast.error('Nama barang wajib diisi sebelum menyimpan ke database.');
-      return;
+    if (!namaBarang) return toast.error('Nama barang wajib diisi.');
+    
+    if (jb === 'balok') {
+      if (!check(item.panjangManual)) return toast.error('Panjang wajib diisi.');
+      if (!check(item.lebarManual)) return toast.error('Lebar wajib diisi.');
+      if (!check(item.tinggiManual)) return toast.error('Tinggi wajib diisi.');
+    } else if (jb === 'tabung') {
+      if (!check(item.diameterManual)) return toast.error('Diameter wajib diisi.');
+      if (!check(item.panjangManual)) return toast.error('Panjang wajib diisi.');
+    } else if (jb === 'custom') {
+      if (!check(item.panjangManual)) return toast.error('Panjang wajib diisi.');
+    } else if (jb === 'wf') {
+      if (!check(item.tinggiWFManual)) return toast.error('Tinggi (H) wajib diisi.');
+      if (!check(item.lebarFlangeManual)) return toast.error('Lebar Flange (B) wajib diisi.');
+      if (!check(item.ketebalanWebManual)) return toast.error('Tebal Web (tw) wajib diisi.');
+      if (!check(item.ketebalanFlangeManual)) return toast.error('Tebal Flange (tf) wajib diisi.');
+    } else if (jb === 'plat') {
+      if (!check(item.panjangPlatManual)) return toast.error('Panjang Plat wajib diisi.');
+      if (!check(item.lebarPlatManual)) return toast.error('Lebar Plat wajib diisi.');
+      if (!check(item.ketebalanPlatManual)) return toast.error('Ketebalan Plat wajib diisi.');
     }
-    if (!hargaJual || hargaJual <= 0) {
-      toast.error('Harga jual wajib diisi sebelum menyimpan ke database.');
-      return;
+
+    if (!['wf', 'plat', 'custom'].includes(jb)) {
+      if (!check(item.ketebalanManual)) return toast.error('Ketebalan wajib diisi.');
     }
+
+    if (jb !== 'custom') {
+      if (!check(item.jenisBahanManual)) return toast.error('Jenis Bahan wajib diisi.');
+      if (!check(item.beratJenisManual)) return toast.error('Berat Jenis wajib diisi.');
+      if (!check(item.minWeldingManual)) return toast.error('Min. Ukuran Welding wajib diisi.');
+    }
+
+    if (!check(item.beratbatangManual)) return toast.error('Berat per Batang wajib diisi.');
+    if (!check(item.hargamodalManual)) return toast.error('Harga Modal wajib diisi.');
 
     const barangData = {
       nama: namaBarang,

@@ -450,12 +450,12 @@ const InputBarang = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="beratbatang">Berat per Batang (kg) <span className="text-red-500">*</span></Label>
-                    <Input id="beratbatang" name="beratbatang" data-testid="beratbatang-input" type="number" value={formData.beratbatang} onChange={handleInputChange} placeholder="50" className="input-focus" />
+                    <Input id="beratbatang" name="beratbatang" data-testid="beratbatang-input" type="number" value={formData.beratbatang} onChange={handleInputChange} placeholder="50" className="input-focus" required />
                   </div>
                   {formData.jenisBentuk !== 'custom' && (
                     <div className="space-y-2">
-                      <Label htmlFor="minWelding">Min. Ukuran Welding (mm)</Label>
-                      <Input id="minWelding" name="minWelding" data-testid="minWelding-input" type="number" value={formData.minWelding} onChange={handleInputChange} placeholder="50" className="input-focus" />
+                      <Label htmlFor="minWelding">Min. Ukuran Welding (mm) <span className="text-red-500">*</span></Label>
+                      <Input id="minWelding" name="minWelding" data-testid="minWelding-input" type="number" value={formData.minWelding} onChange={handleInputChange} placeholder="50" className="input-focus" required />
                     </div>
                   )}
                 </div>

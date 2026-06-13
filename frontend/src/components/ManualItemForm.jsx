@@ -125,7 +125,7 @@ const ManualItemForm = ({
           </div>
           {jenisBentuk !== 'custom' && (
             <div className="space-y-1">
-              <Label className="text-xs">Min. Ukuran Welding (mm)</Label>
+              <Label className="text-xs">Min. Ukuran Welding (mm) <span className="text-red-500">*</span></Label>
               <Input type="number" placeholder="50" {...f('minWeldingManual')} />
             </div>
           )}
@@ -180,7 +180,7 @@ const ManualItemForm = ({
                 }}
                 className="w-3.5 h-3.5 text-sky-600 rounded focus:ring-sky-500"
               />
-              <Label htmlFor={`hargaJasaCheckbox-${index}`} className="text-xs cursor-pointer">Harga Jasa (Rp)</Label>
+              <Label htmlFor={`hargaJasaCheckbox-${index}`} className="text-xs cursor-pointer">Harga Jasa (Rp) {isHargaJasaEnabled && <span className="text-red-500">*</span>}</Label>
             </div>
             <Input
               type="number"
