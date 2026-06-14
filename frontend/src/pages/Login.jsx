@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Lock, User } from 'lucide-react';
+import { Lock, User, AlertCircle, Clock } from 'lucide-react';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -15,18 +15,71 @@ const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  const [failedAttempts, setFailedAttempts] = useState(() => {
+    return parseInt(localStorage.getItem('loginFailedAttempts') || '0', 10);
+  });
+  const [cooldownRemaining, setCooldownRemaining] = useState(() => {
+    const cooldownUntil = parseInt(localStorage.getItem('loginCooldownUntil') || '0', 10);
+    const now = Date.now();
+    if (cooldownUntil > now) {
+      return Math.ceil((cooldownUntil - now) / 1000);
+    }
+    return 0;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('loginFailedAttempts', failedAttempts.toString());
+  }, [failedAttempts]);
+
+  useEffect(() => {
+    let timer;
+    if (cooldownRemaining > 0) {
+      timer = setInterval(() => {
+        setCooldownRemaining(prev => {
+          const newRemaining = prev - 1;
+          if (newRemaining <= 0) {
+            setFailedAttempts(0);
+            localStorage.removeItem('loginCooldownUntil');
+            localStorage.setItem('loginFailedAttempts', '0');
+            return 0;
+          }
+          return newRemaining;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldownRemaining]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (cooldownRemaining > 0) {
+      toast.error(`Silakan tunggu ${cooldownRemaining} detik lagi.`);
+      return;
+    }
+
     setLoading(true);
 
     try {
       const result = await login(username, password);
       
       if (result.success) {
+        setFailedAttempts(0);
+        localStorage.removeItem('loginFailedAttempts');
+        localStorage.removeItem('loginCooldownUntil');
         toast.success('Login berhasil!');
         navigate('/dashboard');
       } else {
-        toast.error(result.message);
+        const newFailedAttempts = failedAttempts + 1;
+        setFailedAttempts(newFailedAttempts);
+        
+        if (newFailedAttempts >= 5) {
+          setCooldownRemaining(60);
+          const cooldownUntil = Date.now() + 60000;
+          localStorage.setItem('loginCooldownUntil', cooldownUntil.toString());
+          toast.error('Terlalu banyak percobaan gagal. Silakan tunggu 60 detik.');
+        } else {
+          toast.error(result.message || 'Login gagal');
+        }
       }
     } catch (error) {
       toast.error('Terjadi kesalahan saat login');
@@ -34,6 +87,8 @@ const Login = () => {
       setLoading(false);
     }
   };
+
+  const isLocked = cooldownRemaining > 0;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50 p-4">
@@ -47,6 +102,26 @@ const Login = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-5">
+            {isLocked && (
+              <div className="bg-red-50 text-red-600 p-4 rounded-lg flex items-center gap-3 border border-red-200">
+                <Clock className="w-5 h-5 flex-shrink-0" />
+                <div className="text-sm font-medium">
+                  Terlalu banyak percobaan gagal.
+                  <br />
+                  Silakan tunggu {cooldownRemaining} detik.
+                </div>
+              </div>
+            )}
+
+            {!isLocked && failedAttempts > 0 && failedAttempts < 5 && (
+              <div className="bg-orange-50 text-orange-600 p-3 rounded-lg flex items-center gap-3 border border-orange-200">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <div className="text-sm font-medium">
+                  Tinggal {5 - failedAttempts}x percobaan
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="username" className="text-sm font-medium text-gray-700">
                 Username
@@ -62,6 +137,7 @@ const Login = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   className="pl-10 h-11 input-focus"
                   required
+                  disabled={loading || isLocked}
                 />
               </div>
             </div>
@@ -81,6 +157,7 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 h-11 input-focus"
                   required
+                  disabled={loading || isLocked}
                 />
               </div>
             </div>
@@ -89,9 +166,9 @@ const Login = () => {
               type="submit"
               data-testid="login-submit-button"
               className="w-full h-11 bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-700 hover:to-cyan-700 text-white font-medium btn-primary"
-              disabled={loading}
+              disabled={loading || isLocked}
             >
-              {loading ? 'Memproses...' : 'Masuk'}
+              {loading ? 'Memproses...' : (isLocked ? 'Terkunci' : 'Masuk')}
             </Button>
           </form>
         </CardContent>
