@@ -117,6 +117,7 @@ class EstimasiItem(BaseModel):
     hargaSatuan: float
     hargaJual: Optional[float] = None
     hargaJasa: Optional[float] = None
+    hargaModal: Optional[float] = None
     luasPekerjaan: Optional[float] = None
     subtotalMaterial: Optional[float] = None
     subtotalMaterialPemakaian: Optional[float] = None
@@ -142,6 +143,12 @@ class EstimasiItem(BaseModel):
     panjangPlatManual: Optional[str] = None
     lebarPlatManual: Optional[str] = None
     ketebalanPlatManual: Optional[str] = None
+    # Penawaran pricing fields
+    fromEstimasi: Optional[str] = None
+    hargaJualPerUnit: Optional[float] = None
+    subtotalJual: Optional[float] = None
+    namaManual: Optional[str] = None
+    satuanManual: Optional[str] = None
 
 class EstimasiCreate(BaseModel):
     namaClient: Optional[str] = None
@@ -183,6 +190,10 @@ class EstimasiRef(BaseModel):
     id: str
     nomor: str
     nama: str
+    # Penawaran pricing fields (Singkat mode)
+    dimensiKerja: Optional[float] = None
+    hargaJualPerM2: Optional[float] = None
+    subtotalJual: Optional[float] = None
 
 class PenawaranCreate(BaseModel):
     namaProject: str
@@ -196,6 +207,8 @@ class PenawaranCreate(BaseModel):
     totalBerat: Optional[float] = 0
     totalLuasPermukaan: Optional[float] = 0
     totalTitikWelding: Optional[int] = 0
+    totalDimensiKerja: Optional[float] = 0
+    tipePenawaran: str = "singkat"
 
 class PenawaranResponse(BaseModel):
     id: str
@@ -211,6 +224,8 @@ class PenawaranResponse(BaseModel):
     totalBerat: Optional[float] = 0
     totalLuasPermukaan: Optional[float] = 0
     totalTitikWelding: Optional[int] = 0
+    totalDimensiKerja: Optional[float] = 0
+    tipePenawaran: str = "singkat"
     createdAt: str
     updatedAt: Optional[str] = None
     status: str = "draft"

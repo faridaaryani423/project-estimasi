@@ -48,31 +48,31 @@ export const calculateBerat = (barang) => {
 /**
  * Calculate luas permukaan for painting
  */
-export const calculateLuasPermukaan = (barang) => {
+export const calculateLuasPermukaan = (barang, customLength = null) => {
   const jenisBentuk = barang.jenisBentuk || 'balok';
   let luasPermukaan = 0;
 
   try {
     if (jenisBentuk === 'balok') {
-      const p = parseFloat(barang.panjang) / 1000;
+      const p = parseFloat(customLength !== null ? customLength : barang.panjang) / 1000;
       const l = parseFloat(barang.lebar) / 1000;
       const t = parseFloat(barang.tinggi) / 1000;
       luasPermukaan = 2 * (p * l + p * t + l * t);
     } else if (jenisBentuk === 'tabung') {
       const r = (parseFloat(barang.diameter) / 2) / 1000;
-      const panjang = parseFloat(barang.panjang) / 1000;
+      const panjang = parseFloat(customLength !== null ? customLength : barang.panjang) / 1000;
       luasPermukaan = (2 * Math.PI * r * r) + (2 * Math.PI * r * panjang);
     } else if (jenisBentuk === 'wf') {
       const H = parseFloat(barang.tinggiWF) / 1000;
       const B = parseFloat(barang.lebarFlange) / 1000;
-      const panjang = parseFloat(barang.panjang) / 1000 || 1;
+      const panjang = parseFloat(customLength !== null ? customLength : barang.panjang) / 1000 || 1;
       luasPermukaan = (4 * B + 2 * H) * panjang;
     } else if (jenisBentuk === 'plat') {
-      const p = parseFloat(barang.panjangPlat) / 1000;
+      const p = parseFloat(customLength !== null ? customLength : barang.panjangPlat) / 1000;
       const l = parseFloat(barang.lebarPlat) / 1000;
       luasPermukaan = 2 * p * l;
     } else if (jenisBentuk === 'custom') {
-      const panjang = parseFloat(barang.panjang) / 1000;
+      const panjang = parseFloat(customLength !== null ? customLength : barang.panjang) / 1000;
       const ketebalan = parseFloat(barang.ketebalan) / 1000;
       luasPermukaan = 4 * panjang * ketebalan;
     }
@@ -752,7 +752,7 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
     totalBeratReal += allocation.summary.totalBeratReal || 0;
     totalLuasPermukaan += group.items.reduce((sum, item) => {
       const qty = parseInt(item.jumlahKeperluan) || 0;
-      return sum + calculateLuasPermukaan(group.barang) * qty;
+      return sum + calculateLuasPermukaan(group.barang, item.panjangJadi) * qty;
     }, 0);
     totalTitikWelding += allocation.totalTitikWelding || 0;
 
@@ -781,6 +781,7 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
         jumlahKeperluan: entry.jumlahKeperluan,
         volume: sourceItem.volume || null,
         hargaSatuan: allocation.summary.hargaSatuan,
+        hargaModal: parseFloat(group.barang.hargamodal || 0) || 0,
         hargaJasa: Math.round(parseFloat(group.barang.hargajasa || 0) || 0),
         luasPekerjaan,
         subtotalMaterial: Math.round(entry.subtotalMaterial),
@@ -791,9 +792,9 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
         beratPerBatang: allocation.summary.beratStandar,
         beratTotal: entry.beratReal,
         beratWaste: entry.beratWaste,
-        luasPermukaan: calculateLuasPermukaan(group.barang),
+        luasPermukaan: calculateLuasPermukaan(group.barang, entry.panjangJadi),
         luasPermukaanTotal:
-          calculateLuasPermukaan(group.barang) * (parseInt(entry.jumlahKeperluan) || 0),
+          calculateLuasPermukaan(group.barang, entry.panjangJadi) * (parseInt(entry.jumlahKeperluan) || 0),
         breakdown: {
           kebutuhanBahan: allocation.kebutuhanBahan,
           panjangRealTerpakai: allocation.panjangRealTerpakai,
@@ -873,6 +874,7 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
       volume: null,
       hargaSatuan: Math.round(hargaModal),
       hargaJual: Math.round(parseFloat(item.hargaManual || 0) || 0),
+      hargaModal: Math.round(hargaModal),
       hargaJasa: Math.round(hargaJasa),
       luasPekerjaan: luasPekerjaan,
       subtotalMaterial: Math.round(subtotalMaterial),
