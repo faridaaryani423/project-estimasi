@@ -813,9 +813,10 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
 
   // ✅ Manual items
   const manualDetails = manualItems.map((item) => {
-    const jumlahKeperluan = parseInt(item.jumlahKeperluan) || 0;
+    const isCustomShape = (item.jenisBentukManual || 'custom') === 'custom';
+    const jumlahKeperluan = isCustomShape ? 1 : (parseInt(item.jumlahKeperluan) || 0);
     const hargaModal = parseFloat(item.hargamodalManual || 0) || 0;
-    const satuanHargaModal = item.satuanHargaModalManual || 'batang';
+    const satuanHargaModal = isCustomShape ? 'batang' : (item.satuanHargaModalManual || 'batang');
     const hargaJasa = parseFloat(item.hargajasaManual || 0) || 0;
 
     // Mock barang untuk hitung berat & luas permukaan
@@ -836,10 +837,10 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
       beratJenis: item.beratJenisManual,
     };
 
-    const beratPerBatang = parseFloat(item.beratbatangManual || 0) > 0 ? parseFloat(item.beratbatangManual) : calculateBerat(mockBarang);
+    const beratPerBatang = isCustomShape ? 0 : (parseFloat(item.beratbatangManual || 0) > 0 ? parseFloat(item.beratbatangManual) : calculateBerat(mockBarang));
     const beratTotal = beratPerBatang * jumlahKeperluan;
 
-    const luasPermukaan = calculateLuasPermukaan(mockBarang);
+    const luasPermukaan = isCustomShape ? 0 : calculateLuasPermukaan(mockBarang);
     const luasPermukaanTotal = luasPermukaan * jumlahKeperluan;
 
     let subtotalMaterial = 0;

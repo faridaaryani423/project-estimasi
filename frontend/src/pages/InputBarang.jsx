@@ -343,10 +343,11 @@ const InputBarang = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Ukuran Barang (mm) <span className="text-red-500">*</span></Label>
-                
-                {formData.jenisBentuk === 'balok' && (
+              {formData.jenisBentuk !== 'custom' && (
+                <div className="space-y-2">
+                  <Label>Ukuran Barang (mm) <span className="text-red-500">*</span></Label>
+                  
+                  {formData.jenisBentuk === 'balok' && (
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <Label htmlFor="panjang" className="text-xs text-gray-600">Panjang</Label>
@@ -376,12 +377,7 @@ const InputBarang = () => {
                   </div>
                 )}
 
-                {formData.jenisBentuk === 'custom' && (
-                  <div>
-                    <Label htmlFor="panjang" className="text-xs text-gray-600">Panjang</Label>
-                    <Input id="panjang" name="panjang" data-testid="panjang-input" type="number" value={formData.panjang} onChange={handleInputChange} placeholder="1000" required className="input-focus" />
-                  </div>
-                )}
+                {/* removed custom rendering */}
 
                 {formData.jenisBentuk === 'wf' && (
                   <div className="grid grid-cols-2 gap-3">
@@ -421,6 +417,7 @@ const InputBarang = () => {
                   </div>
                 )}
               </div>
+              )}
 
               {/* Ketebalan field only for balok & tabung */}
               {!['wf', 'plat', 'custom'].includes(formData.jenisBentuk) && (
@@ -431,9 +428,10 @@ const InputBarang = () => {
               )}
 
               {/* Material Info */}
-              <div className="border-t pt-4 space-y-4">
-                <h3 className="font-semibold text-gray-900">Informasi Material</h3>
-                <div className="grid grid-cols-2 gap-4">
+              {formData.jenisBentuk !== 'custom' && (
+                <div className="border-t pt-4 space-y-4">
+                  <h3 className="font-semibold text-gray-900">Informasi Material</h3>
+                  <div className="grid grid-cols-2 gap-4">
                   {formData.jenisBentuk !== 'custom' && (
                     <div className="space-y-2">
                       <Label htmlFor="jenisBahan">Jenis Bahan <span className="text-red-500">*</span></Label>
@@ -460,6 +458,7 @@ const InputBarang = () => {
                   )}
                 </div>
               </div>
+              )}
 
               {/* Harga */}
               <div className="grid grid-cols-2 gap-4">
@@ -467,28 +466,32 @@ const InputBarang = () => {
                   <div className="flex items-center justify-between">
                     <Label htmlFor="hargamodal">Harga Modal (Rp)</Label>
                     <div className="flex gap-3">
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="satuanHargaModal"
-                          value="batang"
-                          checked={formData.satuanHargaModal !== 'kg'}
-                          onChange={handleInputChange}
-                          className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
-                        />
-                        <span className="text-xs text-gray-600">Per Batang</span>
-                      </label>
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="satuanHargaModal"
-                          value="kg"
-                          checked={formData.satuanHargaModal === 'kg'}
-                          onChange={handleInputChange}
-                          className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
-                        />
-                        <span className="text-xs text-gray-600">Per Kg</span>
-                      </label>
+                      {formData.jenisBentuk !== 'custom' && (
+                        <>
+                          <label className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="satuanHargaModal"
+                              value="batang"
+                              checked={formData.satuanHargaModal !== 'kg'}
+                              onChange={handleInputChange}
+                              className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
+                            />
+                            <span className="text-xs text-gray-600">Per Batang</span>
+                          </label>
+                          <label className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="satuanHargaModal"
+                              value="kg"
+                              checked={formData.satuanHargaModal === 'kg'}
+                              onChange={handleInputChange}
+                              className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
+                            />
+                            <span className="text-xs text-gray-600">Per Kg</span>
+                          </label>
+                        </>
+                      )}
                     </div>
                   </div>
                   <Input id="hargamodal" name="hargamodal" type="number" value={formData.hargamodal} onChange={handleInputChange} placeholder="500000" required className="input-focus" />

@@ -58,6 +58,7 @@ const ManualItemForm = ({
       </div>
 
       {/* Dimensi */}
+      {jenisBentuk !== 'custom' && (
       <div className="space-y-2">
         <Label className="text-xs">Ukuran Barang (mm) <span className="text-red-500">*</span></Label>
         {jenisBentuk === 'balok' && (
@@ -72,9 +73,6 @@ const ManualItemForm = ({
             <div><Label className="text-[10px] text-gray-500">Diameter</Label><Input type="number" placeholder="500" {...f('diameterManual')} /></div>
             <div><Label className="text-[10px] text-gray-500">Panjang</Label><Input type="number" placeholder="1000" {...f('panjangManual')} /></div>
           </div>
-        )}
-        {jenisBentuk === 'custom' && (
-          <div><Label className="text-[10px] text-gray-500">Panjang</Label><Input type="number" placeholder="1000" {...f('panjangManual')} /></div>
         )}
         {jenisBentuk === 'wf' && (
           <div className="grid grid-cols-2 gap-2">
@@ -92,6 +90,7 @@ const ManualItemForm = ({
           </div>
         )}
       </div>
+      )}
 
       {/* Ketebalan */}
       {!['wf', 'plat', 'custom'].includes(jenisBentuk) && (
@@ -102,6 +101,7 @@ const ManualItemForm = ({
       )}
 
       {/* Informasi Material */}
+      {jenisBentuk !== 'custom' && (
       <div className="border-t border-sky-200 pt-3 space-y-3">
         <h3 className="text-xs font-semibold text-gray-900">Informasi Material</h3>
         <div className="grid grid-cols-2 gap-3">
@@ -131,10 +131,12 @@ const ManualItemForm = ({
           )}
         </div>
       </div>
+      )}
 
       {/* Harga */}
       <div className="border-t border-sky-200 pt-3 space-y-3">
         {/* Satuan Harga Modal Custom per user request */}
+        {jenisBentuk !== 'custom' && (
         <div className="space-y-1">
           <Label className="text-xs">Satuan Harga Modal</Label>
           <div className="flex gap-4">
@@ -162,6 +164,7 @@ const ManualItemForm = ({
             </label>
           </div>
         </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">

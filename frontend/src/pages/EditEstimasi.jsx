@@ -513,8 +513,6 @@ const EditEstimasi = () => {
     } else if (jb === 'tabung') {
       if (!check(item.diameterManual)) return toast.error('Diameter wajib diisi.');
       if (!check(item.panjangManual)) return toast.error('Panjang wajib diisi.');
-    } else if (jb === 'custom') {
-      if (!check(item.panjangManual)) return toast.error('Panjang wajib diisi.');
     } else if (jb === 'wf') {
       if (!check(item.tinggiWFManual)) return toast.error('Tinggi (H) wajib diisi.');
       if (!check(item.lebarFlangeManual)) return toast.error('Lebar Flange (B) wajib diisi.');
@@ -534,9 +532,9 @@ const EditEstimasi = () => {
       if (!check(item.jenisBahanManual)) return toast.error('Jenis Bahan wajib diisi.');
       if (!check(item.beratJenisManual)) return toast.error('Berat Jenis wajib diisi.');
       if (!check(item.minWeldingManual)) return toast.error('Min. Ukuran Welding wajib diisi.');
+      if (!check(item.beratbatangManual)) return toast.error('Berat per Batang wajib diisi.');
     }
 
-    if (!check(item.beratbatangManual)) return toast.error('Berat per Batang wajib diisi.');
     if (!check(item.hargamodalManual)) return toast.error('Harga Modal wajib diisi.');
 
     const barangData = {
@@ -594,15 +592,20 @@ const EditEstimasi = () => {
       const item = selectedItems[i];
       if (!item.barangId) continue;
       
-      const jumlahValid = item.jumlahKeperluan && parseInt(item.jumlahKeperluan) > 0;
-      if (!jumlahValid) {
-        hasInvalid = true;
-        errorMessage = `Baris ${i + 1}: Jumlah keperluan harus lebih dari 0.`;
-        break;
+      const isManual = item.barangId === '__manual__';
+      const jb = isManual ? (item.jenisBentukManual || 'custom') : '';
+      const isCustomShape = isManual && jb === 'custom';
+
+      if (!isCustomShape) {
+        const jumlahValid = item.jumlahKeperluan && parseInt(item.jumlahKeperluan) > 0;
+        if (!jumlahValid) {
+          hasInvalid = true;
+          errorMessage = `Baris ${i + 1}: Jumlah keperluan harus lebih dari 0.`;
+          break;
+        }
       }
 
-      if (item.barangId === '__manual__') {
-        const jb = item.jenisBentukManual || 'custom';
+      if (isManual) {
         const check = (val) => val !== undefined && val !== null && String(val).trim() !== '';
 
         if (!check(item.namaManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Nama barang wajib diisi.`; break; }
@@ -611,8 +614,6 @@ const EditEstimasi = () => {
           if (!check(item.panjangManual) || !check(item.lebarManual) || !check(item.tinggiManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Panjang, Lebar, Tinggi wajib diisi.`; break; }
         } else if (jb === 'tabung') {
           if (!check(item.diameterManual) || !check(item.panjangManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Diameter dan Panjang wajib diisi.`; break; }
-        } else if (jb === 'custom') {
-          if (!check(item.panjangManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Panjang wajib diisi.`; break; }
         } else if (jb === 'wf') {
           if (!check(item.tinggiWFManual) || !check(item.lebarFlangeManual) || !check(item.ketebalanWebManual) || !check(item.ketebalanFlangeManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Dimensi WF wajib diisi lengkap.`; break; }
         } else if (jb === 'plat') {
@@ -623,9 +624,9 @@ const EditEstimasi = () => {
 
         if (jb !== 'custom') {
           if (!check(item.jenisBahanManual) || !check(item.beratJenisManual) || !check(item.minWeldingManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Jenis Bahan, Berat Jenis, Min Welding wajib diisi.`; break; }
+          if (!check(item.beratbatangManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Berat per Batang wajib diisi.`; break; }
         }
 
-        if (!check(item.beratbatangManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Berat per Batang wajib diisi.`; break; }
         if (!check(item.hargamodalManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Harga Modal wajib diisi.`; break; }
 
         validItems.push(item);
@@ -860,7 +861,7 @@ const EditEstimasi = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => addItemRowWithSameBarang(lastIdx)}
-                      disabled={!item.barangId}
+                      disabled={!item.barangId || (isManual && (item.jenisBentukManual || 'custom') === 'custom')}
                     >
                       <Plus className="w-4 h-4" />
                     </Button>
@@ -978,9 +979,7 @@ const EditEstimasi = () => {
                                 <div><Label className="text-xs">Ketebalan</Label><Input type="number" {...field('ketebalanPlat')} /></div>
                               </div>
                             )}
-                            {eb.jenisBentuk === 'custom' && (
-                              <div><Label className="text-xs">Panjang</Label><Input type="number" {...field('panjang')} /></div>
-                            )}
+                                  {/* removed custom rendering */}
                           </div>
 
                           {/* Material */}
@@ -1124,7 +1123,7 @@ const EditEstimasi = () => {
                 })}
 
                 {/* Kode item + jumlah untuk barang manual */}
-                {isManual && itemsWithSame.map((cur, sub) => {
+                {isManual && (item.jenisBentukManual || 'custom') !== 'custom' && itemsWithSame.map((cur, sub) => {
                   const actualIdx = index + sub;
                   return (
                     <div key={actualIdx} className="grid grid-cols-3 gap-3 items-end p-3 bg-white rounded-lg border">
