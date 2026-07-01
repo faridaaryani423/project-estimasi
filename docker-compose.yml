@@ -1,0 +1,41 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      # Pilih salah satu. Jika ingin aman (hanya bisa diakses dari server itu sendiri), gunakan 127.0.0.1
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+      DB_NAME: project_estimasi
+      JWT_SECRET: weld-planner-secret-key-2024
+      # Gabungkan origin menggunakan koma jika backend Anda mendukung format ini
+      CORS_ORIGINS: http://localhost:3000,https://estimasi.hegarsumberkreasi.co.id:8080
+    depends_on:
+      - mongo
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Hanya boleh ada satu. Sesuaikan dengan tujuan build saat ini.
+        REACT_APP_API_URL: https://estimasi.hegarsumberkreasi.co.id:8080/api
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:3000:80"
+
+volumes:
+  mongo_data:
