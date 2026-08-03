@@ -23,7 +23,9 @@ const ManualItemForm = ({
 
   return (
     <div className="mt-2 p-4 bg-sky-50 rounded-lg border border-sky-200 space-y-4">
-      <p className="text-xs font-semibold text-sky-700 uppercase tracking-wide">Detail Barang Manual</p>
+      <div className="flex justify-between items-center">
+        <p className="text-xs font-semibold text-sky-700 uppercase tracking-wide">Detail Barang Manual</p>
+      </div>
 
       {/* Nama Barang */}
       <div className="space-y-1">
@@ -57,7 +59,15 @@ const ManualItemForm = ({
         </div>
       </div>
 
-      {/* Dimensi */}
+      {/* Jumlah khusus Custom (Pcs/Unit) */}
+      {jenisBentuk === 'custom' && (
+        <div className="space-y-1 pt-2">
+          <Label className="text-xs">Jumlah (Pcs/Unit) <span className="text-red-500">*</span></Label>
+          <Input type="number" placeholder="Contoh: 10" {...f('jumlahKeperluan')} />
+        </div>
+      )}
+
+      {/* Dimensi & Ketebalan */}
       {jenisBentuk !== 'custom' && (
       <div className="space-y-2">
         <Label className="text-xs">Ukuran Barang (mm) <span className="text-red-500">*</span></Label>
@@ -92,7 +102,6 @@ const ManualItemForm = ({
       </div>
       )}
 
-      {/* Ketebalan */}
       {!['wf', 'plat', 'custom'].includes(jenisBentuk) && (
         <div className="space-y-1">
           <Label className="text-xs">Ketebalan Barang (mm) <span className="text-red-500">*</span></Label>
@@ -105,66 +114,64 @@ const ManualItemForm = ({
       <div className="border-t border-sky-200 pt-3 space-y-3">
         <h3 className="text-xs font-semibold text-gray-900">Informasi Material</h3>
         <div className="grid grid-cols-2 gap-3">
-          {jenisBentuk !== 'custom' && (
-            <div className="space-y-1">
-              <Label className="text-xs">Jenis Bahan <span className="text-red-500">*</span></Label>
-              <Input placeholder="Contoh: Baja ST37" {...f('jenisBahanManual')} />
-            </div>
-          )}
-          {jenisBentuk !== 'custom' && (
-            <div className="space-y-1">
-              <Label className="text-xs">Berat Jenis (kg/m³) <span className="text-red-500">*</span></Label>
-              <Input type="number" placeholder="7850" {...f('beratJenisManual')} />
-            </div>
-          )}
+          <div className="space-y-1">
+            <Label className="text-xs">Jenis Bahan <span className="text-red-500">*</span></Label>
+            <Input placeholder="Contoh: Baja ST37" {...f('jenisBahanManual')} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Berat Jenis (kg/m³) <span className="text-red-500">*</span></Label>
+            <Input type="number" placeholder="7850" {...f('beratJenisManual')} />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
             <Label className="text-xs">Berat per Batang (kg) <span className="text-red-500">*</span></Label>
             <Input type="number" placeholder="50" {...f('beratbatangManual')} />
           </div>
-          {jenisBentuk !== 'custom' && (
-            <div className="space-y-1">
-              <Label className="text-xs">Min. Ukuran Welding (mm) <span className="text-red-500">*</span></Label>
-              <Input type="number" placeholder="50" {...f('minWeldingManual')} />
-            </div>
-          )}
+          <div className="space-y-1">
+            <Label className="text-xs">Min. Ukuran Welding (mm) <span className="text-red-500">*</span></Label>
+            <Input type="number" placeholder="50" {...f('minWeldingManual')} />
+          </div>
         </div>
       </div>
       )}
 
       {/* Harga */}
       <div className="border-t border-sky-200 pt-3 space-y-3">
-        {/* Satuan Harga Modal Custom per user request */}
-        {jenisBentuk !== 'custom' && (
+        {/* Satuan Harga Modal */}
         <div className="space-y-1">
           <Label className="text-xs">Satuan Harga Modal</Label>
-          <div className="flex gap-4">
-            <label className="flex items-center gap-1.5 cursor-pointer">
-              <input
-                type="radio"
-                name={`satuanHargaModalManual-${index}`}
-                value="batang"
-                checked={item.satuanHargaModalManual !== 'kg'}
-                onChange={(e) => onItemChange(index, 'satuanHargaModalManual', e.target.value)}
-                className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
-              />
-              <span className="text-xs font-medium text-gray-700">Per Batang</span>
-            </label>
-            <label className="flex items-center gap-1.5 cursor-pointer">
-              <input
-                type="radio"
-                name={`satuanHargaModalManual-${index}`}
-                value="kg"
-                checked={item.satuanHargaModalManual === 'kg'}
-                onChange={(e) => onItemChange(index, 'satuanHargaModalManual', e.target.value)}
-                className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
-              />
-              <span className="text-xs font-medium text-gray-700">Per Kg</span>
-            </label>
-          </div>
+          {jenisBentuk !== 'custom' ? (
+            <div className="flex gap-4">
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="radio"
+                  name={`satuanHargaModalManual-${index}`}
+                  value="batang"
+                  checked={item.satuanHargaModalManual !== 'kg'}
+                  onChange={(e) => onItemChange(index, 'satuanHargaModalManual', e.target.value)}
+                  className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
+                />
+                <span className="text-xs font-medium text-gray-700">Per Batang</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="radio"
+                  name={`satuanHargaModalManual-${index}`}
+                  value="kg"
+                  checked={item.satuanHargaModalManual === 'kg'}
+                  onChange={(e) => onItemChange(index, 'satuanHargaModalManual', e.target.value)}
+                  className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
+                />
+                <span className="text-xs font-medium text-gray-700">Per Kg</span>
+              </label>
+            </div>
+          ) : (
+            <div className="text-xs font-medium text-gray-700 capitalize bg-gray-50 px-2 py-1.5 rounded-md border border-gray-200 w-max">
+              Per Unit / Pcs
+            </div>
+          )}
         </div>
-        )}
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">

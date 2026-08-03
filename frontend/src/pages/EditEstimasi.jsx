@@ -11,7 +11,7 @@ import {
   Download, FileUp
 } from 'lucide-react';
 import { barangAPI, estimasiAPI } from '@/services/api';
-import { calculateLuasPermukaan, calculateMaterialGroupAllocation, calculateWithWasteReuse } from '@/utils/calculationEngine';
+import { calculateLuasPermukaan, calculateMaterialGroupAllocation, calculateBerat } from '@/utils/calculationEngine';
 import { formatNumberWithSeparator } from '@/lib/utils';
 import BarangCombobox from '@/components/BarangCombobox';
 import ManualItemForm from '@/components/ManualItemForm';
@@ -86,8 +86,10 @@ const EditEstimasi = () => {
 
   const [formData, setFormData] = useState({
     namaEstimasi: '',
+    metodeDimensiKerja: 'pxl', // 'pxl' | 'luas_langsung'
     panjangRuangan: '',
     lebarRuangan: '',
+    luasRuanganInput: '',
     namaClient: '',
     lokasi: '',
     kontakPerson: '',
@@ -241,13 +243,18 @@ const EditEstimasi = () => {
       }
 
       setEstimasi(found);
+      // Deteksi metode dimensi dari data tersimpan
+      const metodeDimensi = found.metodeDimensiKerja ||
+        (found.luasRuanganInput ? 'luas_langsung' : 'pxl');
       setFormData({
-        namaEstimasi:   found.namaEstimasi || '',
-        panjangRuangan: found.panjangRuangan?.toString() || '',
-        lebarRuangan:   found.lebarRuangan?.toString()   || '',
-        namaClient:     found.namaClient   || '',
-        lokasi:         found.lokasi        || '',
-        kontakPerson:   found.kontakPerson  || '',
+        namaEstimasi:      found.namaEstimasi || '',
+        metodeDimensiKerja: metodeDimensi,
+        panjangRuangan:    found.panjangRuangan?.toString() || '',
+        lebarRuangan:      found.lebarRuangan?.toString()   || '',
+        luasRuanganInput:  found.luasRuanganInput?.toString() || '',
+        namaClient:        found.namaClient   || '',
+        lokasi:            found.lokasi        || '',
+        kontakPerson:      found.kontakPerson  || '',
       });
 
       setSelectedItems(
@@ -577,6 +584,240 @@ const EditEstimasi = () => {
 
   const [savingManualBarang, setSavingManualBarang] = useState({});
 
+  // ─── Kalkulasi material (versi internal, mirror EstimasiForm) ─────
+  const calculateWithWasteReuse = (validItems, luasPekerjaan) => {
+    const materialItems = validItems.filter((item) => item.barangId && item.barangId !== '__manual__');
+    const manualItems   = validItems.filter((item) => item.barangId === '__manual__');
+
+    let totalEstimasi = 0, totalBeratReal = 0, totalLuasPermukaan = 0, totalTitikWelding = 0;
+    const itemDetails = [];
+    const groupMap    = new Map();
+    const groupOrder  = [];
+
+    materialItems.forEach((item) => {
+      if (!groupMap.has(item.barangId)) {
+        const barang = getEffectiveBarang(item.barangId);
+        if (!barang) return;
+        const group = { barangId: item.barangId, barang, items: [] };
+        groupMap.set(item.barangId, group);
+        groupOrder.push(group);
+      }
+      groupMap.get(item.barangId).items.push(item);
+    });
+
+    groupOrder.forEach((group) => {
+      const allocation = calculateMaterialGroupAllocation(group.barang, group.items, luasPekerjaan);
+      totalEstimasi       += allocation.itemBreakdown.reduce((sum, e) => sum + (e.subtotal || 0), 0);
+      totalBeratReal      += allocation.summary.totalBeratReal || 0;
+      totalLuasPermukaan  += group.items.reduce((sum, item) => {
+        const qty = parseInt(item.jumlahKeperluan) || 0;
+        return sum + calculateLuasPermukaan(group.barang) * qty;
+      }, 0);
+      totalTitikWelding   += allocation.totalTitikWelding || 0;
+
+      allocation.itemBreakdown.forEach((entry) => {
+        const sourceItem = group.items.find((item, idx) => idx + 1 === entry.itemNo) || group.items[0];
+        const itemSpecificGuides = (allocation.cuttingGuide || []).filter((guide) => {
+          if (typeof guide?.itemNo !== 'undefined') return Number(guide.itemNo) === Number(entry.itemNo);
+          if (Array.isArray(guide?.pieces)) return guide.pieces.some((piece) => Number(piece?.itemNo) === Number(entry.itemNo));
+          return false;
+        });
+        itemDetails.push({
+          barangId:                 sourceItem.barangId,
+          kodeItem:                 entry.kodeItem || sourceItem.kodeItem || null,
+          namaBarang:               entry.namaBarang || group.barang.nama,
+          jenisBentuk:              group.barang.jenisBentuk || 'balok',
+          ukuranMentah:             group.barang.ukuran,
+          panjangMentah:            allocation.summary.stockLength,
+          panjangJadi:              entry.panjangJadi,
+          jenisBahan:               group.barang.jenisBahan,
+          beratJenis:               group.barang.beratJenis,
+          minWelding:               group.barang.minWelding,
+          jumlahKeperluan:          entry.jumlahKeperluan,
+          volume:                   sourceItem.volume || null,
+          hargaSatuan:              allocation.summary.hargaSatuan,
+          hargaModal:               parseFloat(group.barang.hargamodal || 0) || 0,
+          hargaJasa:                Math.round(parseFloat(group.barang.hargajasa || 0) || 0),
+          luasPekerjaan,
+          subtotalMaterial:         Math.round(entry.subtotalMaterial),
+          subtotalMaterialPemakaian: Math.round(entry.subtotalMaterialPemakaian),
+          subtotalMaterialWaste:    Math.round(entry.subtotalMaterialWaste),
+          subtotalJasa:             Math.round(entry.subtotalJasa),
+          subtotal:                 Math.round(entry.subtotal),
+          beratPerBatang:           allocation.summary.beratStandar,
+          beratTotal:               entry.beratReal,
+          beratWaste:               entry.beratWaste,
+          luasPermukaan:            calculateLuasPermukaan(group.barang),
+          luasPermukaanTotal:       calculateLuasPermukaan(group.barang) * (parseInt(entry.jumlahKeperluan) || 0),
+          breakdown: {
+            kebutuhanBahan:    allocation.kebutuhanBahan,
+            panjangRealTerpakai: allocation.panjangRealTerpakai,
+            waste:             allocation.waste,
+            wastePercentage:   allocation.wastePercentage,
+            totalTitikWelding: allocation.totalTitikWelding,
+            cuttingGuide:      itemSpecificGuides,
+            barAllocations:    allocation.barAllocations || [],
+            needsWelding:      allocation.needsWelding,
+            summary:           allocation.summary,
+          },
+          usedExistingWaste: 0,
+        });
+      });
+    });
+
+    // ── Manual items ──
+    const manualDetails = manualItems.map((item) => {
+      const hargaModal    = parseFloat(item.hargamodalManual || 0) || 0;
+      const hargaJasa     = parseFloat(item.hargajasaManual  || 0) || 0;
+      const isCustomShape = (item.jenisBentukManual || 'custom') === 'custom';
+
+      if (!isCustomShape) {
+        const jumlahKeperluan = parseInt(item.jumlahKeperluan) || 0;
+        const satuanHargaModal = item.satuanHargaModalManual || 'batang';
+
+        const mockBarang = {
+          jenisBentuk:      item.jenisBentukManual || 'balok',
+          panjang:          item.panjangManual,
+          lebar:            item.lebarManual,
+          tinggi:           item.tinggiManual,
+          diameter:         item.diameterManual,
+          ketebalan:        item.ketebalanManual,
+          tinggiWF:         item.tinggiWFManual,
+          lebarFlange:      item.lebarFlangeManual,
+          ketebalanWeb:     item.ketebalanWebManual,
+          ketebalanFlange:  item.ketebalanFlangeManual,
+          panjangPlat:      item.panjangPlatManual,
+          lebarPlat:        item.lebarPlatManual,
+          ketebalanPlat:    item.ketebalanPlatManual,
+          beratJenis:       item.beratJenisManual,
+        };
+
+        const beratPerBatang   = parseFloat(item.beratbatangManual || 0) > 0 ? parseFloat(item.beratbatangManual) : calculateBerat(mockBarang);
+        const beratTotal       = beratPerBatang * jumlahKeperluan;
+        const luasPermukaan    = calculateLuasPermukaan(mockBarang);
+        const luasPermukaanTotal = luasPermukaan * jumlahKeperluan;
+
+        let subtotalMaterial = 0;
+        if (satuanHargaModal === 'kg') {
+          subtotalMaterial = hargaModal * beratTotal;
+        } else {
+          subtotalMaterial = hargaModal * jumlahKeperluan;
+        }
+        const subtotalJasaVal = hargaJasa > 0 && luasPekerjaan > 0 ? hargaJasa * luasPekerjaan : 0;
+        const subtotal        = subtotalMaterial + subtotalJasaVal;
+
+        totalEstimasi      += subtotal;
+        totalBeratReal     += beratTotal;
+        totalLuasPermukaan += luasPermukaanTotal;
+
+        return {
+          ...item,
+          barangId:               '__manual__',
+          kodeItem:               item.kodeItem || null,
+          isManual:               true,
+          namaBarang:             item.namaManual || 'Barang Manual',
+          jenisBentuk:            item.jenisBentukManual || 'manual',
+          supplier:               item.supplierManual || null,
+          jenisBahan:             item.jenisBahanManual || 'Manual',
+          beratJenis:             item.beratJenisManual || null,
+          beratbatang:            item.beratbatangManual || null,
+          minWelding:             item.minWeldingManual || null,
+          ukuranMentah:           null,
+          panjangMentah:          parseFloat(item.panjangManual || item.panjangPlatManual || 0),
+          panjangJadi:            parseFloat(item.panjangJadi) || 0,
+          jumlahKeperluan,
+          volume:                 null,
+          hargaSatuan:            Math.round(hargaModal),
+          hargaJual:              Math.round(hargaModal),
+          hargaModal:             Math.round(hargaModal),
+          hargaJasa:              Math.round(hargaJasa),
+          luasPekerjaan,
+          subtotalMaterial:       Math.round(subtotalMaterial),
+          subtotalMaterialPemakaian: Math.round(subtotalMaterial),
+          subtotalMaterialWaste:  0,
+          subtotalJasa:           Math.round(subtotalJasaVal),
+          subtotal:               Math.round(subtotal),
+          beratPerBatang,
+          beratTotal,
+          beratWaste:             0,
+          luasPermukaan,
+          luasPermukaanTotal,
+          breakdown: {
+            kebutuhanBahan:    jumlahKeperluan,
+            panjangRealTerpakai: 0,
+            waste:             0,
+            wastePercentage:   0,
+            totalTitikWelding: 0,
+            cuttingGuide:      [],
+            barAllocations:    [],
+            needsWelding:      false,
+            satuanHargaModal,
+          },
+          usedExistingWaste: 0,
+        };
+      } else {
+        // Custom: harga modal × jumlah unit
+        const jumlahUnit      = parseFloat(item.jumlahKeperluan) || 0;
+        const subtotalMaterial = hargaModal * jumlahUnit;
+        const subtotalJasaVal = hargaJasa > 0 && luasPekerjaan > 0 ? hargaJasa * luasPekerjaan : 0;
+        const subtotal        = subtotalMaterial + subtotalJasaVal;
+
+        totalEstimasi += subtotal;
+
+        return {
+          ...item,
+          barangId:               '__manual__',
+          kodeItem:               item.kodeItem || null,
+          isManual:               true,
+          namaBarang:             item.namaManual || 'Barang Manual',
+          jenisBentuk:            'custom',
+          supplier:               item.supplierManual || null,
+          jenisBahan:             'Manual',
+          jumlahKeperluan:        jumlahUnit,
+          beratPerBatang:         0,
+          beratTotal:             0,
+          beratWaste:             0,
+          hargaSatuan:            Math.round(hargaModal),
+          hargaJual:              Math.round(hargaModal),
+          hargaModal:             Math.round(hargaModal),
+          hargaJasa:              Math.round(hargaJasa),
+          luasPekerjaan,
+          subtotalMaterial:       Math.round(subtotalMaterial),
+          subtotalMaterialPemakaian: Math.round(subtotalMaterial),
+          subtotalMaterialWaste:  0,
+          subtotalJasa:           Math.round(subtotalJasaVal),
+          subtotal:               Math.round(subtotal),
+          luasPermukaan:          0,
+          luasPermukaanTotal:     0,
+          ukuranMentah:           null,
+          panjangMentah:          0,
+          panjangJadi:            0,
+          volume:                 null,
+          breakdown: {
+            kebutuhanBahan:    jumlahUnit,
+            panjangRealTerpakai: 0,
+            waste:             0,
+            wastePercentage:   0,
+            totalTitikWelding: 0,
+            cuttingGuide:      [],
+            barAllocations:    [],
+            needsWelding:      false,
+            satuanHargaModal:  'pcs',
+          },
+          usedExistingWaste: 0,
+        };
+      }
+    });
+
+    return {
+      itemDetails:        [...itemDetails, ...manualDetails].filter(Boolean),
+      totalEstimasi,
+      totalBeratReal,
+      totalLuasPermukaan,
+      totalTitikWelding,
+    };
+  };
+
   // ─── Kalkulasi & simpan ───────────────────────────────────────────
   const handleUpdate = async () => {
     if (!formData.namaEstimasi) {
@@ -650,10 +891,13 @@ const EditEstimasi = () => {
       return;
     }
 
-    const luasPekerjaan =
-      formData.panjangRuangan && formData.lebarRuangan
-        ? parseFloat(formData.panjangRuangan) * parseFloat(formData.lebarRuangan)
-        : 0;
+    const metodeDimensi  = formData.metodeDimensiKerja || 'pxl';
+    const luasPekerjaan  = (() => {
+      if (metodeDimensi === 'pxl') {
+        return (parseFloat(formData.panjangRuangan) || 0) * (parseFloat(formData.lebarRuangan) || 0);
+      }
+      return parseFloat(formData.luasRuanganInput) || 0;
+    })();
 
     const hasJasa = validItems.some((item) => {
       if (item.barangId === '__manual__') return false;
@@ -670,20 +914,22 @@ const EditEstimasi = () => {
       setSaving(true);
 
       const { itemDetails, totalEstimasi, totalBeratReal, totalLuasPermukaan, totalTitikWelding } =
-        calculateWithWasteReuse(validItems, luasPekerjaan, barangList);
+        calculateWithWasteReuse(validItems, luasPekerjaan);
 
       const payload = {
-        namaEstimasi:   formData.namaEstimasi,
-        namaClient:     formData.namaClient   || null,
-        lokasi:         formData.lokasi        || null,
-        kontakPerson:   formData.kontakPerson  || null,
-        panjangRuangan: formData.panjangRuangan ? parseFloat(formData.panjangRuangan) : null,
-        lebarRuangan:   formData.lebarRuangan  ? parseFloat(formData.lebarRuangan)   : null,
-        luasRuangan:    luasPekerjaan > 0      ? luasPekerjaan                        : null,
-        items:          itemDetails,
-        totalEstimasi:       Math.round(totalEstimasi),
-        totalBeratReal:      Math.round(totalBeratReal * 100) / 100,
-        totalLuasPermukaan:  Math.round(totalLuasPermukaan * 100) / 100,
+        namaEstimasi:       formData.namaEstimasi,
+        namaClient:         formData.namaClient   || null,
+        lokasi:             formData.lokasi        || null,
+        kontakPerson:       formData.kontakPerson  || null,
+        metodeDimensiKerja: formData.metodeDimensiKerja || 'pxl',
+        panjangRuangan:     formData.panjangRuangan ? parseFloat(formData.panjangRuangan) : null,
+        lebarRuangan:       formData.lebarRuangan   ? parseFloat(formData.lebarRuangan)   : null,
+        luasRuanganInput:   formData.luasRuanganInput ? parseFloat(formData.luasRuanganInput) : null,
+        luasRuangan:        luasPekerjaan > 0 ? luasPekerjaan : null,
+        items:              itemDetails,
+        totalEstimasi:      Math.round(totalEstimasi),
+        totalBeratReal:     Math.round(totalBeratReal * 100) / 100,
+        totalLuasPermukaan: Math.round(totalLuasPermukaan * 100) / 100,
         totalTitikWelding,
       };
 
@@ -796,25 +1042,49 @@ const EditEstimasi = () => {
           </div>
 
           <div className="space-y-2">
-            <Label>Dimensi Kerja</Label>
-            <div className="flex items-center gap-3">
-              <Input
-                name="panjangRuangan"
-                type="number"
-                value={formData.panjangRuangan}
-                onChange={handleInputChange}
-                placeholder="Panjang (m)"
-              />
-              <span className="text-gray-500 font-semibold">×</span>
-              <Input
-                name="lebarRuangan"
-                type="number"
-                value={formData.lebarRuangan}
-                onChange={handleInputChange}
-                placeholder="Lebar (m)"
-              />
+            <Label>Dimensi Kerja (Luas Pekerjaan)</Label>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="metodeDimensiKerja"
+                    value="pxl"
+                    checked={formData.metodeDimensiKerja !== 'luas_langsung'}
+                    onChange={handleInputChange}
+                    className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Panjang × Lebar</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="metodeDimensiKerja"
+                    value="luas_langsung"
+                    checked={formData.metodeDimensiKerja === 'luas_langsung'}
+                    onChange={handleInputChange}
+                    className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Input Luas Langsung</span>
+                </label>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {formData.metodeDimensiKerja !== 'luas_langsung' ? (
+                  <>
+                    <Input name="panjangRuangan" type="number" value={formData.panjangRuangan} onChange={handleInputChange} placeholder="Panjang (m)" />
+                    <span className="text-gray-500 font-semibold">×</span>
+                    <Input name="lebarRuangan" type="number" value={formData.lebarRuangan} onChange={handleInputChange} placeholder="Lebar (m)" />
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 w-full sm:w-1/2">
+                    <Input name="luasRuanganInput" type="number" value={formData.luasRuanganInput} onChange={handleInputChange} placeholder="Luas (m²)" />
+                    <span className="text-gray-500 font-medium text-sm whitespace-nowrap">m²</span>
+                  </div>
+                )}
+              </div>
             </div>
-            {formData.panjangRuangan && formData.lebarRuangan && (
+            {formData.metodeDimensiKerja !== 'luas_langsung' && formData.panjangRuangan && formData.lebarRuangan && (
               <p className="text-sm text-blue-600 font-medium">
                 Luas: {(parseFloat(formData.panjangRuangan) * parseFloat(formData.lebarRuangan)).toFixed(2)} m²
               </p>
@@ -856,15 +1126,18 @@ const EditEstimasi = () => {
                 <div className="flex items-center justify-between">
                   <Label className="font-semibold">Item #{index + 1}</Label>
                   <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => addItemRowWithSameBarang(lastIdx)}
-                      disabled={!item.barangId || (isManual && (item.jenisBentukManual || 'custom') === 'custom')}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
+                    {!(isManual && (item.jenisBentukManual || 'custom') === 'custom') && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addItemRowWithSameBarang(lastIdx)}
+                        className="px-3"
+                        disabled={!item.barangId}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       variant="outline"

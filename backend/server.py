@@ -77,7 +77,6 @@ class BarangBase(BaseModel):
     satuanHargaModal: Optional[str] = "batang"
     beratbatang: Optional[str] = None
     minWelding: Optional[str] = "50"
-    hargamodal: str
     hargajasa: Optional[str] = None
     ukuran: Optional[str] = None
     foto: Optional[str] = None
@@ -155,8 +154,10 @@ class EstimasiCreate(BaseModel):
     lokasi: Optional[str] = None
     kontakPerson: Optional[str] = None
     namaEstimasi: str
+    metodeDimensiKerja: Optional[str] = 'pxl'
     panjangRuangan: Optional[float] = None
     lebarRuangan: Optional[float] = None
+    luasRuanganInput: Optional[float] = None
     luasRuangan: Optional[float] = None
     items: List[EstimasiItem]
     totalEstimasi: float
@@ -171,8 +172,10 @@ class EstimasiResponse(BaseModel):
     namaClient: Optional[str] = None
     lokasi: Optional[str] = None
     kontakPerson: Optional[str] = None
+    metodeDimensiKerja: Optional[str] = 'pxl'
     panjangRuangan: Optional[float] = None
     lebarRuangan: Optional[float] = None
+    luasRuanganInput: Optional[float] = None
     luasRuangan: Optional[float] = None
     items: List[EstimasiItem]
     totalEstimasi: float
@@ -542,9 +545,8 @@ async def delete_penawaran(penawaran_id: str, current_user: dict = Depends(get_c
 
 # ========================= INIT DATA =========================
 
-@api_router.post("/init")
-async def initialize_data():
-    """Initialize default data (users and barang)"""
+async def _do_initialize_data():
+    """Core logic for initializing default data (users and barang). Can be called from startup or API."""
     
     # Check if users exist
     user_count = await db.users.count_documents({})
@@ -661,7 +663,12 @@ async def initialize_data():
         ]
         await db.barang.insert_many(default_barang)
         logger.info("Default barang created")
-    
+
+
+@api_router.post("/init")
+async def initialize_data():
+    """Initialize default data via API endpoint (users and barang)"""
+    await _do_initialize_data()
     return {"message": "Data initialized"}
 
 # ========================= SETUP =========================
@@ -680,7 +687,7 @@ app.add_middleware(
 async def startup():
     # Initialize data on startup
     try:
-        await initialize_data()
+        await _do_initialize_data()
     except Exception as e:
         logger.error(f"Error initializing data: {e}")
 
