@@ -740,6 +740,83 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
   });
 
   groupOrder.forEach((group) => {
+    // Jika barang master bertipe custom, jangan buat cutting allocation
+    if (group.barang.jenisBentuk === 'custom') {
+      const hargaModal = parseFloat(group.barang.hargamodal || 0) || 0;
+      const hargaJasa = parseFloat(group.barang.hargajasa || 0) || 0;
+      const satuan = group.barang.satuan || 'Bh';
+
+      group.items.forEach((item, index) => {
+        const qty = parseInt(item.jumlahKeperluan) || 0;
+        const subtotalMaterial = qty * hargaModal;
+        const subtotalJasa = hargaJasa > 0 && luasPekerjaan > 0 ? Math.round(hargaJasa * luasPekerjaan) : Math.round(hargaJasa * qty);
+        const subtotal = subtotalMaterial + subtotalJasa;
+
+        totalEstimasi += subtotal;
+
+        itemDetails.push({
+          barangId: group.barang.id,
+          kodeItem: item.kodeItem || null,
+          namaBarang: item.namaBarang || group.barang.nama,
+          jenisBentuk: 'custom',
+          supplier: group.barang.supplier || item.supplier || null,
+          ukuranMentah: null,
+          panjangMentah: 0,
+          panjangJadi: 0,
+          jenisBahan: group.barang.jenisBahan || 'Custom',
+          beratJenis: null,
+          beratbatang: null,
+          minWelding: '0',
+          jumlahKeperluan: qty,
+          satuan: satuan,
+          satuanBarang: satuan,
+          volume: null,
+          hargaSatuan: Math.round(hargaModal),
+          hargaModal: Math.round(hargaModal),
+          hargaJasa: Math.round(hargaJasa),
+          luasPekerjaan,
+          subtotalMaterial: Math.round(subtotalMaterial),
+          subtotalMaterialPemakaian: Math.round(subtotalMaterial),
+          subtotalMaterialWaste: 0,
+          subtotalJasa: Math.round(subtotalJasa),
+          subtotal: Math.round(subtotal),
+          beratPerBatang: 0,
+          beratTotal: 0,
+          beratWaste: 0,
+          luasPermukaan: 0,
+          luasPermukaanTotal: 0,
+          breakdown: {
+            isCustom: true,
+            kebutuhanBahan: qty,
+            panjangRealTerpakai: 0,
+            waste: 0,
+            wastePercentage: 0,
+            totalTitikWelding: 0,
+            cuttingGuide: [],
+            barAllocations: [],
+            needsWelding: false,
+            summary: {
+              stockLength: 0,
+              minWelding: 0,
+              hargaSatuan: Math.round(hargaModal),
+              beratStandar: 0,
+              totalBars: 0,
+              totalUsedLength: 0,
+              totalWasteLength: 0,
+              totalBeratReal: 0,
+              totalBeratWaste: 0,
+              totalHargaReal: Math.round(subtotalMaterial),
+              totalHargaPemakaian: Math.round(subtotalMaterial),
+              selisihBiayaWaste: 0,
+              totalPieces: qty,
+            },
+          },
+          usedExistingWaste: 0,
+        });
+      });
+      return;
+    }
+
     const allocation = calculateMaterialGroupAllocation(
       group.barang,
       group.items,
@@ -772,6 +849,8 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
         kodeItem: entry.kodeItem || sourceItem.kodeItem || null,
         namaBarang: entry.namaBarang || group.barang.nama,
         jenisBentuk: group.barang.jenisBentuk || 'balok',
+        satuan: group.barang.satuan || 'batang',
+        satuanBarang: group.barang.satuan || 'batang',
         ukuranMentah: group.barang.ukuran,
         panjangMentah: allocation.summary.stockLength,
         panjangJadi: entry.panjangJadi,
@@ -814,14 +893,86 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
   // ✅ Manual items
   const manualDetails = manualItems.map((item) => {
     const isCustomShape = (item.jenisBentukManual || 'custom') === 'custom';
-    const jumlahKeperluan = isCustomShape ? 1 : (parseInt(item.jumlahKeperluan) || 0);
-    const hargaModal = parseFloat(item.hargamodalManual || 0) || 0;
-    const satuanHargaModal = isCustomShape ? 'batang' : (item.satuanHargaModalManual || 'batang');
+    const jumlahKeperluan = parseInt(item.jumlahKeperluan) || 0;
+    const hargaModal = parseFloat(item.hargamodalManual || item.hargaSatuan || 0) || 0;
+    const satuan = item.satuanBarangManual || item.satuanManual || item.satuan || (isCustomShape ? 'Bh' : 'batang');
+    const satuanHargaModal = isCustomShape ? 'unit' : (item.satuanHargaModalManual || 'batang');
     const hargaJasa = parseFloat(item.hargajasaManual || 0) || 0;
 
-    // Mock barang untuk hitung berat & luas permukaan
+    if (isCustomShape) {
+      const subtotalMaterial = hargaModal * jumlahKeperluan;
+      const subtotalJasaVal = hargaJasa > 0 && luasPekerjaan > 0 ? Math.round(hargaJasa * luasPekerjaan) : Math.round(hargaJasa * jumlahKeperluan);
+      const subtotal = subtotalMaterial + subtotalJasaVal;
+
+      totalEstimasi += subtotal;
+
+      return {
+        barangId: '__manual__',
+        kodeItem: item.kodeItem || null,
+        isManual: true,
+        namaBarang: item.namaManual || 'Barang Custom',
+        jenisBentuk: 'custom',
+        supplier: item.supplierManual || null,
+        jenisBahan: item.jenisBahanManual || 'Custom',
+        beratJenis: null,
+        beratbatang: null,
+        minWelding: '0',
+        ukuranMentah: null,
+        panjangMentah: 0,
+        panjangJadi: 0,
+        jumlahKeperluan,
+        satuan,
+        satuanBarang: satuan,
+        volume: null,
+        hargaSatuan: Math.round(hargaModal),
+        hargaJual: Math.round(parseFloat(item.hargaManual || item.hargaJual || 0) || 0),
+        hargaModal: Math.round(hargaModal),
+        hargaJasa: Math.round(hargaJasa),
+        luasPekerjaan: luasPekerjaan,
+        subtotalMaterial: Math.round(subtotalMaterial),
+        subtotalMaterialPemakaian: Math.round(subtotalMaterial),
+        subtotalMaterialWaste: 0,
+        subtotalJasa: Math.round(subtotalJasaVal),
+        subtotal: Math.round(subtotal),
+        beratPerBatang: 0,
+        beratTotal: 0,
+        beratWaste: 0,
+        luasPermukaan: 0,
+        luasPermukaanTotal: 0,
+        breakdown: {
+          isCustom: true,
+          kebutuhanBahan: jumlahKeperluan,
+          panjangRealTerpakai: 0,
+          waste: 0,
+          wastePercentage: 0,
+          totalTitikWelding: 0,
+          cuttingGuide: [],
+          barAllocations: [],
+          needsWelding: false,
+          summary: {
+            stockLength: 0,
+            minWelding: 0,
+            hargaSatuan: Math.round(hargaModal),
+            beratStandar: 0,
+            totalBars: 0,
+            totalUsedLength: 0,
+            totalWasteLength: 0,
+            totalBeratReal: 0,
+            totalBeratWaste: 0,
+            totalHargaReal: Math.round(subtotalMaterial),
+            totalHargaPemakaian: Math.round(subtotalMaterial),
+            selisihBiayaWaste: 0,
+            totalPieces: jumlahKeperluan,
+          },
+          satuanHargaModal: 'unit',
+        },
+        usedExistingWaste: 0,
+      };
+    }
+
+    // Mock barang untuk hitung berat & luas permukaan non-custom manual
     const mockBarang = {
-      jenisBentuk: item.jenisBentukManual || 'custom',
+      jenisBentuk: item.jenisBentukManual || 'balok',
       panjang: item.panjangManual,
       lebar: item.lebarManual,
       tinggi: item.tinggiManual,
@@ -837,10 +988,10 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
       beratJenis: item.beratJenisManual,
     };
 
-    const beratPerBatang = isCustomShape ? 0 : (parseFloat(item.beratbatangManual || 0) > 0 ? parseFloat(item.beratbatangManual) : calculateBerat(mockBarang));
+    const beratPerBatang = parseFloat(item.beratbatangManual || 0) > 0 ? parseFloat(item.beratbatangManual) : calculateBerat(mockBarang);
     const beratTotal = beratPerBatang * jumlahKeperluan;
 
-    const luasPermukaan = isCustomShape ? 0 : calculateLuasPermukaan(mockBarang);
+    const luasPermukaan = calculateLuasPermukaan(mockBarang);
     const luasPermukaanTotal = luasPermukaan * jumlahKeperluan;
 
     let subtotalMaterial = 0;
@@ -862,8 +1013,10 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
       kodeItem: item.kodeItem || null,
       isManual: true,
       namaBarang: item.namaManual || 'Barang Manual',
-      jenisBentuk: item.jenisBentukManual || 'manual',
+      jenisBentuk: item.jenisBentukManual || 'balok',
       supplier: item.supplierManual || null,
+      satuan: satuan,
+      satuanBarang: satuan,
       jenisBahan: item.jenisBahanManual || 'Manual',
       beratJenis: item.beratJenisManual || null,
       beratbatang: item.beratbatangManual || null,

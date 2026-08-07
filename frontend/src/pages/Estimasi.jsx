@@ -106,9 +106,11 @@ const Estimasi = () => {
       9: { cellWidth: potonganWidth },
     };
 
-    const luasKerja =
-      Number(est.luasRuangan || 0) ||
-      (parseFloat(est.panjangRuangan || 0) || 0) * (parseFloat(est.lebarRuangan || 0) || 0);
+    const nilaiDim =
+      est.nilaiDimensiKerja ??
+      est.luasRuangan ??
+      ((parseFloat(est.panjangRuangan || 0) || 0) * (parseFloat(est.lebarRuangan || 0) || 0));
+    const satuanDim = est.satuanDimensiKerja || 'm²';
 
     const fmtN  = (v, d = 0) =>
       Number(v || 0).toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -135,13 +137,12 @@ const Estimasi = () => {
       doc.text(`No. Bukti : ${est.nomorEstimasi}`, pageWidth - marginR, 17, { align: 'right' });
       doc.text(`Nama Proyek : ${cleanText(est.namaEstimasi)}`, marginL + 2, 17);
       if (cleanText(est.namaClient)) doc.text(`Client : ${cleanText(est.namaClient)}`, marginL + 2, 22);
-      if (luasKerja > 0) {
-        doc.text(
-          `Dimensi Kerja : ${est.panjangRuangan || '-'} × ${est.lebarRuangan || '-'} m  (${Number(luasKerja).toFixed(2)} m²)`,
-          pageWidth - marginR,
-          22,
-          { align: 'right' }
-        );
+      if (nilaiDim > 0) {
+        let dimText = `Dimensi Kerja : ${Number(nilaiDim).toLocaleString('id-ID', { maximumFractionDigits: 2 })} ${satuanDim}`;
+        if (est.panjangRuangan && est.lebarRuangan && satuanDim === 'm²') {
+          dimText = `Dimensi Kerja : ${est.panjangRuangan} × ${est.lebarRuangan} m  (${Number(nilaiDim).toFixed(2)} m²)`;
+        }
+        doc.text(dimText, pageWidth - marginR, 22, { align: 'right' });
       }
       doc.setLineWidth(0.3);
       doc.line(marginL, 28, pageWidth - marginR, 28);
@@ -182,7 +183,109 @@ const Estimasi = () => {
       const repItem  = group.rows[0];
       const lastItem = group.rows[group.rows.length - 1];
       const summary  = lastItem?.breakdown?.summary || {};
+      const alphaLabel = (i) => String.fromCharCode(97 + i);
 
+      const isCustomGroup = group.rows.some(
+        (r) =>
+          r.jenisBentuk === 'custom' ||
+          r.jenisBentukManual === 'custom' ||
+          r.breakdown?.isCustom === true ||
+          r.breakdown?.summary?.isCustom === true
+      );
+
+      // ── Custom Items (baut, mur, aksesoris custom dll) ──
+      if (isCustomGroup) {
+        const customSatuan = repItem.satuan || repItem.satuanBarang || repItem.satuanManual || 'Bh';
+        const customHargaSatuan = parseFloat(repItem.hargaSatuan || repItem.hargaModal || summary.hargaSatuan || 0) || 0;
+        const matLabel = `${repItem.namaBarang}  Harga Satuan : ${fmtRp(customHargaSatuan)} / ${customSatuan}`;
+
+        ensurePageSpace(30);
+
+        doc.setFillColor(238, 242, 247);
+        doc.rect(marginL, startY - 2.8, pageWidth - marginL - marginR, 4.3, 'F');
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text(matLabel, marginL + 1.2, startY);
+        startY += 5;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.text(`${new Date(est.createdAt).toLocaleDateString('id-ID')}   ${cleanText(est.namaEstimasi)}`, marginL, startY);
+        startY += 3.5;
+
+        const tableBody = [];
+        let totalCustomQty = 0;
+        let totalCustomSubtotal = 0;
+
+        group.rows.forEach((row, rowIdx) => {
+          const qty = parseFloat(row.jumlahKeperluan) || 0;
+          const rowHarga = parseFloat(row.hargaSatuan || row.hargaModal || customHargaSatuan) || 0;
+          const subtotal = parseFloat(row.subtotal) || (qty * rowHarga);
+          totalCustomQty += qty;
+          totalCustomSubtotal += subtotal;
+
+          const kode = row.kodeItem ? `${row.kodeItem}. ` : '';
+          const spesLabel = `${alphaLabel(rowIdx)}. ${kode}${row.namaBarang || repItem.namaBarang} ( ${fmtN(qty)} ${customSatuan} )`;
+
+          tableBody.push([
+            spesLabel,
+            `${fmtN(qty)} ${customSatuan}`,
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            fmtRp(subtotal),
+            fmtRp(subtotal),
+            '-',
+          ]);
+        });
+
+        grandHargaPlusWaste += totalCustomSubtotal;
+        grandHargaReal += totalCustomSubtotal;
+
+        const subTotalStyle = { fontStyle: 'bold', fillColor: [240, 240, 240] };
+        tableBody.push([
+          { content: `SUB TOTAL   ${fmtN(totalCustomQty)} ${customSatuan}`, colSpan: 2, styles: { ...subTotalStyle, halign: 'left' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
+          { content: fmtRp(totalCustomSubtotal), styles: { ...subTotalStyle, halign: 'right' } },
+          { content: fmtRp(totalCustomSubtotal), styles: { ...subTotalStyle, halign: 'right' } },
+          { content: '', styles: subTotalStyle },
+        ]);
+
+        autoTable(doc, {
+          startY,
+          head: [[
+            'Spesifikasi / Uraian', 'Pemakaian', 'Panjang\nSisa', 'Berat\nSisa',
+            'Berat\nReal', 'Berat\n+ Waste', 'Luas\n(M2)',
+            'Harga\n+ Waste', 'Harga\nReal', 'Potongan',
+          ]],
+          body       : tableBody,
+          theme      : 'grid',
+          tableWidth : tableAvailWidth,
+          headStyles : {
+            fillColor : [215, 220, 227], textColor: [20, 20, 20],
+            fontStyle : 'bold', fontSize: 6.5, halign: 'center',
+            lineColor : [130, 130, 130], lineWidth: 0.1,
+          },
+          styles: {
+            fontSize: 6.5, cellPadding: 1.3, overflow: 'linebreak',
+            lineColor: [150, 150, 150], lineWidth: 0.08,
+          },
+          alternateRowStyles: { fillColor: [252, 252, 252] },
+          columnStyles: sharedColStyles,
+          margin: { left: marginL, right: marginR },
+        });
+
+        startY = doc.lastAutoTable.finalY + 5;
+        return;
+      }
+
+      // ── Structural Items (batang, plat, pipa, wf dll) ──
       const panjangMentah   = summary.stockLength  || 6000;
       const panjangMentahM  = panjangMentah / 1000;
       const beratStandar    = summary.beratStandar  || repItem.beratPerBatang || 0;
@@ -275,8 +378,6 @@ const Estimasi = () => {
       doc.text(`${new Date(est.createdAt).toLocaleDateString('id-ID')}   ${cleanText(est.namaEstimasi)}`, marginL, startY);
       startY += 3.5;
 
-      // ── Manual items now use the standard table format ──
-
       // ── Bangun baris tabel ──
       const tableBody    = [];
       const barsByItem   = new Map();
@@ -288,8 +389,6 @@ const Estimasi = () => {
           if (!existing.find((b) => b.batangNo === bar.batangNo)) existing.push(bar);
         });
       });
-
-      const alphaLabel = (i) => String.fromCharCode(97 + i);
 
       group.rows.forEach((row, rowIdx) => {
         const itemNo      = rowIdx + 1;
@@ -781,23 +880,24 @@ const Estimasi = () => {
                   </CardContent>
                 </Card>
 
-                {/* Dimensi Kerja */}
+                {/* Dimensi Pekerjaan */}
                 <Card className="bg-blue-50">
                   <CardContent className="pt-6 flex items-center gap-3">
                     <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
                       <Ruler className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-600">Dimensi Kerja</p>
+                      <p className="text-xs text-gray-600">Dimensi Pekerjaan</p>
                       <p className="text-lg font-bold">
                         {(() => {
-                          const luasKerja =
-                            Number(viewingEstimasi.luasRuangan || 0) ||
-                            (parseFloat(viewingEstimasi.panjangRuangan || 0) || 0) *
-                              (parseFloat(viewingEstimasi.lebarRuangan || 0) || 0);
-                          return Number(luasKerja).toFixed(2);
-                        })()}{' '}
-                        m²
+                          const nilai =
+                            viewingEstimasi.nilaiDimensiKerja ??
+                            viewingEstimasi.luasRuangan ??
+                            ((parseFloat(viewingEstimasi.panjangRuangan || 0) || 0) *
+                              (parseFloat(viewingEstimasi.lebarRuangan || 0) || 0));
+                          const satuan = viewingEstimasi.satuanDimensiKerja || 'm²';
+                          return `${Number(nilai || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 })} ${satuan}`;
+                        })()}
                       </p>
                     </div>
                   </CardContent>
@@ -1007,13 +1107,14 @@ const Estimasi = () => {
                     );
 
                     const rows = groupedValues.map((group, idx) => {
+                      const isCustom = group.jenisBentuk === 'custom' || group.breakdown?.isCustom === true || group.jenisBentukManual === 'custom';
                       const isManualRow =
                         !!group.isManual ||
                         group.barangId === '__manual__' ||
                         group.jenisBahan === 'Manual';
                       const wastePercentage = group.finalWastePercentage || 0;
                       const effectiveLuasKerja = resolvedDimensiKerja > 0 
-                        ? resolvedDimensiKerja : Number(group.luasPekerjaan || 0); // Hindari pembagian dengan nol
+                        ? resolvedDimensiKerja : Number(group.luasPekerjaan || 0);
 
                       return (
                         <TableRow key={idx}>
@@ -1021,65 +1122,61 @@ const Estimasi = () => {
                           <TableCell className="font-medium">
                             {group.namaBarang}
                             <br />
-                            <span className="text-xs text-gray-500">{group.jenisBahan}</span>
+                            <span className="text-xs text-gray-500">{group.jenisBahan || (isCustom ? 'Custom' : '-')}</span>
                           </TableCell>
                           <TableCell>
-                            {Number(group.panjangMentah) > 0 ? `${formatNumberWithSeparator(group.panjangMentah)} mm` : '-'}
+                            {!isCustom && Number(group.panjangMentah) > 0 ? `${formatNumberWithSeparator(group.panjangMentah)} mm` : '-'}
                           </TableCell>
                           <TableCell>
                             {effectiveLuasKerja > 0 ? (
                               <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium">
-                                {Number(effectiveLuasKerja).toFixed(2)} m²
+                                {Number(effectiveLuasKerja).toFixed(2)} {viewingEstimasi.satuanDimensiKerja || 'm²'}
                               </span>
                             ) : (
                               <span className="text-gray-400 text-xs">-</span>
                             )}
                           </TableCell>
                           <TableCell className="font-semibold text-purple-600">
-                            {isManualRow && group.totalBahan === 0 ? group.totalJumlah : group.totalBahan}
+                            {isCustom ? `${group.totalJumlah} ${group.satuan || group.satuanBarang || 'Bh'}` : (isManualRow && group.totalBahan === 0 ? group.totalJumlah : group.totalBahan)}
                           </TableCell>
                           <TableCell className="font-semibold text-emerald-700">
-                            {typeof group.finalPanjangReal === 'number'
+                            {!isCustom && typeof group.finalPanjangReal === 'number' && group.finalPanjangReal > 0
                               ? `${formatNumberWithSeparator(Math.round(group.finalPanjangReal))} mm`
                               : '-'}
                           </TableCell>
                           <TableCell className="text-red-600">
-                            {typeof group.finalWaste === 'number'
+                            {!isCustom && typeof group.finalWaste === 'number' && group.finalWaste > 0
                               ? `${formatNumberWithSeparator(Math.round(group.finalWaste))} mm (${Math.round(wastePercentage || 0)}%)`
                               : '-'}
                           </TableCell>
                           <TableCell className="font-semibold text-cyan-700">
-                            {typeof group.finalBeratPlusWaste === 'number' && typeof group.finalBeratReal === 'number'
+                            {!isCustom && typeof group.finalBeratPlusWaste === 'number' && typeof group.finalBeratReal === 'number' && (group.finalBeratPlusWaste - group.finalBeratReal) > 0
                               ? `${Number(Math.max((group.finalBeratPlusWaste || 0) - (group.finalBeratReal || 0), 0)).toFixed(2)} kg`
                               : '-'}
                           </TableCell>
                           <TableCell className="font-semibold text-blue-700">
-                            {typeof group.finalBeratReal === 'number' ? `${Number(group.finalBeratReal).toFixed(2)} kg` : '-'}
+                            {!isCustom && typeof group.finalBeratReal === 'number' && group.finalBeratReal > 0 ? `${Number(group.finalBeratReal).toFixed(2)} kg` : '-'}
                           </TableCell>
                           <TableCell className="font-semibold text-indigo-700">
-                            {typeof group.finalBeratPlusWaste === 'number' ? `${Number(group.finalBeratPlusWaste).toFixed(2)} kg` : '-'}
+                            {!isCustom && typeof group.finalBeratPlusWaste === 'number' && group.finalBeratPlusWaste > 0 ? `${Number(group.finalBeratPlusWaste).toFixed(2)} kg` : '-'}
                           </TableCell>
 
-                          {/* ── LUAS PERMUKAAN CELL (BARU) ── */}
+                          {/* ── LUAS PERMUKAAN CELL ── */}
                           <TableCell className="font-semibold text-violet-700">
-                            {typeof group.finalLuasPermukaan === 'number'
+                            {!isCustom && typeof group.finalLuasPermukaan === 'number' && group.finalLuasPermukaan > 0
                                 ? `${Number(group.finalLuasPermukaan).toFixed(2)} m²`
                                 : <span className="text-gray-400 text-xs">-</span>}
                           </TableCell>
 
                           <TableCell className="font-semibold text-emerald-600">
-                            {isManualRow && Number(group.subtotal || 0) > 0
-                              ? `Rp ${(group.subtotal || 0).toLocaleString('id-ID')}`
-                              : Number(group.finalHargaPlusWaste || 0) > 0
-                                ? `Rp ${Number(group.finalHargaPlusWaste || 0).toLocaleString('id-ID')}`
-                                : '-'}
+                            {Number(group.subtotal || group.finalHargaPlusWaste || 0) > 0
+                              ? `Rp ${Number(group.subtotal || group.finalHargaPlusWaste || 0).toLocaleString('id-ID')}`
+                              : '-'}
                           </TableCell>
                           <TableCell className="font-semibold text-amber-700">
-                            {isManualRow && Number(group.subtotal || 0) > 0
-                              ? `Rp ${(group.subtotal || 0).toLocaleString('id-ID')}`
-                              : Number(group.finalHargaReal || 0) > 0
-                                ? `Rp ${Number(group.finalHargaReal || 0).toLocaleString('id-ID')}`
-                                : '-'}
+                            {Number(group.subtotal || group.finalHargaReal || 0) > 0
+                              ? `Rp ${Number(group.subtotal || group.finalHargaReal || 0).toLocaleString('id-ID')}`
+                              : '-'}
                           </TableCell>
                         </TableRow>
                       );

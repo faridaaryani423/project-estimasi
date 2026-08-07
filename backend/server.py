@@ -78,6 +78,7 @@ class BarangBase(BaseModel):
     beratbatang: Optional[str] = None
     minWelding: Optional[str] = "50"
     hargajasa: Optional[str] = None
+    satuan: Optional[str] = "batang"
     ukuran: Optional[str] = None
     foto: Optional[str] = None
     createdBy: Optional[str] = None
@@ -105,14 +106,16 @@ class EstimasiItem(BaseModel):
     jenisBentuk: Optional[str] = None
     supplier: Optional[str] = None
     ukuranMentah: Optional[str] = None
-    panjangMentah: float
-    panjangJadi: float
+    panjangMentah: Optional[float] = 0
+    panjangJadi: Optional[float] = 0
     jenisBahan: Optional[str] = None
     beratJenis: Optional[str] = None
     beratbatang: Optional[str] = None
     minWelding: Optional[str] = None
     jumlahKeperluan: int
     volume: Optional[str] = None
+    satuan: Optional[str] = None
+    satuanBarang: Optional[str] = None
     hargaSatuan: float
     hargaJual: Optional[float] = None
     hargaJasa: Optional[float] = None
@@ -142,12 +145,23 @@ class EstimasiItem(BaseModel):
     panjangPlatManual: Optional[str] = None
     lebarPlatManual: Optional[str] = None
     ketebalanPlatManual: Optional[str] = None
+    jenisBentukManual: Optional[str] = None
+    supplierManual: Optional[str] = None
+    jenisBahanManual: Optional[str] = None
+    beratJenisManual: Optional[str] = None
+    beratbatangManual: Optional[str] = None
+    minWeldingManual: Optional[str] = None
+    hargamodalManual: Optional[str] = None
+    hargajasaManual: Optional[str] = None
+    satuanManual: Optional[str] = None
+    satuanBarangManual: Optional[str] = None
+    satuanHargaModalManual: Optional[str] = None
+    hargaManual: Optional[str] = None
     # Penawaran pricing fields
     fromEstimasi: Optional[str] = None
     hargaJualPerUnit: Optional[float] = None
     subtotalJual: Optional[float] = None
     namaManual: Optional[str] = None
-    satuanManual: Optional[str] = None
 
 class EstimasiCreate(BaseModel):
     namaClient: Optional[str] = None
@@ -158,6 +172,8 @@ class EstimasiCreate(BaseModel):
     panjangRuangan: Optional[float] = None
     lebarRuangan: Optional[float] = None
     luasRuanganInput: Optional[float] = None
+    satuanDimensiKerja: Optional[str] = 'm²'
+    nilaiDimensiKerja: Optional[float] = None
     luasRuangan: Optional[float] = None
     items: List[EstimasiItem]
     totalEstimasi: float
@@ -176,6 +192,8 @@ class EstimasiResponse(BaseModel):
     panjangRuangan: Optional[float] = None
     lebarRuangan: Optional[float] = None
     luasRuanganInput: Optional[float] = None
+    satuanDimensiKerja: Optional[str] = 'm²'
+    nilaiDimensiKerja: Optional[float] = None
     luasRuangan: Optional[float] = None
     items: List[EstimasiItem]
     totalEstimasi: float

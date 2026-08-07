@@ -271,12 +271,21 @@ const exportToPDFDetail = (penawaran) => {
       0
     );
 
-    const volume = isManualRow
-      ? Number(matchedItems[0]?.jumlahKeperluan || 0)
-      : group.totalBeratMaterial;
-    const satuan = isManualRow
-      ? (matchedItems[0]?.satuanManual || 'Ls')
-      : 'Kg';
+    const isCustomGroup =
+      group.representativeItem?.jenisBentuk === 'custom' ||
+      matchedItems.some((it) => it.jenisBentuk === 'custom' || it.breakdown?.isCustom || it.jenisBentukManual === 'custom');
+
+    const volume = isCustomGroup
+      ? matchedItems.reduce((s, it) => s + Number(it.jumlahKeperluan || 0), 0)
+      : (isManualRow
+        ? Number(matchedItems[0]?.jumlahKeperluan || 0)
+        : group.totalBeratMaterial);
+
+    const satuan = isCustomGroup
+      ? (matchedItems[0]?.satuan || matchedItems[0]?.satuanManual || matchedItems[0]?.breakdown?.satuan || 'Bh')
+      : (isManualRow
+        ? (matchedItems[0]?.satuanManual || 'Ls')
+        : 'Kg');
 
     tableBody.push([
       {

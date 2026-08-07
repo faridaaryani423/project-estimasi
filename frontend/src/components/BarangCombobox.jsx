@@ -70,7 +70,9 @@ const BarangCombobox = ({ barangList, value, onSelect, disabled }) => {
                   />
                   <div>
                     <p className="font-medium">{barang.nama}</p>
-                    <p className="text-xs text-gray-500">{barang.ukuran}</p>
+                    <p className="text-xs text-gray-500">
+                      {barang.jenisBentuk === 'custom' ? `Custom (${barang.satuan || 'Bh'})` : barang.ukuran}
+                    </p>
                   </div>
                 </CommandItem>
               ))}

@@ -6,7 +6,8 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL') or 'http://127.0.0.1:8000'
+BASE_URL = BASE_URL.rstrip('/')
 
 class TestAuth:
     """Authentication endpoint tests"""
@@ -166,7 +167,7 @@ class TestBarang:
             "tinggi": "30",
             "jenisBahan": "Baja ST37",
             "beratJenis": "7850",
-            "harga": "100000"
+            "hargamodal": "100000"
         }
         create_response = requests.post(f"{BASE_URL}/api/barang", 
             headers={"Authorization": f"Bearer {auth_token}"},
@@ -183,7 +184,7 @@ class TestBarang:
             "tinggi": "35",
             "jenisBahan": "Baja SS400",
             "beratJenis": "7850",
-            "harga": "120000"
+            "hargamodal": "120000"
         }
         update_response = requests.put(f"{BASE_URL}/api/barang/{barang_id}", 
             headers={"Authorization": f"Bearer {auth_token}"},
@@ -192,7 +193,7 @@ class TestBarang:
         assert update_response.status_code == 200
         updated = update_response.json()
         assert updated["nama"] == "TEST_Updated Barang Name"
-        assert updated["harga"] == "120000"
+        assert updated["hargamodal"] == "120000"
         
         # Verify with GET
         get_response = requests.get(f"{BASE_URL}/api/barang", headers={

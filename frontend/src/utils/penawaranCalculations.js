@@ -90,7 +90,7 @@ export const getItemsWeightTotals = (items = []) => {
 };
 
 export const getEstimasiDimensiKerja = (estimasi) => {
-  const direct = parseFloat(estimasi?.luasRuangan);
+  const direct = parseFloat(estimasi?.nilaiDimensiKerja ?? estimasi?.luasRuangan);
   if (Number.isFinite(direct) && direct > 0) return direct;
   const panjang = parseFloat(estimasi?.panjangRuangan) || 0;
   const lebar = parseFloat(estimasi?.lebarRuangan) || 0;

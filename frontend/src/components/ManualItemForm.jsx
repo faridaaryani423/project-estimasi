@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Zap, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ManualItemForm = ({
@@ -12,7 +12,7 @@ const ManualItemForm = ({
   onSavePermanent,     // (index) => Promise<void>
   saving = {},         // { [index]: boolean }
 }) => {
-  const jenisBentuk = item.jenisBentukManual || 'balok';
+  const jenisBentuk = item.jenisBentukManual || 'custom';
 
   const f = (field) => ({
     value: item[field] || '',
@@ -21,22 +21,12 @@ const ManualItemForm = ({
 
   const [isHargaJasaEnabled, setIsHargaJasaEnabled] = React.useState(!!item.hargajasaManual);
 
+  const SATUAN_OPTIONS = ['Bh', 'Pcs', 'Set', 'Unit', 'Box', 'Kg', 'Btg', 'M', 'M²', 'Ls'];
+
   return (
     <div className="mt-2 p-4 bg-sky-50 rounded-lg border border-sky-200 space-y-4">
       <div className="flex justify-between items-center">
         <p className="text-xs font-semibold text-sky-700 uppercase tracking-wide">Detail Barang Manual</p>
-      </div>
-
-      {/* Nama Barang */}
-      <div className="space-y-1">
-        <Label className="text-xs">Nama Barang <span className="text-red-500">*</span></Label>
-        <Input placeholder="Contoh: Besi UNP 100" {...f('namaManual')} />
-      </div>
-
-      {/* Supplier */}
-      <div className="space-y-1">
-        <Label className="text-xs">Supplier</Label>
-        <Input placeholder="Contoh: CV. Besi Jaya" {...f('supplierManual')} />
       </div>
 
       {/* Jenis Bentuk */}
@@ -50,7 +40,12 @@ const ManualItemForm = ({
                 name={`jenisBentukManual-${index}`}
                 value={bentuk}
                 checked={jenisBentuk === bentuk}
-                onChange={(e) => onItemChange(index, 'jenisBentukManual', e.target.value)}
+                onChange={(e) => {
+                  onItemChange(index, 'jenisBentukManual', e.target.value);
+                  if (e.target.value === 'custom' && !item.satuanManual && !item.satuanBarangManual) {
+                    onItemChange(index, 'satuanBarangManual', 'Bh');
+                  }
+                }}
                 className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
               />
               <span className="text-xs font-medium text-gray-700 capitalize">{bentuk}</span>
@@ -59,89 +54,118 @@ const ManualItemForm = ({
         </div>
       </div>
 
-      {/* Jumlah khusus Custom (Pcs/Unit) */}
-      {jenisBentuk === 'custom' && (
-        <div className="space-y-1 pt-2">
-          <Label className="text-xs">Jumlah (Pcs/Unit) <span className="text-red-500">*</span></Label>
-          <Input type="number" placeholder="Contoh: 10" {...f('jumlahKeperluan')} />
-        </div>
-      )}
-
-      {/* Dimensi & Ketebalan */}
-      {jenisBentuk !== 'custom' && (
-      <div className="space-y-2">
-        <Label className="text-xs">Ukuran Barang (mm) <span className="text-red-500">*</span></Label>
-        {jenisBentuk === 'balok' && (
-          <div className="grid grid-cols-3 gap-2">
-            <div><Label className="text-[10px] text-gray-500">Panjang</Label><Input type="number" placeholder="1000" {...f('panjangManual')} /></div>
-            <div><Label className="text-[10px] text-gray-500">Lebar</Label><Input type="number" placeholder="600" {...f('lebarManual')} /></div>
-            <div><Label className="text-[10px] text-gray-500">Tinggi</Label><Input type="number" placeholder="750" {...f('tinggiManual')} /></div>
-          </div>
-        )}
-        {jenisBentuk === 'tabung' && (
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label className="text-[10px] text-gray-500">Diameter</Label><Input type="number" placeholder="500" {...f('diameterManual')} /></div>
-            <div><Label className="text-[10px] text-gray-500">Panjang</Label><Input type="number" placeholder="1000" {...f('panjangManual')} /></div>
-          </div>
-        )}
-        {jenisBentuk === 'wf' && (
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label className="text-[10px] text-gray-500">Tinggi (H)</Label><Input type="number" placeholder="200" {...f('tinggiWFManual')} /></div>
-            <div><Label className="text-[10px] text-gray-500">Lebar Flange (B)</Label><Input type="number" placeholder="100" {...f('lebarFlangeManual')} /></div>
-            <div><Label className="text-[10px] text-gray-500">Tebal Web (tw)</Label><Input type="number" placeholder="5.5" {...f('ketebalanWebManual')} /></div>
-            <div><Label className="text-[10px] text-gray-500">Tebal Flange (tf)</Label><Input type="number" placeholder="8" {...f('ketebalanFlangeManual')} /></div>
-          </div>
-        )}
-        {jenisBentuk === 'plat' && (
-          <div className="grid grid-cols-3 gap-2">
-            <div><Label className="text-[10px] text-gray-500">Panjang</Label><Input type="number" placeholder="6000" {...f('panjangPlatManual')} /></div>
-            <div><Label className="text-[10px] text-gray-500">Lebar</Label><Input type="number" placeholder="1500" {...f('lebarPlatManual')} /></div>
-            <div><Label className="text-[10px] text-gray-500">Ketebalan</Label><Input type="number" placeholder="6" {...f('ketebalanPlatManual')} /></div>
-          </div>
-        )}
+      {/* Nama Barang */}
+      <div className="space-y-1">
+        <Label className="text-xs">Nama Barang <span className="text-red-500">*</span></Label>
+        <Input placeholder="Contoh: Baud HTB M16" {...f('namaManual')} />
       </div>
-      )}
 
-      {!['wf', 'plat', 'custom'].includes(jenisBentuk) && (
-        <div className="space-y-1">
-          <Label className="text-xs">Ketebalan Barang (mm) <span className="text-red-500">*</span></Label>
-          <Input type="number" placeholder="5" {...f('ketebalanManual')} />
-        </div>
-      )}
-
-      {/* Informasi Material */}
-      {jenisBentuk !== 'custom' && (
-      <div className="border-t border-sky-200 pt-3 space-y-3">
-        <h3 className="text-xs font-semibold text-gray-900">Informasi Material</h3>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Jenis Bahan <span className="text-red-500">*</span></Label>
-            <Input placeholder="Contoh: Baja ST37" {...f('jenisBahanManual')} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Berat Jenis (kg/m³) <span className="text-red-500">*</span></Label>
-            <Input type="number" placeholder="7850" {...f('beratJenisManual')} />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Berat per Batang (kg) <span className="text-red-500">*</span></Label>
-            <Input type="number" placeholder="50" {...f('beratbatangManual')} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Min. Ukuran Welding (mm) <span className="text-red-500">*</span></Label>
-            <Input type="number" placeholder="50" {...f('minWeldingManual')} />
-          </div>
-        </div>
+      {/* Supplier */}
+      <div className="space-y-1">
+        <Label className="text-xs">Supplier</Label>
+        <Input placeholder="Contoh: CV. Baut Sentosa" {...f('supplierManual')} />
       </div>
+
+      {/* Input Khusus Custom (Jumlah & Satuan) */}
+      {jenisBentuk === 'custom' ? (
+        <div className="grid grid-cols-2 gap-3 pt-1">
+          <div className="space-y-1">
+            <Label className="text-xs">Jumlah <span className="text-red-500">*</span></Label>
+            <Input type="number" placeholder="Contoh: 252" {...f('jumlahKeperluan')} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Satuan <span className="text-red-500">*</span></Label>
+            <div className="flex gap-2">
+              <select
+                value={item.satuanBarangManual || item.satuanManual || 'Bh'}
+                onChange={(e) => {
+                  onItemChange(index, 'satuanBarangManual', e.target.value);
+                  onItemChange(index, 'satuanManual', e.target.value);
+                }}
+                className="w-full text-xs h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {SATUAN_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Dimensi & Ketebalan Non-Custom */}
+          <div className="space-y-2">
+            <Label className="text-xs">Ukuran Barang (mm) <span className="text-red-500">*</span></Label>
+            {jenisBentuk === 'balok' && (
+              <div className="grid grid-cols-3 gap-2">
+                <div><Label className="text-[10px] text-gray-500">Panjang</Label><Input type="number" placeholder="1000" {...f('panjangManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Lebar</Label><Input type="number" placeholder="600" {...f('lebarManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Tinggi</Label><Input type="number" placeholder="750" {...f('tinggiManual')} /></div>
+              </div>
+            )}
+            {jenisBentuk === 'tabung' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label className="text-[10px] text-gray-500">Diameter</Label><Input type="number" placeholder="500" {...f('diameterManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Panjang</Label><Input type="number" placeholder="1000" {...f('panjangManual')} /></div>
+              </div>
+            )}
+            {jenisBentuk === 'wf' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label className="text-[10px] text-gray-500">Tinggi (H)</Label><Input type="number" placeholder="200" {...f('tinggiWFManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Lebar Flange (B)</Label><Input type="number" placeholder="100" {...f('lebarFlangeManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Tebal Web (tw)</Label><Input type="number" placeholder="5.5" {...f('ketebalanWebManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Tebal Flange (tf)</Label><Input type="number" placeholder="8" {...f('ketebalanFlangeManual')} /></div>
+              </div>
+            )}
+            {jenisBentuk === 'plat' && (
+              <div className="grid grid-cols-3 gap-2">
+                <div><Label className="text-[10px] text-gray-500">Panjang</Label><Input type="number" placeholder="6000" {...f('panjangPlatManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Lebar</Label><Input type="number" placeholder="1500" {...f('lebarPlatManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Ketebalan</Label><Input type="number" placeholder="6" {...f('ketebalanPlatManual')} /></div>
+              </div>
+            )}
+          </div>
+
+          {!['wf', 'plat'].includes(jenisBentuk) && (
+            <div className="space-y-1">
+              <Label className="text-xs">Ketebalan Barang (mm) <span className="text-red-500">*</span></Label>
+              <Input type="number" placeholder="5" {...f('ketebalanManual')} />
+            </div>
+          )}
+
+          {/* Informasi Material Non-Custom */}
+          <div className="border-t border-sky-200 pt-3 space-y-3">
+            <h3 className="text-xs font-semibold text-gray-900">Informasi Material</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Jenis Bahan <span className="text-red-500">*</span></Label>
+                <Input placeholder="Contoh: Baja ST37" {...f('jenisBahanManual')} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Berat Jenis (kg/m³) <span className="text-red-500">*</span></Label>
+                <Input type="number" placeholder="7850" {...f('beratJenisManual')} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Berat per Batang (kg) <span className="text-red-500">*</span></Label>
+                <Input type="number" placeholder="50" {...f('beratbatangManual')} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Min. Ukuran Welding (mm) <span className="text-red-500">*</span></Label>
+                <Input type="number" placeholder="50" {...f('minWeldingManual')} />
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Harga */}
       <div className="border-t border-sky-200 pt-3 space-y-3">
-        {/* Satuan Harga Modal */}
-        <div className="space-y-1">
-          <Label className="text-xs">Satuan Harga Modal</Label>
-          {jenisBentuk !== 'custom' ? (
+        {/* Satuan Harga Modal untuk non-custom */}
+        {jenisBentuk !== 'custom' && (
+          <div className="space-y-1">
+            <Label className="text-xs">Satuan Harga Modal</Label>
             <div className="flex gap-4">
               <label className="flex items-center gap-1.5 cursor-pointer">
                 <input
@@ -166,17 +190,15 @@ const ManualItemForm = ({
                 <span className="text-xs font-medium text-gray-700">Per Kg</span>
               </label>
             </div>
-          ) : (
-            <div className="text-xs font-medium text-gray-700 capitalize bg-gray-50 px-2 py-1.5 rounded-md border border-gray-200 w-max">
-              Per Unit / Pcs
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <Label className="text-xs">Harga Modal (Rp) <span className="text-red-500">*</span></Label>
-            <Input type="number" placeholder="500000" {...f('hargamodalManual')} />
+            <Label className="text-xs">
+              {jenisBentuk === 'custom' ? `Harga Satuan / ${item.satuanBarangManual || item.satuanManual || 'Bh'} (Rp)` : 'Harga Modal (Rp)'} <span className="text-red-500">*</span>
+            </Label>
+            <Input type="number" placeholder="15000" {...f('hargamodalManual')} />
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2 mb-1">
@@ -194,7 +216,7 @@ const ManualItemForm = ({
             </div>
             <Input
               type="number"
-              placeholder="500000"
+              placeholder="50000"
               {...f('hargajasaManual')}
               disabled={!isHargaJasaEnabled}
               required={isHargaJasaEnabled}
@@ -202,6 +224,16 @@ const ManualItemForm = ({
             />
           </div>
         </div>
+
+        {/* Subtotal Preview untuk Custom */}
+        {jenisBentuk === 'custom' && item.jumlahKeperluan && item.hargamodalManual && (
+          <div className="p-2.5 bg-sky-100/60 rounded border border-sky-200 text-xs flex justify-between items-center text-sky-900">
+            <span>Subtotal ({item.jumlahKeperluan} {item.satuanBarangManual || item.satuanManual || 'Bh'} × Rp {Number(item.hargamodalManual || 0).toLocaleString('id-ID')}):</span>
+            <span className="font-bold text-sm text-sky-800">
+              Rp {(Number(item.jumlahKeperluan || 0) * Number(item.hargamodalManual || 0)).toLocaleString('id-ID')}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Tombol aksi */}
@@ -211,7 +243,7 @@ const ManualItemForm = ({
           variant="outline"
           size="sm"
           className="flex-1 border-sky-300 text-sky-700 hover:bg-sky-50 text-xs"
-          onClick={() => toast.success('Perubahan diterapkan untuk estimasi ini saja.')}
+          onClick={() => toast.success('Perubahan diterapkan untuk estimasi ini.')}
         >
           Gunakan untuk Estimasi Ini
         </Button>

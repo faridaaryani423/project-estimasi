@@ -40,6 +40,7 @@ const InputBarang = () => {
     minWelding: '', // minimum panjang untuk welding (mm)
     hargamodal: '',
     satuanHargaModal: 'batang',
+    satuan: 'Bh',
     hargajasa: '',
     supplier: '',   // ← BARU
     foto: null
@@ -94,7 +95,7 @@ const InputBarang = () => {
     'nama', 'jenisBentuk', 'panjang', 'lebar', 'tinggi', 'diameter', 'ketebalan',
     'tinggiWF', 'lebarFlange', 'ketebalanWeb', 'ketebalanFlange',
     'panjangPlat', 'lebarPlat', 'ketebalanPlat',
-    'jenisBahan', 'beratJenis', 'beratbatang', 'minWelding', 'supplier', 'foto'
+    'jenisBahan', 'beratJenis', 'beratbatang', 'minWelding', 'supplier', 'foto', 'satuan'
   ];
 
   // Field-field yang termasuk "harga"
@@ -124,25 +125,28 @@ const InputBarang = () => {
         );
       }
 
+      const isCustom = formData.jenisBentuk === 'custom';
+
       const barangData = {
         nama: formData.nama,
         jenisBentuk: formData.jenisBentuk,
-        panjang: formData.panjang || null,
-        lebar: formData.lebar || null,
-        tinggi: formData.tinggi || null,
-        diameter: formData.diameter || null,
-        ketebalan: formData.ketebalan || null,
-        tinggiWF: formData.tinggiWF || null,
-        lebarFlange: formData.lebarFlange || null,
-        ketebalanWeb: formData.ketebalanWeb || null,
-        ketebalanFlange: formData.ketebalanFlange || null,
-        panjangPlat: formData.panjangPlat || null,
-        lebarPlat: formData.lebarPlat || null,
-        ketebalanPlat: formData.ketebalanPlat || null,
-        jenisBahan: formData.jenisBahan,
-        beratJenis: formData.beratJenis,
-        beratbatang: formData.beratbatang || null,
-        minWelding: formData.minWelding || '50',
+        satuan: isCustom ? (formData.satuan || 'Bh') : (formData.satuan || 'batang'),
+        panjang: isCustom ? null : (formData.panjang || null),
+        lebar: isCustom ? null : (formData.lebar || null),
+        tinggi: isCustom ? null : (formData.tinggi || null),
+        diameter: isCustom ? null : (formData.diameter || null),
+        ketebalan: isCustom ? null : (formData.ketebalan || null),
+        tinggiWF: isCustom ? null : (formData.tinggiWF || null),
+        lebarFlange: isCustom ? null : (formData.lebarFlange || null),
+        ketebalanWeb: isCustom ? null : (formData.ketebalanWeb || null),
+        ketebalanFlange: isCustom ? null : (formData.ketebalanFlange || null),
+        panjangPlat: isCustom ? null : (formData.panjangPlat || null),
+        lebarPlat: isCustom ? null : (formData.lebarPlat || null),
+        ketebalanPlat: isCustom ? null : (formData.ketebalanPlat || null),
+        jenisBahan: isCustom ? (formData.jenisBahan || 'Custom') : formData.jenisBahan,
+        beratJenis: isCustom ? null : (formData.beratJenis || null),
+        beratbatang: isCustom ? null : (formData.beratbatang || null),
+        minWelding: isCustom ? '0' : (formData.minWelding || '50'),
         hargamodal: formData.hargamodal,
         hargajasa: formData.hargajasa || null,
         supplier: formData.supplier || null,
@@ -181,6 +185,7 @@ const InputBarang = () => {
     const data = {
       nama: item.nama,
       jenisBentuk: item.jenisBentuk || 'balok',
+      satuan: item.satuan || 'Bh',
       panjang: item.panjang || '',
       lebar: item.lebar || '',
       tinggi: item.tinggi || '',
@@ -227,6 +232,7 @@ const InputBarang = () => {
     setFormData({
       nama: '',
       jenisBentuk: 'balok',
+      satuan: 'Bh',
       panjang: '',
       lebar: '',
       tinggi: '',
@@ -246,7 +252,7 @@ const InputBarang = () => {
       hargamodal: '',
       hargajasa: '',
       supplier: '',
-      foto: null
+      foto: null,
     });
     setFotoPreview(null);
     setIsHargaJasaEnabled(false);
@@ -460,11 +466,13 @@ const InputBarang = () => {
               </div>
               )}
 
-              {/* Harga */}
+              {/* Harga & Satuan */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="hargamodal">Harga Modal (Rp)</Label>
+                    <Label htmlFor="hargamodal">
+                      {formData.jenisBentuk === 'custom' ? `Harga Satuan / ${formData.satuan || 'Bh'} (Rp)` : 'Harga Modal (Rp)'} <span className="text-red-500">*</span>
+                    </Label>
                     <div className="flex gap-3">
                       {formData.jenisBentuk !== 'custom' && (
                         <>
@@ -494,13 +502,59 @@ const InputBarang = () => {
                       )}
                     </div>
                   </div>
-                  <Input id="hargamodal" name="hargamodal" type="number" value={formData.hargamodal} onChange={handleInputChange} placeholder="500000" required className="input-focus" />
+                  <Input id="hargamodal" name="hargamodal" type="number" value={formData.hargamodal} onChange={handleInputChange} placeholder={formData.jenisBentuk === 'custom' ? '15000' : '500000'} required className="input-focus" />
                 </div>
+                {formData.jenisBentuk === 'custom' ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="satuan">Satuan Barang <span className="text-red-500">*</span></Label>
+                    <select
+                      id="satuan"
+                      name="satuan"
+                      value={formData.satuan || 'Bh'}
+                      onChange={handleInputChange}
+                      className="w-full text-sm h-10 rounded-md border border-input bg-background px-3 py-2 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      {['Bh', 'Pcs', 'Set', 'Unit', 'Box', 'Kg', 'Btg', 'M', 'M²', 'Ls'].map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="hargaJasaCheckbox"
+                        checked={isHargaJasaEnabled}
+                        onChange={(e) => {
+                          setIsHargaJasaEnabled(e.target.checked);
+                          if (!e.target.checked) setFormData(prev => ({ ...prev, hargajasa: '' }));
+                        }}
+                        className="w-4 h-4 text-sky-600 rounded focus:ring-sky-500"
+                      />
+                      <Label htmlFor="hargajasa">Harga Jasa (Rp) {isHargaJasaEnabled && <span className="text-red-500">*</span>}</Label>
+                    </div>
+                    <Input
+                      id="hargajasa"
+                      name="hargajasa"
+                      type="number"
+                      value={formData.hargajasa}
+                      onChange={handleInputChange}
+                      placeholder="500000"
+                      required={isHargaJasaEnabled}
+                      disabled={!isHargaJasaEnabled}
+                      className="input-focus disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {formData.jenisBentuk === 'custom' && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      id="hargaJasaCheckbox"
+                      id="hargaJasaCheckboxCustom"
                       checked={isHargaJasaEnabled}
                       onChange={(e) => {
                         setIsHargaJasaEnabled(e.target.checked);
@@ -508,7 +562,7 @@ const InputBarang = () => {
                       }}
                       className="w-4 h-4 text-sky-600 rounded focus:ring-sky-500"
                     />
-                    <Label htmlFor="hargajasa">Harga Jasa (Rp) {isHargaJasaEnabled && <span className="text-red-500">*</span>}</Label>
+                    <Label htmlFor="hargaJasaCheckboxCustom">Harga Jasa Satuan (Rp) (Opsional)</Label>
                   </div>
                   <Input
                     id="hargajasa"
@@ -516,13 +570,12 @@ const InputBarang = () => {
                     type="number"
                     value={formData.hargajasa}
                     onChange={handleInputChange}
-                    placeholder="500000"
-                    required={isHargaJasaEnabled}
+                    placeholder="0"
                     disabled={!isHargaJasaEnabled}
                     className="input-focus disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
-              </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="foto">Foto Barang (.jpg/.jpeg)</Label>
@@ -611,11 +664,16 @@ const InputBarang = () => {
                           {item.jenisBentuk || 'balok'}
                         </span>
                       </TableCell>
-                      <TableCell className="text-sm text-gray-600">{item.ukuran}</TableCell>
+                      <TableCell className="text-sm text-gray-600">
+                        {item.jenisBentuk === 'custom' ? (item.satuan || 'Bh') : (item.ukuran || '-')}
+                      </TableCell>
                       <TableCell className="text-sm text-gray-600">{item.jenisBahan || '-'}</TableCell>
                       <TableCell className="text-sm text-gray-600">{item.supplier || '-'}</TableCell>  {/* ← BARU */}
                       <TableCell className="font-semibold text-blue-600">{item.beratbatang ? `${parseFloat(item.beratbatang).toLocaleString('id-ID')} kg` : '-'}</TableCell>
-                      <TableCell className="font-semibold text-emerald-600">Rp {parseFloat(item.hargamodal).toLocaleString('id-ID')}</TableCell>
+                      <TableCell className="font-semibold text-emerald-600">
+                        Rp {parseFloat(item.hargamodal || 0).toLocaleString('id-ID')}
+                        {item.jenisBentuk === 'custom' && <span className="text-xs text-gray-500 font-normal"> / {item.satuan || 'Bh'}</span>}
+                      </TableCell>
                       <TableCell className="font-semibold text-emerald-600">{item.hargajasa ? `Rp ${parseFloat(item.hargajasa).toLocaleString('id-ID')}` : '-'}</TableCell>
                       <TableCell className="text-xs text-gray-500">
                         <div className="space-y-1">
