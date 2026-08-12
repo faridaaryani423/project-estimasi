@@ -193,6 +193,10 @@ const Estimasi = () => {
           r.breakdown?.summary?.isCustom === true
       );
 
+      const isPlatGroup = !isCustomGroup && group.rows.some(
+        (r) => r.jenisBentuk === 'plat' || r.jenisBentukManual === 'plat'
+      );
+
       // ── Custom Items (baut, mur, aksesoris custom dll) ──
       if (isCustomGroup) {
         const customSatuan = repItem.satuan || repItem.satuanBarang || repItem.satuanManual || 'Bh';
@@ -285,8 +289,115 @@ const Estimasi = () => {
         return;
       }
 
-      // ── Structural Items (batang, plat, pipa, wf dll) ──
+      // ── Plat Items (lembar, tanpa detail potongan) ──
+      if (isPlatGroup) {
+        const platHargaSatuan = parseFloat(summary.hargaSatuan || repItem.hargaSatuan || repItem.hargaModal || 0) || 0;
+        const platDimensi = (() => {
+          const p = repItem.panjangPlat || summary.panjangPlat;
+          const l = repItem.lebarPlat   || summary.lebarPlat;
+          const t = repItem.ketebalanPlat || summary.ketebalanPlat;
+          if (p && l && t) return `${p}×${l}×${t} mm`;
+          if (p && l) return `${p}×${l} mm`;
+          return '';
+        })();
+        const matLabelPlat = `${repItem.namaBarang}` +
+          (repItem.jenisBahan ? ` (${repItem.jenisBahan})` : '') +
+          (platDimensi ? `  Ukuran: ${platDimensi}` : '') +
+          `  Harga Satuan: ${fmtRp(platHargaSatuan)} / Lembar`;
+
+        ensurePageSpace(30);
+
+        doc.setFillColor(238, 242, 247);
+        doc.rect(marginL, startY - 2.8, pageWidth - marginL - marginR, 4.3, 'F');
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text(matLabelPlat, marginL + 1.2, startY);
+        startY += 5;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.text(`${new Date(est.createdAt).toLocaleDateString('id-ID')}   ${cleanText(est.namaEstimasi)}`, marginL, startY);
+        startY += 3.5;
+
+        const tableBody = [];
+        let totalPlatQty = 0;
+        let totalPlatSubtotal = 0;
+
+        group.rows.forEach((row, rowIdx) => {
+          const qty = parseFloat(row.jumlahKeperluan) || 0;
+          const rowHarga = parseFloat(row.hargaSatuan || row.hargaModal || platHargaSatuan) || 0;
+          const subtotal = parseFloat(row.subtotal) || (qty * rowHarga);
+          const beratRow = parseFloat(row.beratTotal || 0) || 0;
+          totalPlatQty += qty;
+          totalPlatSubtotal += subtotal;
+
+          const kode = row.kodeItem ? `${row.kodeItem}. ` : '';
+          const spesLabel = `${alphaLabel(rowIdx)}. ${kode}${row.namaBarang || repItem.namaBarang} ( ${fmtN(qty)} Lembar )`;
+
+          tableBody.push([
+            spesLabel,
+            `${fmtN(qty)} Lbr`,
+            '-',
+            '-',
+            fmtN(beratRow, 2),
+            fmtN(beratRow, 2),
+            '-',
+            fmtRp(subtotal),
+            fmtRp(subtotal),
+            '-',
+          ]);
+        });
+
+        const totalPlatBerat = group.rows.reduce((s, r) => s + (parseFloat(r.beratTotal || 0) || 0), 0);
+        grandBeratReal      += totalPlatBerat;
+        grandBeratPlusWaste += totalPlatBerat;
+        grandHargaPlusWaste += totalPlatSubtotal;
+        grandHargaReal      += totalPlatSubtotal;
+
+        const subTotalStyle = { fontStyle: 'bold', fillColor: [240, 240, 240] };
+        tableBody.push([
+          { content: `SUB TOTAL   ${fmtN(totalPlatQty)} Lembar`, colSpan: 2, styles: { ...subTotalStyle, halign: 'left' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
+          { content: fmtN(totalPlatBerat, 2), styles: { ...subTotalStyle, halign: 'right' } },
+          { content: fmtN(totalPlatBerat, 2), styles: { ...subTotalStyle, halign: 'right' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
+          { content: fmtRp(totalPlatSubtotal), styles: { ...subTotalStyle, halign: 'right' } },
+          { content: fmtRp(totalPlatSubtotal), styles: { ...subTotalStyle, halign: 'right' } },
+          { content: '', styles: subTotalStyle },
+        ]);
+
+        autoTable(doc, {
+          startY,
+          head: [[
+            'Spesifikasi / Uraian', 'Pemakaian', 'Panjang\nSisa', 'Berat\nSisa',
+            'Berat\nReal', 'Berat\n+ Waste', 'Luas\n(M2)',
+            'Harga\n+ Waste', 'Harga\nReal', 'Potongan',
+          ]],
+          body       : tableBody,
+          theme      : 'grid',
+          tableWidth : tableAvailWidth,
+          headStyles : {
+            fillColor : [215, 220, 227], textColor: [20, 20, 20],
+            fontStyle : 'bold', fontSize: 6.5, halign: 'center',
+            lineColor : [130, 130, 130], lineWidth: 0.1,
+          },
+          styles: {
+            fontSize: 6.5, cellPadding: 1.3, overflow: 'linebreak',
+            lineColor: [150, 150, 150], lineWidth: 0.08,
+          },
+          alternateRowStyles: { fillColor: [252, 252, 252] },
+          columnStyles: sharedColStyles,
+          margin: { left: marginL, right: marginR },
+        });
+
+        startY = doc.lastAutoTable.finalY + 5;
+        return;
+      }
+
+      // ── Structural Items (batang, pipa, wf dll) ──
       const panjangMentah   = summary.stockLength  || 6000;
+
       const panjangMentahM  = panjangMentah / 1000;
       const beratStandar    = summary.beratStandar  || repItem.beratPerBatang || 0;
       const hargaSatuan     = summary.hargaSatuan   || repItem.hargaSatuan    || 0;
@@ -511,8 +622,42 @@ const Estimasi = () => {
     });
 
     // ── Grand Total ──────────────────────────────────────────────────────────────
-    ensurePageSpace(25);
+    ensurePageSpace(35);
     const gtStyle = { fontStyle: 'bold', fillColor: [180, 210, 255] };
+
+    // Hitung nilaiDim dan grandHargaSatuan untuk PDF
+    const grandTotalForPDF = grandHargaReal || grandHargaPlusWaste;
+    const hargaSatuanPDF = nilaiDim > 0 ? grandTotalForPDF / Number(nilaiDim) : null;
+
+    const grandTotalBody = [[
+      { content: 'GRAND TOTAL',               colSpan: 2, styles: { ...gtStyle, halign: 'left'  } },
+      { content: '-',                                     styles: { ...gtStyle, halign: 'right' } },
+      { content: fmtN(grandBeratSisa, 2),                 styles: { ...gtStyle, halign: 'right' } },
+      { content: fmtN(grandBeratReal, 2),                 styles: { ...gtStyle, halign: 'right' } },
+      { content: fmtN(grandBeratPlusWaste, 2),            styles: { ...gtStyle, halign: 'right' } },
+      { content: '-',                                     styles: { ...gtStyle, halign: 'right' } },
+      { content: fmtRp(grandHargaReal),                   styles: { ...gtStyle, halign: 'right' } },
+      { content: fmtRp(grandHargaPlusWaste),              styles: { ...gtStyle, halign: 'right' } },
+      { content: '',                                      styles: { fillColor: [180, 210, 255]  } },
+    ]];
+
+    if (hargaSatuanPDF !== null) {
+      const hsStyle = { fontStyle: 'bold', fillColor: [209, 231, 255] };
+      const hargaSatuanWaste  = grandHargaPlusWaste / Number(nilaiDim);
+      const hargaSatuanReal   = grandTotalForPDF    / Number(nilaiDim);
+      // Baris 1: HARGA / SATUAN  (Harga + Waste ÷ Dimensi Kerja)
+      grandTotalBody.push([
+        { content: 'HARGA / SATUAN', colSpan: 2, styles: { ...hsStyle, halign: 'left' } },
+        { content: '-', styles: { ...hsStyle, halign: 'right' } },
+        { content: '-', styles: { ...hsStyle, halign: 'right' } },
+        { content: '-', styles: { ...hsStyle, halign: 'right' } },
+        { content: '-', styles: { ...hsStyle, halign: 'right' } },
+        { content: '-', styles: { ...hsStyle, halign: 'right' } },
+        { content: fmtN(hargaSatuanWaste, 0), styles: { ...hsStyle, halign: 'right' } },
+        { content: fmtN(hargaSatuanReal, 0),  styles: { ...hsStyle, halign: 'right' } },
+        { content: '',                         styles: { fillColor: [209, 231, 255] } },
+      ]);
+    }
 
     autoTable(doc, {
       startY,
@@ -520,17 +665,7 @@ const Estimasi = () => {
       head      : [['Spesifikasi / Uraian','Pemakaian','Panjang\nSisa','Berat\nSisa',
                     'Berat\nReal','Berat\n+ Waste','Luas\n(M2)','Harga\n+ Waste','Harga\nReal','Potongan']],
       headStyles: { minCellHeight: 0, cellPadding: 0, fontSize: 0, lineWidth: 0 },
-      body: [[
-        { content: 'GRAND TOTAL',               colSpan: 2, styles: { ...gtStyle, halign: 'left'  } },
-        { content: '-',                                     styles: { ...gtStyle, halign: 'right' } },
-        { content: fmtN(grandBeratSisa, 2),                 styles: { ...gtStyle, halign: 'right' } },
-        { content: fmtN(grandBeratReal, 2),                 styles: { ...gtStyle, halign: 'right' } },
-        { content: fmtN(grandBeratPlusWaste, 2),            styles: { ...gtStyle, halign: 'right' } },
-        { content: '-',                                     styles: { ...gtStyle, halign: 'right' } },
-        { content: fmtRp(grandHargaReal),                   styles: { ...gtStyle, halign: 'right' } },
-        { content: fmtRp(grandHargaPlusWaste),              styles: { ...gtStyle, halign: 'right' } },
-        { content: '',                                      styles: { fillColor: [180, 210, 255]  } },
-      ]],
+      body: grandTotalBody,
       theme      : 'grid',
       tableWidth : tableAvailWidth,
       styles     : { fontSize: 7.5, cellPadding: 1.5, lineColor: [130, 130, 130], lineWidth: 0.1 },
@@ -984,6 +1119,7 @@ const Estimasi = () => {
                   <TableRow>
                     <TableHead>No</TableHead>
                     <TableHead>Barang</TableHead>
+                    <TableHead className="text-right">Harga/Satuan</TableHead>
                     <TableHead>Stok</TableHead>
                     <TableHead>Dimensi Kerja</TableHead>
                     <TableHead>Bahan</TableHead>
@@ -1116,6 +1252,22 @@ const Estimasi = () => {
                       const effectiveLuasKerja = resolvedDimensiKerja > 0 
                         ? resolvedDimensiKerja : Number(group.luasPekerjaan || 0);
 
+                      // Hitung harga satuan per item group
+                      const hargaSatuanGroup = (() => {
+                        // Cek dari breakdown summary dulu
+                        const fromSummary = parseFloat(group.breakdown?.summary?.hargaSatuan || 0) || 0;
+                        if (fromSummary > 0) return fromSummary;
+                        // Cek dari field langsung
+                        const fromField = parseFloat(group.hargaSatuan || group.hargaModal || group.hargamodal || 0) || 0;
+                        if (fromField > 0) return fromField;
+                        return 0;
+                      })();
+                      const satuanGroup = isCustom
+                        ? (group.satuan || group.satuanBarang || group.satuanManual || 'Bh')
+                        : group.jenisBentuk === 'plat'
+                          ? 'Lbr'
+                          : 'Btg';
+
                       return (
                         <TableRow key={idx}>
                           <TableCell>{idx + 1}</TableCell>
@@ -1123,6 +1275,17 @@ const Estimasi = () => {
                             {group.namaBarang}
                             <br />
                             <span className="text-xs text-gray-500">{group.jenisBahan || (isCustom ? 'Custom' : '-')}</span>
+                          </TableCell>
+                          {/* ── HARGA/SATUAN CELL ── */}
+                          <TableCell className="text-right">
+                            {hargaSatuanGroup > 0 ? (
+                              <span className="font-semibold text-sky-700 text-xs">
+                                Rp {Number(hargaSatuanGroup).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                <span className="text-gray-400 font-normal ml-0.5">/ {satuanGroup}</span>
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 text-xs">-</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             {!isCustom && Number(group.panjangMentah) > 0 ? `${formatNumberWithSeparator(group.panjangMentah)} mm` : '-'}
@@ -1184,7 +1347,7 @@ const Estimasi = () => {
 
                     rows.push(
                       <TableRow key="totals-row" className="bg-gray-50">
-                        <TableCell colSpan={5} className="text-right font-bold">
+                        <TableCell colSpan={6} className="text-right font-bold">
                           TOTAL
                         </TableCell>
                         <TableCell className="font-bold text-emerald-700">
@@ -1202,7 +1365,7 @@ const Estimasi = () => {
                         <TableCell className="font-bold text-indigo-700">
                           {Number(totals.beratPlusWaste || 0).toFixed(2)} kg
                         </TableCell>
-                        {/* ── TOTAL LUAS PERMUKAAN (BARU) ── */}
+                        {/* ── TOTAL LUAS PERMUKAAN ── */}
                         <TableCell className="font-bold text-violet-700">
                           {totals.luasPermukaan > 0
                             ? `${Number(totals.luasPermukaan).toFixed(2)} m²`
@@ -1216,6 +1379,36 @@ const Estimasi = () => {
                         </TableCell>
                       </TableRow>
                     );
+
+                    // ── Baris Harga Satuan (Grand Total / Dimensi Kerja) ──────────────
+                    const dimensiKerjaValue =
+                      Number(viewingEstimasi.nilaiDimensiKerja || 0) ||
+                      Number(viewingEstimasi.luasRuangan || 0) ||
+                      ((parseFloat(viewingEstimasi.panjangRuangan || 0) || 0) *
+                        (parseFloat(viewingEstimasi.lebarRuangan || 0) || 0));
+                    const satuanDimensi = viewingEstimasi.satuanDimensiKerja || 'm²';
+                    const grandTotalValue = totals.hargaPlusWaste || 0;
+                    const hargaSatuanPerDimensi =
+                      dimensiKerjaValue > 0 ? grandTotalValue / dimensiKerjaValue : null;
+                    const hargaSatuanReal =
+                      dimensiKerjaValue > 0 ? (totals.hargaReal || 0) / dimensiKerjaValue : null;
+
+                    if (hargaSatuanPerDimensi !== null) {
+                      rows.push(
+                        <TableRow key="harga-satuan-row" className="bg-sky-50 border-t-2 border-sky-200">
+                          <TableCell colSpan={12} className="text-left font-bold text-sky-800 text-sm tracking-wide">
+                            HARGA / SATUAN
+                          </TableCell>
+                          <TableCell className="font-bold text-sky-700 text-base text-right">
+                            {Math.round(hargaSatuanPerDimensi).toLocaleString('id-ID')}
+                          </TableCell>
+                          <TableCell className="font-bold text-amber-700 text-base text-right">
+                            {Math.round(hargaSatuanReal || 0).toLocaleString('id-ID')}
+                          </TableCell>
+                        </TableRow>
+                      );
+
+                    }
 
                     return rows;
                   })()}

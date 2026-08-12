@@ -105,6 +105,7 @@ const EditEstimasi = () => {
   const [localBarangOverrides, setLocalBarangOverrides] = useState({});
   const [savingBarang, setSavingBarang]                 = useState({});
   const [expandedBarang, setExpandedBarang]             = useState({});
+  const [savingManualBarang, setSavingManualBarang]     = useState({});
   const importFileRef                                   = useRef(null);
 
   // ── Download & Import Excel ───────────────────────────────────────────────────
@@ -1009,7 +1010,8 @@ const EditEstimasi = () => {
                   <div className="flex items-center gap-2">
                     {!(
                       (isManual && (item.jenisBentukManual || 'custom') === 'custom') ||
-                      (!isManual && getEffectiveBarang(item.barangId)?.jenisBentuk === 'custom')
+                      (!isManual && getEffectiveBarang(item.barangId)?.jenisBentuk === 'custom') ||
+                      (!isManual && getEffectiveBarang(item.barangId)?.jenisBentuk === 'plat')
                     ) && (
                       <Button
                         type="button"
@@ -1271,6 +1273,7 @@ const EditEstimasi = () => {
                   const curInfo   = getSelectedBarangInfo(cur.barangId);
                   const curBarang = getEffectiveBarang(cur.barangId);
                   const isCustomDB = curBarang?.jenisBentuk === 'custom';
+                  const isPlatDB   = curBarang?.jenisBentuk === 'plat';
                   const satuan = curBarang?.satuan || 'Bh';
 
                   if (isCustomDB) {
@@ -1292,6 +1295,46 @@ const EditEstimasi = () => {
                             value={cur.jumlahKeperluan || ''}
                             onChange={(e) => handleItemChange(actualIdx, 'jumlahKeperluan', e.target.value)}
                           />
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (isPlatDB) {
+                    return (
+                      <div key={actualIdx} className="grid grid-cols-2 gap-3 items-end p-3 bg-white rounded-lg border">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Kode Item</Label>
+                          <Input
+                            placeholder="P-01"
+                            value={cur.kodeItem || ''}
+                            onChange={(e) => handleItemChange(actualIdx, 'kodeItem', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">
+                            Jumlah (Lembar) <span className="text-red-500">*</span>
+                          </Label>
+                          <div className="flex gap-2">
+                            <Input
+                              type="number"
+                              value={cur.jumlahKeperluan || ''}
+                              onChange={(e) => handleItemChange(actualIdx, 'jumlahKeperluan', e.target.value)}
+                              placeholder="5"
+                              className="flex-1"
+                            />
+                            {selectedItems.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeItemRow(actualIdx)}
+                                className="px-3 hover:bg-red-50 hover:text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
