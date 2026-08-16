@@ -876,20 +876,29 @@ const EstimasiForm = () => {
 
             {/* ── Daftar Item ── */}
             <div className="flex items-center justify-between border-t pt-4">
-              <h3 className="text-base font-semibold text-gray-900">Pilih Barang</h3>
-              <Button onClick={addItemRow} variant="outline" size="sm">
-                <Plus className="w-4 h-4 mr-1" /> Tambah
+              <h3 className="text-base font-semibold text-gray-900">Daftar Barang</h3>
+              <Button onClick={addItemRow} variant="outline" size="sm" id="btn-tambah-barang-atas-form">
+                <Plus className="w-4 h-4 mr-1" /> Tambah Barang
               </Button>
             </div>
 
-            {selectedItems.map((item, index) => {
-              const barangInfo     = getSelectedBarangInfo(item.barangId);
-              const isGroupable    = item.barangId && (item.barangId !== '__manual__' || (item.namaManual || '').trim() !== '');
-              const isSameAsPrev   = isGroupable && index > 0 && isSameBarang(item, selectedItems[index - 1]);
-              if (isSameAsPrev) return null;
+            {(() => {
+              // Hitung jumlah grup yang terlihat untuk kontrol visibilitas tombol Delete
+              let visibleGroupCount = 0;
+              selectedItems.forEach((item, index) => {
+                const isGroupable = item.barangId && (item.barangId !== '__manual__' || (item.namaManual || '').trim() !== '');
+                const isSameAsPrev = isGroupable && index > 0 && isSameBarang(item, selectedItems[index - 1]);
+                if (!isSameAsPrev) visibleGroupCount++;
+              });
 
-              const itemsWithSame = [item];
-              if (isGroupable) {
+              return selectedItems.map((item, index) => {
+                const barangInfo     = getSelectedBarangInfo(item.barangId);
+                const isGroupable    = item.barangId && (item.barangId !== '__manual__' || (item.namaManual || '').trim() !== '');
+                const isSameAsPrev   = isGroupable && index > 0 && isSameBarang(item, selectedItems[index - 1]);
+                if (isSameAsPrev) return null;
+
+                const itemsWithSame = [item];
+                if (isGroupable) {
                 for (let i = index + 1; i < selectedItems.length; i++) {
                   if (isSameBarang(selectedItems[i], item)) itemsWithSame.push(selectedItems[i]);
                   else break;
@@ -898,43 +907,29 @@ const EstimasiForm = () => {
               const lastIdx  = index + itemsWithSame.length - 1;
               const isManual = item.barangId === '__manual__';
 
-              return (
-                <div key={index} className="p-4 border rounded-lg bg-gray-50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="font-semibold">Item #{index + 1}</Label>
-                    <div className="flex items-center gap-2">
-                      {!(
-                        (isManual && (item.jenisBentukManual || 'custom') === 'custom') ||
-                        (!isManual && getEffectiveBarang(item.barangId)?.jenisBentuk === 'custom') ||
-                        (!isManual && getEffectiveBarang(item.barangId)?.jenisBentuk === 'plat')
-                      ) && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addItemRowWithSameBarang(lastIdx)}
-                          className="px-3"
-                          disabled={!item.barangId}
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      )}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          isManual
-                            ? removeAllItemsWithSameManualName(item.namaManual, index)
-                            : removeAllItemsWithSameBarang(item.barangId)
-                        }
-                        className="text-red-500 hover:bg-red-50 hover:border-red-300"
-                        title="Hapus barang ini beserta seluruh kodenya"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                return (
+                  <div key={index} className="p-4 border rounded-lg bg-gray-50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="font-semibold">Item #{index + 1}</Label>
+                      <div className="flex items-center gap-2">
+                        {/* Merah: hapus semua baris barang ini — hanya tampil jika ada lebih dari 1 grup */}
+                        {visibleGroupCount > 1 && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() =>
+                              isManual
+                                ? removeAllItemsWithSameManualName(item.namaManual, index)
+                                : removeAllItemsWithSameBarang(item.barangId)
+                            }
+                            className="bg-red-500 hover:bg-red-600 text-white border-0"
+                            title="Hapus barang ini beserta seluruh kodenya"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
                   <BarangCombobox
                     barangList={barangList}
@@ -1268,7 +1263,7 @@ const EstimasiForm = () => {
                           <Label className="text-xs">
                             Jumlah <span className="text-red-500">*</span>
                           </Label>
-                          <div className="flex gap-2">
+                          <div className="flex gap-1.5">
                             <Input
                               type="number"
                               value={cur.jumlahKeperluan}
@@ -1276,13 +1271,25 @@ const EstimasiForm = () => {
                               placeholder="15"
                               className="flex-1"
                             />
+                            {/* Hijau: tambah detail baru untuk barang yang sama */}
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => addItemRowWithSameBarang(actualIdx)}
+                              className="px-2 bg-emerald-500 hover:bg-emerald-600 text-white shrink-0"
+                              title="Tambah detail (kode/panjang/jumlah) baru untuk barang yang sama"
+                              disabled={!cur.barangId}
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
                             {selectedItems.length > 1 && (
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removeItemRow(actualIdx)}
-                                className="px-3 hover:bg-red-50 hover:text-red-600"
+                                className="px-2 hover:bg-red-50 hover:text-red-600 shrink-0"
+                                title="Hapus baris ini"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -1315,7 +1322,7 @@ const EstimasiForm = () => {
                             onChange={(e) => handleItemChange(actualIdx, 'panjangJadi', e.target.value)}
                           />
                         </div>
-                        <div className="flex gap-2 items-end">
+                        <div className="flex gap-1.5 items-end">
                           <div className="flex-1 space-y-1">
                             <Label className="text-xs">Jumlah <span className="text-red-500">*</span></Label>
                             <Input
@@ -1325,6 +1332,16 @@ const EstimasiForm = () => {
                               onChange={(e) => handleItemChange(actualIdx, 'jumlahKeperluan', e.target.value)}
                             />
                           </div>
+                          {/* Hijau: tambah detail baru untuk barang manual yang sama */}
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => addItemRowWithSameBarang(actualIdx)}
+                            className="px-2 bg-emerald-500 hover:bg-emerald-600 text-white shrink-0"
+                            title="Tambah detail baru untuk barang yang sama"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
                           {itemsWithSame.length > 1 && (
                             <Button
                               type="button"
@@ -1332,6 +1349,7 @@ const EstimasiForm = () => {
                               size="icon"
                               onClick={() => removeItemRow(actualIdx)}
                               className="text-red-500 hover:bg-red-50 shrink-0"
+                              title="Hapus baris ini"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -1343,7 +1361,20 @@ const EstimasiForm = () => {
 
                 </div>
               );
-            })}
+            });
+            })()}
+
+            {/* Tombol Tambah Barang di bagian bawah daftar */}
+            <div className="flex justify-center pt-2 border-t border-gray-100 mt-2">
+              <Button
+                onClick={addItemRow}
+                variant="outline"
+                id="btn-tambah-barang-bawah-form"
+                className="w-full border-dashed border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-500"
+              >
+                <Plus className="w-4 h-4 mr-2" /> Tambah Barang
+              </Button>
+            </div>
 
             {/* ── Footer tombol ── */}
             <div className="flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">

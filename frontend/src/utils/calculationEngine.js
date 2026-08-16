@@ -849,6 +849,8 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
         kodeItem: entry.kodeItem || sourceItem.kodeItem || null,
         namaBarang: entry.namaBarang || group.barang.nama,
         jenisBentuk: group.barang.jenisBentuk || 'balok',
+        // Supplier dari barang database
+        supplier: group.barang.supplier || sourceItem.supplier || null,
         satuan: group.barang.satuan || 'batang',
         satuanBarang: group.barang.satuan || 'batang',
         ukuranMentah: group.barang.ukuran,

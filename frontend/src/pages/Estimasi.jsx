@@ -214,7 +214,9 @@ const Estimasi = () => {
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
-        doc.text(`${new Date(est.createdAt).toLocaleDateString('id-ID')}   ${cleanText(est.namaEstimasi)}`, marginL, startY);
+        // Tampilkan supplier per grup, bukan nama project (yang sudah ada di header)
+        const supplierText = repItem.supplier ? `Supplier: ${repItem.supplier}` : `${new Date(est.createdAt).toLocaleDateString('id-ID')}`;
+        doc.text(supplierText, marginL, startY);
         startY += 3.5;
 
         const tableBody = [];
@@ -316,7 +318,9 @@ const Estimasi = () => {
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
-        doc.text(`${new Date(est.createdAt).toLocaleDateString('id-ID')}   ${cleanText(est.namaEstimasi)}`, marginL, startY);
+        // Tampilkan supplier per grup, bukan nama project (yang sudah ada di header)
+        const supplierTextPlat = repItem.supplier ? `Supplier: ${repItem.supplier}` : `${new Date(est.createdAt).toLocaleDateString('id-ID')}`;
+        doc.text(supplierTextPlat, marginL, startY);
         startY += 3.5;
 
         const tableBody = [];
@@ -486,7 +490,9 @@ const Estimasi = () => {
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
-      doc.text(`${new Date(est.createdAt).toLocaleDateString('id-ID')}   ${cleanText(est.namaEstimasi)}`, marginL, startY);
+      // Tampilkan supplier per grup, bukan nama project (yang sudah ada di header)
+      const supplierTextStruct = repItem.supplier ? `Supplier: ${repItem.supplier}` : `${new Date(est.createdAt).toLocaleDateString('id-ID')}`;
+      doc.text(supplierTextStruct, marginL, startY);
       startY += 3.5;
 
       // ── Bangun baris tabel ──
@@ -1271,10 +1277,19 @@ const Estimasi = () => {
                       return (
                         <TableRow key={idx}>
                           <TableCell>{idx + 1}</TableCell>
-                          <TableCell className="font-medium">
+                        <TableCell className="font-medium">
                             {group.namaBarang}
                             <br />
                             <span className="text-xs text-gray-500">{group.jenisBahan || (isCustom ? 'Custom' : '-')}</span>
+                            {/* Tampilkan supplier jika ada */}
+                            {group.supplier && (
+                              <>
+                                <br />
+                                <span className="text-xs text-sky-600 font-medium">
+                                  📦 {group.supplier}
+                                </span>
+                              </>
+                            )}
                           </TableCell>
                           {/* ── HARGA/SATUAN CELL ── */}
                           <TableCell className="text-right">

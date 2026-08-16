@@ -274,41 +274,60 @@ const EditEstimasi = () => {
             ? barangData.find((b) => b.nama === item.namaBarang)
             : null;
 
+          // Helper: convert any value to string, return '' if null/undefined
+          const toStr = (v) => (v !== null && v !== undefined ? String(v) : '');
+
           return {
             ...emptyItem(),
             barangId: isItemManual
               ? '__manual__'
               : item.barangId?.toString() || barangFromDB?.id?.toString() || '',
-            kodeItem: item.kodeItem || '',
-            panjangJadi: item.panjangJadi?.toString() || '',
-            jumlahKeperluan: item.jumlahKeperluan?.toString() || '',
-            volume: item.volume?.toString() || '',
-            // Manual fields
-            namaManual: isItemManual ? (item.namaBarang || '') : '',
-            hargaManual: '', // No longer used
-            hargamodalManual: isItemManual ? (item.hargaSatuan ?? '').toString() : '',
-            satuanHargaModalManual: isItemManual ? (item.breakdown?.satuanHargaModal || 'batang') : 'batang',
-            hargajasaManual: isItemManual ? (item.hargaJasa ?? '').toString() : '',
-            jenisBentukManual: isItemManual ? (item.jenisBentuk || 'custom') : 'balok',
-            supplierManual: isItemManual ? (item.supplier || '') : '',
-            jenisBahanManual: isItemManual
-              ? (item.jenisBahan !== 'Manual' ? item.jenisBahan || '' : '')
+            kodeItem: toStr(item.kodeItem),
+            // Robust panjangJadi: try multiple field names
+            panjangJadi: toStr(item.panjangJadi || item.panjang_jadi || ''),
+            jumlahKeperluan: toStr(item.jumlahKeperluan),
+            volume: toStr(item.volume),
+            // ── Manual fields — selalu populate dari data tersimpan ──
+            namaManual: isItemManual ? toStr(item.namaBarang) : '',
+            hargaManual: '',
+            hargamodalManual: isItemManual ? toStr(item.hargaSatuan ?? item.hargaModal ?? '') : '',
+            satuanHargaModalManual: isItemManual
+              ? (item.breakdown?.satuanHargaModal || item.satuanHargaModal || 'batang')
+              : 'batang',
+            hargajasaManual: isItemManual ? toStr(item.hargaJasa ?? item.hargajasa ?? '') : '',
+            jenisBentukManual: isItemManual ? (item.jenisBentuk || 'custom') : 'custom',
+            // supplier — prioritas: item.supplierManual → item.supplier → ''
+            supplierManual: isItemManual
+              ? toStr(item.supplierManual || item.supplier || '')
               : '',
-            beratJenisManual: isItemManual ? (item.beratJenis?.toString() || '') : '',
-            beratbatangManual: isItemManual ? (item.beratbatang?.toString() || '') : '',
-            minWeldingManual: isItemManual ? (item.minWelding?.toString() || '') : '',
-            panjangManual: isItemManual ? (item.panjangManual?.toString() || item.panjangMentah?.toString() || '') : '',
-            lebarManual: isItemManual ? (item.lebarManual?.toString() || '') : '',
-            tinggiManual: isItemManual ? (item.tinggiManual?.toString() || '') : '',
-            diameterManual: isItemManual ? (item.diameterManual?.toString() || '') : '',
-            ketebalanManual: isItemManual ? (item.ketebalanManual?.toString() || '') : '',
-            tinggiWFManual: isItemManual ? (item.tinggiWFManual?.toString() || '') : '',
-            lebarFlangeManual: isItemManual ? (item.lebarFlangeManual?.toString() || '') : '',
-            ketebalanWebManual: isItemManual ? (item.ketebalanWebManual?.toString() || '') : '',
-            ketebalanFlangeManual: isItemManual ? (item.ketebalanFlangeManual?.toString() || '') : '',
-            panjangPlatManual: isItemManual ? (item.panjangPlatManual?.toString() || item.panjangMentah?.toString() || '') : '',
-            lebarPlatManual: isItemManual ? (item.lebarPlatManual?.toString() || '') : '',
-            ketebalanPlatManual: isItemManual ? (item.ketebalanPlatManual?.toString() || '') : '',
+            jenisBahanManual: isItemManual
+              ? (item.jenisBahan && item.jenisBahan !== 'Manual' ? item.jenisBahan : '')
+              : '',
+            beratJenisManual: isItemManual ? toStr(item.beratJenis) : '',
+            beratbatangManual: isItemManual ? toStr(item.beratbatang) : '',
+            minWeldingManual: isItemManual ? toStr(item.minWelding) : '',
+            // Dimensi panjang/lebar/tinggi — fallback berlapis
+            panjangManual: isItemManual
+              ? toStr(item.panjangManual || item.panjangMentah || item.panjang || '')
+              : '',
+            lebarManual: isItemManual ? toStr(item.lebarManual || item.lebar || '') : '',
+            tinggiManual: isItemManual ? toStr(item.tinggiManual || item.tinggi || '') : '',
+            diameterManual: isItemManual ? toStr(item.diameterManual || item.diameter || '') : '',
+            ketebalanManual: isItemManual ? toStr(item.ketebalanManual || item.ketebalan || '') : '',
+            tinggiWFManual: isItemManual ? toStr(item.tinggiWFManual || item.tinggiWF || '') : '',
+            lebarFlangeManual: isItemManual ? toStr(item.lebarFlangeManual || item.lebarFlange || '') : '',
+            ketebalanWebManual: isItemManual ? toStr(item.ketebalanWebManual || item.ketebalanWeb || '') : '',
+            ketebalanFlangeManual: isItemManual ? toStr(item.ketebalanFlangeManual || item.ketebalanFlange || '') : '',
+            // Dimensi plat — fallback berlapis: Manual → Plat → Mentah
+            panjangPlatManual: isItemManual
+              ? toStr(item.panjangPlatManual || item.panjangPlat || item.panjangMentah || item.panjang || '')
+              : '',
+            lebarPlatManual: isItemManual
+              ? toStr(item.lebarPlatManual || item.lebarPlat || item.lebar || '')
+              : '',
+            ketebalanPlatManual: isItemManual
+              ? toStr(item.ketebalanPlatManual || item.ketebalanPlat || item.ketebalan || '')
+              : '',
           };
         }) || [emptyItem()]
       );
@@ -353,7 +372,7 @@ const EditEstimasi = () => {
   const addItemRow = () => {
     setSelectedItems([
       ...selectedItems,
-      { barangId: '', kodeItem: '', panjangJadi: '', jumlahKeperluan: '', volume: '', namaManual: '', hargaManual: '' },
+      emptyItem(),
     ]);
   };
 
@@ -659,9 +678,10 @@ const EditEstimasi = () => {
       }
 
       if (isManual) {
-        const check = (val) => val !== undefined && val !== null && String(val).trim() !== '';
+        const check = (val) => val !== undefined && val !== null && String(val).trim() !== '' && String(val).trim() !== '0';
+        const checkVal = (val) => val !== undefined && val !== null && String(val).trim() !== '';
 
-        if (!check(item.namaManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Nama barang wajib diisi.`; break; }
+        if (!checkVal(item.namaManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Nama barang wajib diisi.`; break; }
 
         if (jb === 'balok') {
           if (!check(item.panjangManual) || !check(item.lebarManual) || !check(item.tinggiManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Panjang, Lebar, Tinggi wajib diisi.`; break; }
@@ -670,21 +690,30 @@ const EditEstimasi = () => {
         } else if (jb === 'wf') {
           if (!check(item.tinggiWFManual) || !check(item.lebarFlangeManual) || !check(item.ketebalanWebManual) || !check(item.ketebalanFlangeManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Dimensi WF wajib diisi lengkap.`; break; }
         } else if (jb === 'plat') {
-          if (!check(item.panjangPlatManual) || !check(item.lebarPlatManual) || !check(item.ketebalanPlatManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Dimensi Plat wajib diisi lengkap.`; break; }
+          // Validasi plat: cek field manual utama, DENGAN fallback ke field alternatif
+          const panjangPlat = item.panjangPlatManual || item.panjangMentah || item.panjang;
+          const lebarPlat   = item.lebarPlatManual   || item.lebarPlat    || item.lebar;
+          const ketebPlat   = item.ketebalanPlatManual || item.ketebalanPlat || item.ketebalan;
+          if (!check(panjangPlat) || !check(lebarPlat) || !check(ketebPlat)) {
+            hasInvalid = true;
+            errorMessage = `Baris ${i + 1} (Manual): Dimensi Plat wajib diisi lengkap (Panjang, Lebar, Ketebalan).`;
+            break;
+          }
         }
 
         if (!['wf', 'plat', 'custom'].includes(jb) && !check(item.ketebalanManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Ketebalan wajib diisi.`; break; }
 
         if (jb !== 'custom') {
-          if (!check(item.jenisBahanManual) || !check(item.beratJenisManual) || !check(item.minWeldingManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Jenis Bahan, Berat Jenis, Min Welding wajib diisi.`; break; }
+          if (!checkVal(item.jenisBahanManual) || !check(item.beratJenisManual) || !checkVal(item.minWeldingManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Jenis Bahan, Berat Jenis, Min Welding wajib diisi.`; break; }
           if (!check(item.beratbatangManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Berat per Batang wajib diisi.`; break; }
         }
 
-        if (!check(item.hargamodalManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Harga Modal wajib diisi.`; break; }
+        if (!checkVal(item.hargamodalManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Harga Modal wajib diisi.`; break; }
 
         validItems.push(item);
       } else {
-        if (!item.panjangJadi || parseFloat(item.panjangJadi) <= 0) {
+        const pjVal = item.panjangJadi;
+        if (pjVal === null || pjVal === undefined || pjVal === '' || parseFloat(pjVal) <= 0) {
           hasInvalid = true;
           errorMessage = `Baris ${i + 1}: Panjang Jadi wajib diisi lebih dari 0.`;
           break;
@@ -981,65 +1010,60 @@ const EditEstimasi = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Daftar Barang</CardTitle>
-            <Button onClick={addItemRow} variant="outline" size="sm">
-              <Plus className="w-4 h-4 mr-1" /> Tambah
+            <Button onClick={addItemRow} variant="outline" size="sm" id="btn-tambah-barang-atas">
+              <Plus className="w-4 h-4 mr-1" /> Tambah Barang
             </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {selectedItems.map((item, index) => {
-            const barangInfo     = getSelectedBarangInfo(item.barangId);
-            const isGroupable    = item.barangId && (item.barangId !== '__manual__' || (item.namaManual || '').trim() !== '');
-            const isSameAsPrev   = isGroupable && index > 0 && isSameBarang(item, selectedItems[index - 1]);
-            if (isSameAsPrev) return null;
+          {(() => {
+            // Hitung jumlah grup yang terlihat untuk kontrol visibilitas tombol Delete
+            let visibleGroupCount = 0;
+            selectedItems.forEach((item, index) => {
+              const isGroupable = item.barangId && (item.barangId !== '__manual__' || (item.namaManual || '').trim() !== '');
+              const isSameAsPrev = isGroupable && index > 0 && isSameBarang(item, selectedItems[index - 1]);
+              if (!isSameAsPrev) visibleGroupCount++;
+            });
 
-            const itemsWithSame = [item];
-            if (isGroupable) {
-              for (let i = index + 1; i < selectedItems.length; i++) {
-                if (isSameBarang(selectedItems[i], item)) itemsWithSame.push(selectedItems[i]);
-                else break;
+            return selectedItems.map((item, index) => {
+              const barangInfo     = getSelectedBarangInfo(item.barangId);
+              const isGroupable    = item.barangId && (item.barangId !== '__manual__' || (item.namaManual || '').trim() !== '');
+              const isSameAsPrev   = isGroupable && index > 0 && isSameBarang(item, selectedItems[index - 1]);
+              if (isSameAsPrev) return null;
+
+              const itemsWithSame = [item];
+              if (isGroupable) {
+                for (let i = index + 1; i < selectedItems.length; i++) {
+                  if (isSameBarang(selectedItems[i], item)) itemsWithSame.push(selectedItems[i]);
+                  else break;
+                }
               }
-            }
-            const lastIdx  = index + itemsWithSame.length - 1;
-            const isManual = item.barangId === '__manual__';
+              const lastIdx  = index + itemsWithSame.length - 1;
+              const isManual = item.barangId === '__manual__';
 
-            return (
-              <div key={index} className="p-4 border rounded-lg bg-gray-50 space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="font-semibold">Item #{index + 1}</Label>
-                  <div className="flex items-center gap-2">
-                    {!(
-                      (isManual && (item.jenisBentukManual || 'custom') === 'custom') ||
-                      (!isManual && getEffectiveBarang(item.barangId)?.jenisBentuk === 'custom') ||
-                      (!isManual && getEffectiveBarang(item.barangId)?.jenisBentuk === 'plat')
-                    ) && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addItemRowWithSameBarang(lastIdx)}
-                        className="px-3"
-                        disabled={!item.barangId}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    )}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        isManual
-                          ? removeAllItemsWithSameManualName(item.namaManual, index)
-                          : removeAllItemsWithSameBarang(item.barangId)
-                      }
-                      className="text-red-500 hover:bg-red-50 hover:border-red-300"
-                      title="Hapus barang ini beserta seluruh kodenya"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+              return (
+                <div key={index} className="p-4 border rounded-lg bg-gray-50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-semibold">Item #{index + 1}</Label>
+                    <div className="flex items-center gap-2">
+                      {/* Merah: hapus semua baris barang ini — hanya tampil jika ada lebih dari 1 grup */}
+                      {visibleGroupCount > 1 && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() =>
+                            isManual
+                              ? removeAllItemsWithSameManualName(item.namaManual, index)
+                              : removeAllItemsWithSameBarang(item.barangId)
+                          }
+                          className="bg-red-500 hover:bg-red-600 text-white border-0"
+                          title="Hapus barang ini beserta seluruh kodenya"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
 
                 <BarangCombobox
                   barangList={barangList}
@@ -1289,12 +1313,27 @@ const EditEstimasi = () => {
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs">Jumlah ({satuan}) <span className="text-red-500">*</span></Label>
-                          <Input
-                            type="number"
-                            placeholder="252"
-                            value={cur.jumlahKeperluan || ''}
-                            onChange={(e) => handleItemChange(actualIdx, 'jumlahKeperluan', e.target.value)}
-                          />
+                          <div className="flex gap-1.5">
+                            <Input
+                              type="number"
+                              placeholder="252"
+                              value={cur.jumlahKeperluan || ''}
+                              onChange={(e) => handleItemChange(actualIdx, 'jumlahKeperluan', e.target.value)}
+                              className="flex-1"
+                            />
+                            {selectedItems.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeItemRow(actualIdx)}
+                                className="px-2 hover:bg-red-50 hover:text-red-600 shrink-0"
+                                title="Hapus baris ini"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -1315,7 +1354,7 @@ const EditEstimasi = () => {
                           <Label className="text-xs">
                             Jumlah (Lembar) <span className="text-red-500">*</span>
                           </Label>
-                          <div className="flex gap-2">
+                          <div className="flex gap-1.5">
                             <Input
                               type="number"
                               value={cur.jumlahKeperluan || ''}
@@ -1329,7 +1368,8 @@ const EditEstimasi = () => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removeItemRow(actualIdx)}
-                                className="px-3 hover:bg-red-50 hover:text-red-600"
+                                className="px-2 hover:bg-red-50 hover:text-red-600 shrink-0"
+                                title="Hapus baris ini"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -1373,7 +1413,7 @@ const EditEstimasi = () => {
                         <Label className="text-xs">
                           Jumlah <span className="text-red-500">*</span>
                         </Label>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1.5">
                           <Input
                             type="number"
                             value={cur.jumlahKeperluan}
@@ -1381,13 +1421,25 @@ const EditEstimasi = () => {
                             placeholder="15"
                             className="flex-1"
                           />
+                          {/* Hijau: tambah detail baru untuk barang yang sama */}
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => addItemRowWithSameBarang(actualIdx)}
+                            className="px-2 bg-emerald-500 hover:bg-emerald-600 text-white shrink-0"
+                            title="Tambah detail (kode/panjang/jumlah) baru untuk barang yang sama"
+                            disabled={!cur.barangId}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
                           {selectedItems.length > 1 && (
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
                               onClick={() => removeItemRow(actualIdx)}
-                              className="px-3 hover:bg-red-50 hover:text-red-600"
+                              className="px-2 hover:bg-red-50 hover:text-red-600 shrink-0"
+                              title="Hapus baris ini"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -1420,7 +1472,7 @@ const EditEstimasi = () => {
                           onChange={(e) => handleItemChange(actualIdx, 'panjangJadi', e.target.value)}
                         />
                       </div>
-                      <div className="flex gap-2 items-end">
+                      <div className="flex gap-1.5 items-end">
                         <div className="flex-1 space-y-1">
                           <Label className="text-xs">Jumlah <span className="text-red-500">*</span></Label>
                           <Input
@@ -1430,6 +1482,16 @@ const EditEstimasi = () => {
                             onChange={(e) => handleItemChange(actualIdx, 'jumlahKeperluan', e.target.value)}
                           />
                         </div>
+                        {/* Hijau: tambah detail baru untuk barang manual yang sama */}
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => addItemRowWithSameBarang(actualIdx)}
+                          className="px-2 bg-emerald-500 hover:bg-emerald-600 text-white shrink-0"
+                          title="Tambah detail baru untuk barang yang sama"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
                         {itemsWithSame.length > 1 && (
                           <Button
                             type="button"
@@ -1437,6 +1499,7 @@ const EditEstimasi = () => {
                             size="icon"
                             onClick={() => removeItemRow(actualIdx)}
                             className="text-red-500 hover:bg-red-50 shrink-0"
+                            title="Hapus baris ini"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -1448,7 +1511,19 @@ const EditEstimasi = () => {
 
               </div>
             );
-          })}
+          });
+          })()}
+          {/* Tombol Tambah Barang di bagian bawah daftar */}
+          <div className="flex justify-center pt-2 border-t border-gray-100 mt-2">
+            <Button
+              onClick={addItemRow}
+              variant="outline"
+              id="btn-tambah-barang-bawah"
+              className="w-full border-dashed border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-500"
+            >
+              <Plus className="w-4 h-4 mr-2" /> Tambah Barang
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
