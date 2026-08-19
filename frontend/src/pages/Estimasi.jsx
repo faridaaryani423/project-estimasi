@@ -215,7 +215,8 @@ const Estimasi = () => {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
         // Tampilkan supplier per grup, bukan nama project (yang sudah ada di header)
-        const supplierText = repItem.supplier ? `Supplier: ${repItem.supplier}` : `${new Date(est.createdAt).toLocaleDateString('id-ID')}`;
+        const supplierRaw = repItem.supplier || '';
+        const supplierText = `Supplier: ${supplierRaw.trim() ? supplierRaw : '-'}`;
         doc.text(supplierText, marginL, startY);
         startY += 3.5;
 
@@ -319,7 +320,8 @@ const Estimasi = () => {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
         // Tampilkan supplier per grup, bukan nama project (yang sudah ada di header)
-        const supplierTextPlat = repItem.supplier ? `Supplier: ${repItem.supplier}` : `${new Date(est.createdAt).toLocaleDateString('id-ID')}`;
+        const supplierRawPlat = repItem.supplier || '';
+        const supplierTextPlat = `Supplier: ${supplierRawPlat.trim() ? supplierRawPlat : '-'}`;
         doc.text(supplierTextPlat, marginL, startY);
         startY += 3.5;
 
@@ -491,7 +493,8 @@ const Estimasi = () => {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
       // Tampilkan supplier per grup, bukan nama project (yang sudah ada di header)
-      const supplierTextStruct = repItem.supplier ? `Supplier: ${repItem.supplier}` : `${new Date(est.createdAt).toLocaleDateString('id-ID')}`;
+      const supplierRawStruct = repItem.supplier || '';
+      const supplierTextStruct = `Supplier: ${supplierRawStruct.trim() ? supplierRawStruct : '-'}`;
       doc.text(supplierTextStruct, marginL, startY);
       startY += 3.5;
 
@@ -1281,15 +1284,11 @@ const Estimasi = () => {
                             {group.namaBarang}
                             <br />
                             <span className="text-xs text-gray-500">{group.jenisBahan || (isCustom ? 'Custom' : '-')}</span>
-                            {/* Tampilkan supplier jika ada */}
-                            {group.supplier && (
-                              <>
-                                <br />
-                                <span className="text-xs text-sky-600 font-medium">
-                                  📦 {group.supplier}
-                                </span>
-                              </>
-                            )}
+                            {/* Tampilkan supplier, jika kosong tampilkan - */}
+                            <br />
+                            <span className="text-xs text-sky-600 font-medium">
+                              📦 {group.supplier && group.supplier.trim() ? group.supplier : '-'}
+                            </span>
                           </TableCell>
                           {/* ── HARGA/SATUAN CELL ── */}
                           <TableCell className="text-right">

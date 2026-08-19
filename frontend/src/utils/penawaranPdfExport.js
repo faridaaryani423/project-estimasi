@@ -271,7 +271,8 @@ const exportToPDFDetail = (penawaran) => {
       0
     );
     // Supplier dari item pertama di grup
-    const supplierValue = matchedItems[0]?.supplier || '-';
+    const supplierRaw = matchedItems[0]?.supplier || '';
+    const supplierValue = supplierRaw.trim() ? supplierRaw : '-';
 
     const isCustomGroup =
       group.representativeItem?.jenisBentuk === 'custom' ||

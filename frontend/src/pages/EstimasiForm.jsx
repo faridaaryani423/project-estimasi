@@ -891,11 +891,15 @@ const EstimasiForm = () => {
                 if (!isSameAsPrev) visibleGroupCount++;
               });
 
+              let displayGroupIndex = 0;
+
               return selectedItems.map((item, index) => {
                 const barangInfo     = getSelectedBarangInfo(item.barangId);
                 const isGroupable    = item.barangId && (item.barangId !== '__manual__' || (item.namaManual || '').trim() !== '');
                 const isSameAsPrev   = isGroupable && index > 0 && isSameBarang(item, selectedItems[index - 1]);
                 if (isSameAsPrev) return null;
+
+                displayGroupIndex++;
 
                 const itemsWithSame = [item];
                 if (isGroupable) {
@@ -1380,7 +1384,7 @@ const EstimasiForm = () => {
             })()}
 
             {/* Tombol Tambah Barang di bagian bawah daftar */}
-            {/* <div className="flex justify-center pt-2 border-t border-gray-100 mt-2">
+            <div className="flex justify-center pt-2 border-t border-gray-100 mt-2">
               <Button
                 onClick={addItemRow}
                 variant="outline"
@@ -1389,7 +1393,7 @@ const EstimasiForm = () => {
               >
                 <Plus className="w-4 h-4 mr-2" /> Tambah Barang
               </Button>
-            </div> */}
+            </div>
 
             {/* ── Footer tombol ── */}
             <div className="flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">

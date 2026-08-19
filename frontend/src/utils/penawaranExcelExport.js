@@ -103,7 +103,8 @@ const exportSingkatToExcel = (penawaran, wb) => {
     // Sub-baris barang
     eg.barangList.forEach((b) => {
       const label = `  - ${b.namaBarang}${b.kodeItem ? ` (${b.kodeItem})` : ''}`;
-      rows.push(['', label, b.supplier || '', '', '', '']);
+      const supplierRaw = b.supplier || '';
+      rows.push(['', label, supplierRaw.trim() ? supplierRaw : '-', '', '', '']);
     });
   });
 
@@ -172,7 +173,8 @@ const exportDetailToExcel = (penawaran, wb) => {
     const supplierItems = items.filter(i =>
       isManualRow ? i.namaBarang === group.namaBarang : i.barangId === group.barangId
     );
-    const supplierValue = supplierItems[0]?.supplier || '';
+    const supplierRaw = supplierItems[0]?.supplier || '';
+    const supplierValue = supplierRaw.trim() ? supplierRaw : '-';
 
     // Harga jual dan subtotal jual diambil dari item (sudah diset di backend)
     const hargaJualPerUnit = group.representativeItem?.hargaJualPerUnit || items.find(i => i.namaBarang === group.namaBarang)?.hargaJualPerUnit || 0;

@@ -160,7 +160,7 @@ export const exportToPDFSingkat = (penawaran) => {
     // Baris sub-item barang
     eg.barangList.forEach((b) => {
       const label = b.namaBarang + (b.kodeItem ? ` (${b.kodeItem})` : '');
-      const supplierText = b.supplier ? `Supplier: ${b.supplier}` : '';
+      const supplierText = b.supplier ? `Supplier: ${b.supplier}` : 'Supplier: -';
       tableBody.push([
         { content: '', styles: { fillColor: [255, 255, 255] } },
         {

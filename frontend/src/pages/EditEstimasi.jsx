@@ -1025,11 +1025,15 @@ const EditEstimasi = () => {
               if (!isSameAsPrev) visibleGroupCount++;
             });
 
+            let displayGroupIndex = 0;
+
             return selectedItems.map((item, index) => {
               const barangInfo     = getSelectedBarangInfo(item.barangId);
               const isGroupable    = item.barangId && (item.barangId !== '__manual__' || (item.namaManual || '').trim() !== '');
               const isSameAsPrev   = isGroupable && index > 0 && isSameBarang(item, selectedItems[index - 1]);
               if (isSameAsPrev) return null;
+
+              displayGroupIndex++;
 
               const itemsWithSame = [item];
               if (isGroupable) {
@@ -1044,7 +1048,7 @@ const EditEstimasi = () => {
               return (
                 <div key={index} className="p-4 border rounded-lg bg-gray-50 space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="font-semibold">Item #{index + 1}</Label>
+                    <Label className="font-semibold">Item #{displayGroupIndex}</Label>
                     <div className="flex items-center gap-2">
                       {/* Merah: hapus form ini — hanya tampil jika ada lebih dari 1 grup */}
                       {visibleGroupCount > 1 && (
@@ -1528,8 +1532,9 @@ const EditEstimasi = () => {
             );
           });
           })()}
+          {/* End of list */}
           {/* Tombol Tambah Barang di bagian bawah daftar */}
-          {/* <div className="flex justify-center pt-2 border-t border-gray-100 mt-2">
+          <div className="flex justify-center pt-2 border-t border-gray-100 mt-2">
             <Button
               onClick={addItemRow}
               variant="outline"
@@ -1538,7 +1543,7 @@ const EditEstimasi = () => {
             >
               <Plus className="w-4 h-4 mr-2" /> Tambah Barang
             </Button>
-          </div> */}
+          </div>
         </CardContent>
       </Card>
 
