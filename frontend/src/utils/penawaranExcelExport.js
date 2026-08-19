@@ -49,6 +49,7 @@ const buildEstimasiGroupsFromSaved = (penawaran) => {
       targetItems.map((item) => [item.namaBarang, {
         namaBarang: item.namaBarang || item.namaManual || '-',
         kodeItem: item.kodeItem || '',
+        supplier: item.supplier || '',
       }])
     ).values()];
 
@@ -86,7 +87,7 @@ const exportSingkatToExcel = (penawaran, wb) => {
     ['Tanggal', new Date(penawaran.createdAt).toLocaleDateString('id-ID')],
     ['Estimasi', penawaran.estimasiList?.map((e) => e.nomor).join(', ')],
     [''],
-    ['No', 'Item Pekerjaan', 'Volume (M²)', 'Harga Satuan (Rp)', 'Total Harga (Rp)'],
+    ['No', 'Item Pekerjaan', 'Supplier', 'Volume (M²)', 'Harga Satuan (Rp)', 'Total Harga (Rp)'],
   ];
 
   estimasiGroups.forEach((eg, idx) => {
@@ -94,6 +95,7 @@ const exportSingkatToExcel = (penawaran, wb) => {
     rows.push([
       idx + 1,
       eg.nama.toUpperCase(),
+      '',
       eg.dimensiKerja > 0 ? Number(eg.dimensiKerja.toFixed(2)) : '-',
       eg.hargaSatuan > 0 ? eg.hargaSatuan : '-',
       eg.totalHarga > 0 ? eg.totalHarga : '-',
@@ -101,11 +103,11 @@ const exportSingkatToExcel = (penawaran, wb) => {
     // Sub-baris barang
     eg.barangList.forEach((b) => {
       const label = `  - ${b.namaBarang}${b.kodeItem ? ` (${b.kodeItem})` : ''}`;
-      rows.push(['', label, '', '', '']);
+      rows.push(['', label, b.supplier || '', '', '', '']);
     });
   });
 
-  rows.push(['', '', '', 'TOTAL', totalHarga]);
+  rows.push(['', '', '', '', 'TOTAL', totalHarga]);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
 
@@ -113,6 +115,7 @@ const exportSingkatToExcel = (penawaran, wb) => {
   ws['!cols'] = [
     { wch: 6 },
     { wch: 45 },
+    { wch: 25 },
     { wch: 14 },
     { wch: 20 },
     { wch: 20 },
@@ -153,7 +156,7 @@ const exportDetailToExcel = (penawaran, wb) => {
     ['Tanggal', new Date(penawaran.createdAt).toLocaleDateString('id-ID')],
     ['Estimasi', estimasiList.map((e) => e.nomor).join(', ')],
     [''],
-    ['No', 'Item Pekerjaan', 'Volume', 'Satuan', 'Harga Satuan (Rp)', 'Total Harga (Rp)'],
+    ['No', 'Item Pekerjaan', 'Supplier', 'Volume', 'Satuan', 'Harga Satuan (Rp)', 'Total Harga (Rp)'],
   ];
 
   const groupedItems = buildGroupedItemsByBarang(items);
@@ -165,6 +168,12 @@ const exportDetailToExcel = (penawaran, wb) => {
       : group.totalBeratMaterial;
     const satuan = isManualRow ? (group.representativeItem?.satuanManual || 'Ls') : 'Kg';
     
+    // Supplier — diambil dari item pertama di grup
+    const supplierItems = items.filter(i =>
+      isManualRow ? i.namaBarang === group.namaBarang : i.barangId === group.barangId
+    );
+    const supplierValue = supplierItems[0]?.supplier || '';
+
     // Harga jual dan subtotal jual diambil dari item (sudah diset di backend)
     const hargaJualPerUnit = group.representativeItem?.hargaJualPerUnit || items.find(i => i.namaBarang === group.namaBarang)?.hargaJualPerUnit || 0;
     
@@ -182,6 +191,7 @@ const exportDetailToExcel = (penawaran, wb) => {
     rows.push([
       idx + 1,
       group.namaBarang,
+      supplierValue,
       volume > 0 ? Number(volume.toFixed(2)) : '-',
       satuan,
       hargaJualPerUnit > 0 ? hargaJualPerUnit : '-',
@@ -189,12 +199,13 @@ const exportDetailToExcel = (penawaran, wb) => {
     ]);
   });
 
-  rows.push(['', 'TOTAL PENAWARAN', '', '', '', totalHargaJual]);
+  rows.push(['', 'TOTAL PENAWARAN', '', '', '', '', totalHargaJual]);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols'] = [
     { wch: 8 },
     { wch: 50 },
+    { wch: 25 },
     { wch: 14 },
     { wch: 10 },
     { wch: 22 },

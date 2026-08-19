@@ -1046,16 +1046,21 @@ const EditEstimasi = () => {
                   <div className="flex items-center justify-between">
                     <Label className="font-semibold">Item #{index + 1}</Label>
                     <div className="flex items-center gap-2">
-                      {/* Merah: hapus semua baris barang ini — hanya tampil jika ada lebih dari 1 grup */}
+                      {/* Merah: hapus form ini — hanya tampil jika ada lebih dari 1 grup */}
                       {visibleGroupCount > 1 && (
                         <Button
                           type="button"
                           size="sm"
-                          onClick={() =>
-                            isManual
-                              ? removeAllItemsWithSameManualName(item.namaManual, index)
-                              : removeAllItemsWithSameBarang(item.barangId)
-                          }
+                          onClick={() => {
+                            if (isManual) {
+                              removeAllItemsWithSameManualName(item.namaManual, index);
+                            } else if (item.barangId) {
+                              removeAllItemsWithSameBarang(item.barangId);
+                            } else {
+                              // item kosong (belum dipilih barangnya)
+                              removeItemRow(index);
+                            }
+                          }}
                           className="bg-red-500 hover:bg-red-600 text-white border-0"
                           title="Hapus barang ini beserta seluruh kodenya"
                         >
@@ -1146,6 +1151,10 @@ const EditEstimasi = () => {
                                 <Input type="number" {...field('hargamodal')} />
                               </div>
                             </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Supplier</Label>
+                              <Input {...field('supplier')} placeholder="Contoh: CV. Baut Sentosa" />
+                            </div>
                             <div className="flex gap-2 pt-2 border-t">
                               <Button
                                 type="button"
@@ -1211,6 +1220,12 @@ const EditEstimasi = () => {
                                 <div><Label className="text-xs">Ketebalan</Label><Input type="number" {...field('ketebalanPlat')} /></div>
                               </div>
                             )}
+                          </div>
+
+                          {/* Supplier */}
+                          <div className="space-y-1">
+                            <Label className="text-xs">Supplier</Label>
+                            <Input {...field('supplier')} placeholder="Contoh: CV. Baut Sentosa" />
                           </div>
 
                           {/* Material */}
@@ -1514,7 +1529,7 @@ const EditEstimasi = () => {
           });
           })()}
           {/* Tombol Tambah Barang di bagian bawah daftar */}
-          <div className="flex justify-center pt-2 border-t border-gray-100 mt-2">
+          {/* <div className="flex justify-center pt-2 border-t border-gray-100 mt-2">
             <Button
               onClick={addItemRow}
               variant="outline"
@@ -1523,7 +1538,7 @@ const EditEstimasi = () => {
             >
               <Plus className="w-4 h-4 mr-2" /> Tambah Barang
             </Button>
-          </div>
+          </div> */}
         </CardContent>
       </Card>
 

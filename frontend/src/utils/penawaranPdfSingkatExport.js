@@ -27,6 +27,7 @@ const buildEstimasiGroupsFromSaved = (penawaran) => {
     const barangList = items.map((item) => ({
       namaBarang: item.namaBarang || item.namaManual || '-',
       kodeItem: item.kodeItem || '',
+      supplier: item.supplier || '',
     }));
     return [
       {
@@ -58,6 +59,7 @@ const buildEstimasiGroupsFromSaved = (penawaran) => {
     const barangList = targetItems.map((item) => ({
       namaBarang: item.namaBarang || item.namaManual || '-',
       kodeItem: item.kodeItem || '',
+      supplier: item.supplier || '',
     }));
 
     // Dimensi kerja per estimasi
@@ -158,12 +160,13 @@ export const exportToPDFSingkat = (penawaran) => {
     // Baris sub-item barang
     eg.barangList.forEach((b) => {
       const label = b.namaBarang + (b.kodeItem ? ` (${b.kodeItem})` : '');
+      const supplierText = b.supplier ? `Supplier: ${b.supplier}` : '';
       tableBody.push([
         { content: '', styles: { fillColor: [255, 255, 255] } },
         {
-          content: `  - ${label}`,
+          content: `  - ${label}${supplierText ? `\n    ${supplierText}` : ''}`,
           styles: {
-            fontSize: 8,
+            fontSize: 7.5,
             textColor: [90, 90, 90],
             fillColor: [255, 255, 255],
           },

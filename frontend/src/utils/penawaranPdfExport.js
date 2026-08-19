@@ -270,6 +270,8 @@ const exportToPDFDetail = (penawaran) => {
       (s, it) => s + Number(it.subtotalJual || 0),
       0
     );
+    // Supplier dari item pertama di grup
+    const supplierValue = matchedItems[0]?.supplier || '-';
 
     const isCustomGroup =
       group.representativeItem?.jenisBentuk === 'custom' ||
@@ -295,6 +297,10 @@ const exportToPDFDetail = (penawaran) => {
       {
         content: group.namaBarang,
         styles: { fontSize: 8 },
+      },
+      {
+        content: supplierValue,
+        styles: { fontSize: 7, textColor: [100, 100, 100] },
       },
       {
         content:
@@ -326,7 +332,7 @@ const exportToPDFDetail = (penawaran) => {
     { content: '', styles: { fontStyle: 'bold', fillColor: [235, 245, 235] } },
     {
       content: 'TOTAL PENAWARAN',
-      colSpan: 4,
+      colSpan: 5,
       styles: { fontStyle: 'bold', halign: 'right', fillColor: [235, 245, 235] },
     },
     {
@@ -343,7 +349,7 @@ const exportToPDFDetail = (penawaran) => {
 
   autoTable(doc, {
     startY: 42,
-    head: [['No', 'Item Pekerjaan', 'Volume', 'Satuan', 'Harga Satuan (Rp)', 'Total Harga (Rp)']],
+    head: [['No', 'Item Pekerjaan', 'Supplier', 'Volume', 'Satuan', 'Harga Satuan (Rp)', 'Total Harga (Rp)']],
     body: tableBody,
     theme: 'grid',
     headStyles: {
@@ -364,12 +370,13 @@ const exportToPDFDetail = (penawaran) => {
     },
     alternateRowStyles: { fillColor: [252, 252, 255] },
     columnStyles: {
-      0: { cellWidth: 14, halign: 'center' },
+      0: { cellWidth: 12, halign: 'center' },
       1: { cellWidth: 'auto' },
-      2: { cellWidth: 22, halign: 'center' },
-      3: { cellWidth: 14, halign: 'center' },
-      4: { cellWidth: 34, halign: 'right' },
-      5: { cellWidth: 34, halign: 'right' },
+      2: { cellWidth: 28 },
+      3: { cellWidth: 16, halign: 'center' },
+      4: { cellWidth: 12, halign: 'center' },
+      5: { cellWidth: 28, halign: 'right' },
+      6: { cellWidth: 28, halign: 'right' },
     },
     margin: { left: marginL, right: marginR },
   });
