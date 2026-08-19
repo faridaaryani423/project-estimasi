@@ -176,6 +176,12 @@ const EstimasiForm = () => {
     setSelectedItems([...selectedItems, emptyItem()]);
   };
 
+  const insertItemRowAfter = (insertAfterIndex) => {
+    const newItems = [...selectedItems];
+    newItems.splice(insertAfterIndex + 1, 0, emptyItem());
+    setSelectedItems(newItems);
+  };
+
   const addItemRowWithSameBarang = (index) => {
     const currentItem = selectedItems[index];
     const newItem = {
@@ -912,7 +918,8 @@ const EstimasiForm = () => {
               const isManual = item.barangId === '__manual__';
 
                 return (
-                  <div key={index} className="p-4 border rounded-lg bg-gray-50 space-y-3">
+                  <React.Fragment key={index}>
+                    <div className="p-4 border rounded-lg bg-gray-50 space-y-3">
                     <div className="flex items-center justify-between">
                       <Label className="font-semibold">Item #{index + 1}</Label>
                       <div className="flex items-center gap-2">
@@ -1177,7 +1184,7 @@ const EstimasiForm = () => {
                   )}
 
                   {/* Sub-item (panjang jadi + jumlah) untuk barang dari database */}
-                  {!isManual && itemsWithSame.map((cur, sub) => {
+                  {!isManual && !!item.barangId && itemsWithSame.map((cur, sub) => {
                     const actualIdx = index + sub;
                     const curInfo   = getSelectedBarangInfo(cur.barangId);
                     const curBarang = getEffectiveBarang(cur.barangId);
@@ -1290,17 +1297,19 @@ const EstimasiForm = () => {
                               placeholder="15"
                               className="flex-1"
                             />
-                            {/* Hijau: tambah detail baru untuk barang yang sama */}
-                            <Button
-                              type="button"
-                              size="sm"
-                              onClick={() => addItemRowWithSameBarang(actualIdx)}
-                              className="px-2 bg-emerald-500 hover:bg-emerald-600 text-white shrink-0"
-                              title="Tambah detail (kode/panjang/jumlah) baru untuk barang yang sama"
-                              disabled={!cur.barangId}
-                            >
-                              <Plus className="w-4 h-4" />
-                            </Button>
+                            {/* Hijau: tambah detail baru untuk barang yang sama (HANYA DI BARIS TERAKHIR) */}
+                            {sub === itemsWithSame.length - 1 && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => addItemRowWithSameBarang(actualIdx)}
+                                className="px-2 bg-emerald-500 hover:bg-emerald-600 text-white shrink-0"
+                                title="Tambah detail (kode/panjang/jumlah) baru untuk barang yang sama"
+                                disabled={!cur.barangId}
+                              >
+                                <Plus className="w-4 h-4" />
+                              </Button>
+                            )}
                             {selectedItems.length > 1 && (
                               <Button
                                 type="button"
@@ -1351,16 +1360,18 @@ const EstimasiForm = () => {
                               onChange={(e) => handleItemChange(actualIdx, 'jumlahKeperluan', e.target.value)}
                             />
                           </div>
-                          {/* Hijau: tambah detail baru untuk barang manual yang sama */}
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => addItemRowWithSameBarang(actualIdx)}
-                            className="px-2 bg-emerald-500 hover:bg-emerald-600 text-white shrink-0"
-                            title="Tambah detail baru untuk barang yang sama"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </Button>
+                          {/* Hijau: tambah detail baru untuk barang manual yang sama (HANYA DI BARIS TERAKHIR) */}
+                          {sub === itemsWithSame.length - 1 && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => addItemRowWithSameBarang(actualIdx)}
+                              className="px-2 bg-emerald-500 hover:bg-emerald-600 text-white shrink-0"
+                              title="Tambah detail baru untuk barang yang sama"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          )}
                           {itemsWithSame.length > 1 && (
                             <Button
                               type="button"
@@ -1379,21 +1390,23 @@ const EstimasiForm = () => {
                   })}
 
                 </div>
+                  {/* Tombol Tambah Barang di bawah setiap item (sesuai UI mockup) */}
+                  <div className="flex justify-center pt-2 pb-4">
+                    <Button
+                      type="button"
+                      onClick={() => insertItemRowAfter(lastIdx)}
+                      variant="outline"
+                      className="w-full border-dashed border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-500"
+                    >
+                      <Plus className="w-4 h-4 mr-2" /> Tambah Barang
+                    </Button>
+                  </div>
+                </React.Fragment>
               );
             });
             })()}
 
-            {/* Tombol Tambah Barang di bagian bawah daftar */}
-            <div className="flex justify-center pt-2 border-t border-gray-100 mt-2">
-              <Button
-                onClick={addItemRow}
-                variant="outline"
-                id="btn-tambah-barang-bawah-form"
-                className="w-full border-dashed border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-500"
-              >
-                <Plus className="w-4 h-4 mr-2" /> Tambah Barang
-              </Button>
-            </div>
+            {/* Tombol Tambah Barang tunggal di bawah sudah dihapus (diganti per-item) */}
 
             {/* ── Footer tombol ── */}
             <div className="flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">

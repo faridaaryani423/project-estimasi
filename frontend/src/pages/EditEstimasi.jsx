@@ -370,10 +370,13 @@ const EditEstimasi = () => {
   };
 
   const addItemRow = () => {
-    setSelectedItems([
-      ...selectedItems,
-      emptyItem(),
-    ]);
+    setSelectedItems([...selectedItems, emptyItem()]);
+  };
+
+  const insertItemRowAfter = (insertAfterIndex) => {
+    const newItems = [...selectedItems];
+    newItems.splice(insertAfterIndex + 1, 0, emptyItem());
+    setSelectedItems(newItems);
   };
 
   const addItemRowWithSameBarang = (index) => {
@@ -1046,33 +1049,34 @@ const EditEstimasi = () => {
               const isManual = item.barangId === '__manual__';
 
               return (
-                <div key={index} className="p-4 border rounded-lg bg-gray-50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="font-semibold">Item #{displayGroupIndex}</Label>
-                    <div className="flex items-center gap-2">
-                      {/* Merah: hapus form ini — hanya tampil jika ada lebih dari 1 grup */}
-                      {visibleGroupCount > 1 && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => {
-                            if (isManual) {
-                              removeAllItemsWithSameManualName(item.namaManual, index);
-                            } else if (item.barangId) {
-                              removeAllItemsWithSameBarang(item.barangId);
-                            } else {
-                              // item kosong (belum dipilih barangnya)
-                              removeItemRow(index);
-                            }
-                          }}
-                          className="bg-red-500 hover:bg-red-600 text-white border-0"
-                          title="Hapus barang ini beserta seluruh kodenya"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
+                <React.Fragment key={index}>
+                  <div className="p-4 border rounded-lg bg-gray-50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="font-semibold">Item #{displayGroupIndex}</Label>
+                      <div className="flex items-center gap-2">
+                        {/* Merah: hapus form ini — hanya tampil jika ada lebih dari 1 grup */}
+                        {visibleGroupCount > 1 && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => {
+                              if (isManual) {
+                                removeAllItemsWithSameManualName(item.namaManual, index);
+                              } else if (item.barangId) {
+                                removeAllItemsWithSameBarang(item.barangId);
+                              } else {
+                                // item kosong (belum dipilih barangnya)
+                                removeItemRow(index);
+                              }
+                            }}
+                            className="bg-red-500 hover:bg-red-600 text-white border-0"
+                            title="Hapus barang ini beserta seluruh kodenya"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
                 <BarangCombobox
                   barangList={barangList}
@@ -1311,7 +1315,7 @@ const EditEstimasi = () => {
                 )}
 
                 {/* Sub-item (panjang jadi + jumlah) untuk barang dari database */}
-                {!isManual && itemsWithSame.map((cur, sub) => {
+                {!isManual && !!item.barangId && itemsWithSame.map((cur, sub) => {
                   const actualIdx = index + sub;
                   const curInfo   = getSelectedBarangInfo(cur.barangId);
                   const curBarang = getEffectiveBarang(cur.barangId);
@@ -1440,17 +1444,19 @@ const EditEstimasi = () => {
                             placeholder="15"
                             className="flex-1"
                           />
-                          {/* Hijau: tambah detail baru untuk barang yang sama */}
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => addItemRowWithSameBarang(actualIdx)}
-                            className="px-2 bg-emerald-500 hover:bg-emerald-600 text-white shrink-0"
-                            title="Tambah detail (kode/panjang/jumlah) baru untuk barang yang sama"
-                            disabled={!cur.barangId}
-                          >
-                            <Plus className="w-4 h-4" />
-                          </Button>
+                          {/* Hijau: tambah detail baru untuk barang yang sama (HANYA DI BARIS TERAKHIR) */}
+                          {sub === itemsWithSame.length - 1 && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => addItemRowWithSameBarang(actualIdx)}
+                              className="px-2 bg-emerald-500 hover:bg-emerald-600 text-white shrink-0"
+                              title="Tambah detail (kode/panjang/jumlah) baru untuk barang yang sama"
+                              disabled={!cur.barangId}
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          )}
                           {selectedItems.length > 1 && (
                             <Button
                               type="button"
@@ -1501,16 +1507,18 @@ const EditEstimasi = () => {
                             onChange={(e) => handleItemChange(actualIdx, 'jumlahKeperluan', e.target.value)}
                           />
                         </div>
-                        {/* Hijau: tambah detail baru untuk barang manual yang sama */}
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => addItemRowWithSameBarang(actualIdx)}
-                          className="px-2 bg-emerald-500 hover:bg-emerald-600 text-white shrink-0"
-                          title="Tambah detail baru untuk barang yang sama"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
+                        {/* Hijau: tambah detail baru untuk barang manual yang sama (HANYA DI BARIS TERAKHIR) */}
+                        {sub === itemsWithSame.length - 1 && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => addItemRowWithSameBarang(actualIdx)}
+                            className="px-2 bg-emerald-500 hover:bg-emerald-600 text-white shrink-0"
+                            title="Tambah detail baru untuk barang yang sama"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        )}
                         {itemsWithSame.length > 1 && (
                           <Button
                             type="button"
@@ -1529,21 +1537,22 @@ const EditEstimasi = () => {
                 })}
 
               </div>
-            );
-          });
-          })()}
+                  {/* Tombol Tambah Barang di bawah setiap item (sesuai UI mockup) */}
+                  <div className="flex justify-center pt-2 pb-4">
+                    <Button
+                      type="button"
+                      onClick={() => insertItemRowAfter(lastIdx)}
+                      variant="outline"
+                      className="w-full border-dashed border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-500"
+                    >
+                      <Plus className="w-4 h-4 mr-2" /> Tambah Barang
+                    </Button>
+                  </div>
+                </React.Fragment>
+              );
+            });
+            })()}
           {/* End of list */}
-          {/* Tombol Tambah Barang di bagian bawah daftar */}
-          <div className="flex justify-center pt-2 border-t border-gray-100 mt-2">
-            <Button
-              onClick={addItemRow}
-              variant="outline"
-              id="btn-tambah-barang-bawah"
-              className="w-full border-dashed border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-500"
-            >
-              <Plus className="w-4 h-4 mr-2" /> Tambah Barang
-            </Button>
-          </div>
         </CardContent>
       </Card>
 
