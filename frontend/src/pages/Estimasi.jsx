@@ -199,8 +199,8 @@ const Estimasi = () => {
 
       // ── Custom Items (baut, mur, aksesoris custom dll) ──
       if (isCustomGroup) {
-        const customSatuan = repItem.satuan || repItem.satuanBarang || repItem.satuanManual || 'Bh';
-        const customHargaSatuan = parseFloat(repItem.hargaSatuan || repItem.hargaModal || summary.hargaSatuan || 0) || 0;
+        const customSatuan = repItem.satuan || repItem.satuanBarang || repItem.satuanManual || repItem.satuanBarangManual || 'Bh';
+        const customHargaSatuan = parseFloat(repItem.hargaSatuan || repItem.hargaModal || repItem.hargamodal || repItem.hargamodalManual || summary.hargaSatuan || 0) || 0;
         const matLabel = `${repItem.namaBarang}  Harga Satuan : ${fmtRp(customHargaSatuan)} / ${customSatuan}`;
 
         ensurePageSpace(30);
@@ -406,7 +406,9 @@ const Estimasi = () => {
 
       const panjangMentahM  = panjangMentah / 1000;
       const beratStandar    = summary.beratStandar  || repItem.beratPerBatang || 0;
-      const hargaSatuan     = summary.hargaSatuan   || repItem.hargaSatuan    || 0;
+      const hargaSatuan     = summary.hargaSatuan   || repItem.hargaSatuan    || repItem.hargaModal || parseFloat(repItem.hargamodal || repItem.hargamodalManual || 0) || 0;
+      const satuanHargaModal = repItem.satuanHargaModal || repItem.breakdown?.satuanHargaModal || 'batang';
+      const satuanLabel     = satuanHargaModal === 'kg' ? 'Kg' : (repItem.jenisBentuk === 'plat' ? 'Lbr' : 'Btg');
       const minWelding      = summary.minWelding    ?? 50;
       let barAllocations    = lastItem?.breakdown?.barAllocations || [];
 
@@ -476,12 +478,13 @@ const Estimasi = () => {
 
       ensurePageSpace(45);
 
+      const hargaSatuanText = hargaSatuan > 0 ? `  Harga Satuan : ${fmtRp(hargaSatuan)} / ${satuanLabel}` : '';
       const matLabel = repItem.isManual
-        ? repItem.namaBarang
+        ? `${repItem.namaBarang}${hargaSatuanText}`
         : `${repItem.namaBarang}` +
           (repItem.jenisBahan ? ` (${repItem.jenisBahan})` : '') +
           `  (Ukr Std : ${panjangMentahM} M / Berat Std : ${fmtN(beratStandar, 2)} Kg)` +
-          `  Harga Satuan : ${fmtRp(hargaSatuan)} / Btg`;
+          `  Harga Satuan : ${fmtRp(hargaSatuan)} / ${satuanLabel}`;
 
       doc.setFillColor(238, 242, 247);
       doc.rect(marginL, startY - 2.8, pageWidth - marginL - marginR, 4.3, 'F');
@@ -1267,15 +1270,13 @@ const Estimasi = () => {
                         const fromSummary = parseFloat(group.breakdown?.summary?.hargaSatuan || 0) || 0;
                         if (fromSummary > 0) return fromSummary;
                         // Cek dari field langsung
-                        const fromField = parseFloat(group.hargaSatuan || group.hargaModal || group.hargamodal || 0) || 0;
+                        const fromField = parseFloat(group.hargaSatuan || group.hargaModal || group.hargamodal || group.hargamodalManual || 0) || 0;
                         if (fromField > 0) return fromField;
                         return 0;
                       })();
                       const satuanGroup = isCustom
-                        ? (group.satuan || group.satuanBarang || group.satuanManual || 'Bh')
-                        : group.jenisBentuk === 'plat'
-                          ? 'Lbr'
-                          : 'Btg';
+                        ? (group.satuan || group.satuanBarang || group.satuanManual || group.satuanBarangManual || 'Bh')
+                        : (group.satuanHargaModal === 'kg' || group.breakdown?.satuanHargaModal === 'kg' ? 'Kg' : (group.jenisBentuk === 'plat' ? 'Lbr' : 'Btg'));
 
                       return (
                         <TableRow key={idx}>

@@ -149,27 +149,47 @@ const EstimasiForm = () => {
   };
 
   const handleItemChange = (index, field, value) => {
-    const updated = [...selectedItems];
-    const targetItem = updated[index];
+    setSelectedItems((prev) => {
+      const updated = [...prev];
+      const targetItem = updated[index];
 
-    if (
-      targetItem &&
-      targetItem.barangId === '__manual__' &&
-      field !== 'kodeItem' &&
-      field !== 'jumlahKeperluan' &&
-      targetItem.namaManual &&
-      targetItem.namaManual.trim() !== ''
-    ) {
-      const oldName = targetItem.namaManual;
-      updated.forEach((item, idx) => {
-        if (item.barangId === '__manual__' && item.namaManual === oldName) {
-          updated[idx] = { ...item, [field]: value };
+      if (
+        targetItem &&
+        targetItem.barangId === '__manual__' &&
+        field !== 'kodeItem' &&
+        field !== 'jumlahKeperluan' &&
+        field !== 'panjangJadi' &&
+        field !== 'volume' &&
+        targetItem.namaManual &&
+        targetItem.namaManual.trim() !== ''
+      ) {
+        const oldName = targetItem.namaManual;
+        return updated.map((item) => {
+          if (item.barangId === '__manual__' && item.namaManual === oldName) {
+            const newItem = { ...item, [field]: value };
+            if (field === 'satuanBarangManual') newItem.satuanManual = value;
+            if (field === 'satuanManual') newItem.satuanBarangManual = value;
+            if (field === 'jenisBentukManual' && value === 'custom' && !item.satuanBarangManual) {
+              newItem.satuanBarangManual = 'Bh';
+              newItem.satuanManual = 'Bh';
+            }
+            return newItem;
+          }
+          return item;
+        });
+      } else {
+        const currentItem = updated[index];
+        const newItem = { ...currentItem, [field]: value };
+        if (field === 'satuanBarangManual') newItem.satuanManual = value;
+        if (field === 'satuanManual') newItem.satuanBarangManual = value;
+        if (field === 'jenisBentukManual' && value === 'custom' && !currentItem.satuanBarangManual) {
+          newItem.satuanBarangManual = 'Bh';
+          newItem.satuanManual = 'Bh';
         }
-      });
-    } else {
-      updated[index] = { ...updated[index], [field]: value };
-    }
-    setSelectedItems(updated);
+        updated[index] = newItem;
+        return updated;
+      }
+    });
   };
 
   const addItemRow = () => {
@@ -192,7 +212,8 @@ const EstimasiForm = () => {
         hargaManual: currentItem.hargaManual,
         supplierManual: currentItem.supplierManual,
         jenisBentukManual: currentItem.jenisBentukManual,
-        satuanBarangManual: currentItem.satuanBarangManual,
+        satuanBarangManual: currentItem.satuanBarangManual || currentItem.satuanManual || 'Bh',
+        satuanManual: currentItem.satuanManual || currentItem.satuanBarangManual || 'Bh',
         jumlahManual: currentItem.jumlahManual,
         beratManual: currentItem.beratManual,
         panjangManual: currentItem.panjangManual,
@@ -280,6 +301,10 @@ const EstimasiForm = () => {
       nama: barang.nama,
       panjangMentah: barang.jenisBentuk === 'plat' ? barang.panjangPlat : barang.panjang,
       minWelding: barang.minWelding || 0,
+      hargamodal: barang.hargamodal || 0,
+      satuanHargaModal: barang.satuanHargaModal || 'batang',
+      jenisBentuk: barang.jenisBentuk,
+      satuan: barang.satuan,
     };
   };
 
@@ -665,6 +690,9 @@ const EstimasiForm = () => {
     const barangData = {
       nama: namaBarang,
       jenisBentuk: item.jenisBentukManual || 'custom',
+      satuan: (item.jenisBentukManual === 'custom' || !item.jenisBentukManual)
+        ? (item.satuanBarangManual || item.satuanManual || 'Bh')
+        : (item.jenisBentukManual === 'plat' ? 'Lbr' : 'Btg'),
       panjang: item.panjangManual || null,
       lebar: item.lebarManual || null,
       tinggi: item.tinggiManual || null,
@@ -921,7 +949,7 @@ const EstimasiForm = () => {
                   <React.Fragment key={index}>
                     <div className="p-4 border rounded-lg bg-gray-50 space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label className="font-semibold">Item #{index + 1}</Label>
+                      <Label className="font-semibold">Item #{displayGroupIndex}</Label>
                       <div className="flex items-center gap-2">
                         {/* Merah: hapus form ini — hanya tampil jika ada lebih dari 1 grup */}
                         {visibleGroupCount > 1 && (
@@ -973,14 +1001,21 @@ const EstimasiForm = () => {
                         <span className="text-emerald-700 font-semibold">Rp {parseFloat(getEffectiveBarang(item.barangId)?.hargamodal || 0).toLocaleString('id-ID')} / {getEffectiveBarang(item.barangId)?.satuan || 'Bh'}</span>
                       </div>
                     ) : (
-                      <div className="p-3 bg-blue-50 rounded-lg text-sm mt-2">
-                        <span className="font-medium">Stok:</span>{' '}
-                        {formatNumberWithSeparator(barangInfo.panjangMentah)} mm
-                        {barangInfo.minWelding > 0 && (
-                          <span className="ml-3">
-                            <span className="font-medium">Min Welding:</span>{' '}
-                            {formatNumberWithSeparator(barangInfo.minWelding)} mm
-                          </span>
+                      <div className="p-3 bg-blue-50 rounded-lg text-sm mt-2 flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <span className="font-medium">Stok:</span>{' '}
+                          {formatNumberWithSeparator(barangInfo.panjangMentah)} mm
+                          {barangInfo.minWelding > 0 && (
+                            <span className="ml-3">
+                              <span className="font-medium">Min Welding:</span>{' '}
+                              {formatNumberWithSeparator(barangInfo.minWelding)} mm
+                            </span>
+                          )}
+                        </div>
+                        {barangInfo.hargamodal > 0 && (
+                          <div className="text-blue-900 font-semibold">
+                            Harga Satuan: Rp {parseFloat(barangInfo.hargamodal).toLocaleString('id-ID')} / {barangInfo.satuanHargaModal === 'kg' ? 'Kg' : (barangInfo.jenisBentuk === 'plat' ? 'Lbr' : 'Btg')}
+                          </div>
                         )}
                       </div>
                     )

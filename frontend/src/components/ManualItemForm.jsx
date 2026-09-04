@@ -42,9 +42,6 @@ const ManualItemForm = ({
                 checked={jenisBentuk === bentuk}
                 onChange={(e) => {
                   onItemChange(index, 'jenisBentukManual', e.target.value);
-                  if (e.target.value === 'custom' && !item.satuanManual && !item.satuanBarangManual) {
-                    onItemChange(index, 'satuanBarangManual', 'Bh');
-                  }
                 }}
                 className="w-3.5 h-3.5 text-sky-600 focus:ring-sky-500"
               />
@@ -80,7 +77,6 @@ const ManualItemForm = ({
                 value={item.satuanBarangManual || item.satuanManual || 'Bh'}
                 onChange={(e) => {
                   onItemChange(index, 'satuanBarangManual', e.target.value);
-                  onItemChange(index, 'satuanManual', e.target.value);
                 }}
                 className="w-full text-xs h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >

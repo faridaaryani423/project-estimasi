@@ -288,24 +288,30 @@ const EditEstimasi = () => {
             jumlahKeperluan: toStr(item.jumlahKeperluan),
             volume: toStr(item.volume),
             // ── Manual fields — selalu populate dari data tersimpan ──
-            namaManual: isItemManual ? toStr(item.namaBarang) : '',
-            hargaManual: '',
-            hargamodalManual: isItemManual ? toStr(item.hargaSatuan ?? item.hargaModal ?? '') : '',
+            namaManual: isItemManual ? toStr(item.namaManual || item.namaBarang) : '',
+            hargaManual: isItemManual ? toStr(item.hargaManual || item.hargamodalManual || (item.hargaSatuan ?? item.hargaModal ?? '')) : '',
+            hargamodalManual: isItemManual ? toStr(item.hargamodalManual || (item.hargaSatuan ?? item.hargaModal ?? '')) : '',
+            satuanBarangManual: isItemManual
+              ? toStr(item.satuanBarangManual || item.satuanManual || item.satuanBarang || item.satuan || 'Bh')
+              : 'Bh',
+            satuanManual: isItemManual
+              ? toStr(item.satuanManual || item.satuanBarangManual || item.satuanBarang || item.satuan || 'Bh')
+              : 'Bh',
             satuanHargaModalManual: isItemManual
-              ? (item.breakdown?.satuanHargaModal || item.satuanHargaModal || 'batang')
+              ? (item.satuanHargaModalManual || item.breakdown?.satuanHargaModal || item.satuanHargaModal || 'batang')
               : 'batang',
-            hargajasaManual: isItemManual ? toStr(item.hargaJasa ?? item.hargajasa ?? '') : '',
-            jenisBentukManual: isItemManual ? (item.jenisBentuk || 'custom') : 'custom',
+            hargajasaManual: isItemManual ? toStr(item.hargajasaManual || (item.hargaJasa ?? item.hargajasa ?? '')) : '',
+            jenisBentukManual: isItemManual ? (item.jenisBentukManual || item.jenisBentuk || 'custom') : 'custom',
             // supplier — prioritas: item.supplierManual → item.supplier → ''
             supplierManual: isItemManual
               ? toStr(item.supplierManual || item.supplier || '')
               : '',
             jenisBahanManual: isItemManual
-              ? (item.jenisBahan && item.jenisBahan !== 'Manual' ? item.jenisBahan : '')
+              ? (item.jenisBahanManual || (item.jenisBahan && item.jenisBahan !== 'Manual' ? item.jenisBahan : ''))
               : '',
-            beratJenisManual: isItemManual ? toStr(item.beratJenis) : '',
-            beratbatangManual: isItemManual ? toStr(item.beratbatang) : '',
-            minWeldingManual: isItemManual ? toStr(item.minWelding) : '',
+            beratJenisManual: isItemManual ? toStr(item.beratJenisManual || item.beratJenis || '') : '',
+            beratbatangManual: isItemManual ? toStr(item.beratbatangManual || item.beratbatang || '') : '',
+            minWeldingManual: isItemManual ? toStr(item.minWeldingManual || item.minWelding || '') : '',
             // Dimensi panjang/lebar/tinggi — fallback berlapis
             panjangManual: isItemManual
               ? toStr(item.panjangManual || item.panjangMentah || item.panjang || '')
@@ -345,28 +351,47 @@ const EditEstimasi = () => {
   };
 
   const handleItemChange = (index, field, value) => {
-    const updated = [...selectedItems];
-    const targetItem = updated[index];
-    
-    if (
-      targetItem &&
-      targetItem.barangId === '__manual__' && 
-      field !== 'kodeItem' && 
-      field !== 'jumlahKeperluan' &&
-      field !== 'panjangJadi' &&
-      targetItem.namaManual &&
-      targetItem.namaManual.trim() !== ''
-    ) {
-      const oldName = targetItem.namaManual;
-      updated.forEach((item, idx) => {
-        if (item.barangId === '__manual__' && item.namaManual === oldName) {
-          updated[idx] = { ...item, [field]: value };
+    setSelectedItems((prev) => {
+      const updated = [...prev];
+      const targetItem = updated[index];
+      
+      if (
+        targetItem &&
+        targetItem.barangId === '__manual__' && 
+        field !== 'kodeItem' && 
+        field !== 'jumlahKeperluan' &&
+        field !== 'panjangJadi' &&
+        field !== 'volume' &&
+        targetItem.namaManual &&
+        targetItem.namaManual.trim() !== ''
+      ) {
+        const oldName = targetItem.namaManual;
+        return updated.map((item) => {
+          if (item.barangId === '__manual__' && item.namaManual === oldName) {
+            const newItem = { ...item, [field]: value };
+            if (field === 'satuanBarangManual') newItem.satuanManual = value;
+            if (field === 'satuanManual') newItem.satuanBarangManual = value;
+            if (field === 'jenisBentukManual' && value === 'custom' && !item.satuanBarangManual) {
+              newItem.satuanBarangManual = 'Bh';
+              newItem.satuanManual = 'Bh';
+            }
+            return newItem;
+          }
+          return item;
+        });
+      } else {
+        const currentItem = updated[index];
+        const newItem = { ...currentItem, [field]: value };
+        if (field === 'satuanBarangManual') newItem.satuanManual = value;
+        if (field === 'satuanManual') newItem.satuanBarangManual = value;
+        if (field === 'jenisBentukManual' && value === 'custom' && !currentItem.satuanBarangManual) {
+          newItem.satuanBarangManual = 'Bh';
+          newItem.satuanManual = 'Bh';
         }
-      });
-    } else {
-      updated[index] = { ...updated[index], [field]: value };
-    }
-    setSelectedItems(updated);
+        updated[index] = newItem;
+        return updated;
+      }
+    });
   };
 
   const addItemRow = () => {
@@ -389,6 +414,8 @@ const EditEstimasi = () => {
         hargaManual: currentItem.hargaManual,
         supplierManual: currentItem.supplierManual,
         jenisBentukManual: currentItem.jenisBentukManual,
+        satuanBarangManual: currentItem.satuanBarangManual || currentItem.satuanManual || 'Bh',
+        satuanManual: currentItem.satuanManual || currentItem.satuanBarangManual || 'Bh',
         panjangManual: currentItem.panjangManual,
         lebarManual: currentItem.lebarManual,
         tinggiManual: currentItem.tinggiManual,
@@ -470,8 +497,13 @@ const EditEstimasi = () => {
     const barang = getEffectiveBarang(barangId);
     if (!barang) return null;
     return {
+      nama: barang.nama,
       panjangMentah: barang.jenisBentuk === 'plat' ? barang.panjangPlat : barang.panjang,
       minWelding: barang.minWelding || 0,
+      hargamodal: barang.hargamodal || 0,
+      satuanHargaModal: barang.satuanHargaModal || 'batang',
+      jenisBentuk: barang.jenisBentuk,
+      satuan: barang.satuan,
     };
   };
 
@@ -579,6 +611,9 @@ const EditEstimasi = () => {
     const barangData = {
       nama: namaBarang,
       jenisBentuk: item.jenisBentukManual || 'custom',
+      satuan: (item.jenisBentukManual === 'custom' || !item.jenisBentukManual)
+        ? (item.satuanBarangManual || item.satuanManual || 'Bh')
+        : (item.jenisBentukManual === 'plat' ? 'Lbr' : 'Btg'),
       panjang: item.panjangManual || null,
       lebar: item.lebarManual || null,
       tinggi: item.tinggiManual || null,
@@ -1104,14 +1139,21 @@ const EditEstimasi = () => {
                       <span className="text-emerald-700 font-semibold">Rp {parseFloat(getEffectiveBarang(item.barangId)?.hargamodal || 0).toLocaleString('id-ID')} / {getEffectiveBarang(item.barangId)?.satuan || 'Bh'}</span>
                     </div>
                   ) : (
-                    <div className="p-3 bg-blue-50 rounded-lg text-sm mt-2">
-                      <span className="font-medium">Stok:</span>{' '}
-                      {formatNumberWithSeparator(barangInfo.panjangMentah)} mm
-                      {barangInfo.minWelding > 0 && (
-                        <span className="ml-3">
-                          <span className="font-medium">Min Welding:</span>{' '}
-                          {formatNumberWithSeparator(barangInfo.minWelding)} mm
-                        </span>
+                    <div className="p-3 bg-blue-50 rounded-lg text-sm mt-2 flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <span className="font-medium">Stok:</span>{' '}
+                        {formatNumberWithSeparator(barangInfo.panjangMentah)} mm
+                        {barangInfo.minWelding > 0 && (
+                          <span className="ml-3">
+                            <span className="font-medium">Min Welding:</span>{' '}
+                            {formatNumberWithSeparator(barangInfo.minWelding)} mm
+                          </span>
+                        )}
+                      </div>
+                      {barangInfo.hargamodal > 0 && (
+                        <div className="text-blue-900 font-semibold">
+                          Harga Satuan: Rp {parseFloat(barangInfo.hargamodal).toLocaleString('id-ID')} / {barangInfo.satuanHargaModal === 'kg' ? 'Kg' : (barangInfo.jenisBentuk === 'plat' ? 'Lbr' : 'Btg')}
+                        </div>
                       )}
                     </div>
                   )
