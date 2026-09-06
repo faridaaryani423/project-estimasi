@@ -267,9 +267,24 @@ const EditEstimasi = () => {
         kontakPerson:       found.kontakPerson  || '',
       });
 
+      const overrides = {};
+      found.items?.forEach((item) => {
+        if (!item.isManual && item.barangId && item.barangId !== '__manual__') {
+          overrides[item.barangId] = {
+            ...(overrides[item.barangId] || {}),
+            supplier: item.supplier || '',
+            hargamodal: item.hargaModal ?? item.hargamodal ?? '',
+            hargajasa: item.hargaJasa ?? item.hargajasa ?? '',
+            satuan: item.satuan || item.satuanBarang || '',
+          };
+        }
+      });
+      setLocalBarangOverrides(overrides);
+
       setSelectedItems(
         found.items?.map((item) => {
-          const isItemManual = item.isManual || item.barangId === '__manual__';
+          const isCustom = item.jenisBentuk === 'custom' || item.jenisBentukManual === 'custom' || item.breakdown?.isCustom === true;
+          const isItemManual = item.isManual || item.barangId === '__manual__' || isCustom;
           const barangFromDB = !isItemManual
             ? barangData.find((b) => b.nama === item.namaBarang)
             : null;
@@ -282,29 +297,29 @@ const EditEstimasi = () => {
             barangId: isItemManual
               ? '__manual__'
               : item.barangId?.toString() || barangFromDB?.id?.toString() || '',
-            kodeItem: toStr(item.kodeItem),
+            kodeItem: isCustom ? '' : toStr(item.kodeItem),
             // Robust panjangJadi: try multiple field names
             panjangJadi: toStr(item.panjangJadi || item.panjang_jadi || ''),
             jumlahKeperluan: toStr(item.jumlahKeperluan),
             volume: toStr(item.volume),
             // ── Manual fields — selalu populate dari data tersimpan ──
-            namaManual: isItemManual ? toStr(item.namaManual || item.namaBarang) : '',
-            hargaManual: isItemManual ? toStr(item.hargaManual || item.hargamodalManual || (item.hargaSatuan ?? item.hargaModal ?? '')) : '',
-            hargamodalManual: isItemManual ? toStr(item.hargamodalManual || (item.hargaSatuan ?? item.hargaModal ?? '')) : '',
+            namaManual: isItemManual ? toStr(item.namaManual || item.namaBarang || barangFromDB?.nama || '') : '',
+            hargaManual: isItemManual ? toStr(item.hargaManual || item.hargamodalManual || (item.hargaSatuan ?? item.hargaModal ?? barangFromDB?.hargamodal ?? '')) : '',
+            hargamodalManual: isItemManual ? toStr(item.hargamodalManual || (item.hargaSatuan ?? item.hargaModal ?? barangFromDB?.hargamodal ?? '')) : '',
             satuanBarangManual: isItemManual
-              ? toStr(item.satuanBarangManual || item.satuanManual || item.satuanBarang || item.satuan || 'Bh')
+              ? toStr(item.satuanBarangManual || item.satuanManual || item.satuanBarang || item.satuan || barangFromDB?.satuan || 'Bh')
               : 'Bh',
             satuanManual: isItemManual
-              ? toStr(item.satuanManual || item.satuanBarangManual || item.satuanBarang || item.satuan || 'Bh')
+              ? toStr(item.satuanManual || item.satuanBarangManual || item.satuanBarang || item.satuan || barangFromDB?.satuan || 'Bh')
               : 'Bh',
             satuanHargaModalManual: isItemManual
-              ? (item.satuanHargaModalManual || item.breakdown?.satuanHargaModal || item.satuanHargaModal || 'batang')
+              ? (item.satuanHargaModalManual || item.breakdown?.satuanHargaModal || item.satuanHargaModal || (isCustom ? 'unit' : 'batang'))
               : 'batang',
-            hargajasaManual: isItemManual ? toStr(item.hargajasaManual || (item.hargaJasa ?? item.hargajasa ?? '')) : '',
-            jenisBentukManual: isItemManual ? (item.jenisBentukManual || item.jenisBentuk || 'custom') : 'custom',
-            // supplier — prioritas: item.supplierManual → item.supplier → ''
+            hargajasaManual: isItemManual ? toStr(item.hargajasaManual || (item.hargaJasa ?? item.hargajasa ?? barangFromDB?.hargajasa ?? '')) : '',
+            jenisBentukManual: isItemManual ? (item.jenisBentukManual || item.jenisBentuk || barangFromDB?.jenisBentuk || 'custom') : 'custom',
+            // supplier — prioritas: item.supplierManual → item.supplier → barangFromDB.supplier → ''
             supplierManual: isItemManual
-              ? toStr(item.supplierManual || item.supplier || '')
+              ? toStr(item.supplierManual || item.supplier || barangFromDB?.supplier || '')
               : '',
             jenisBahanManual: isItemManual
               ? (item.jenisBahanManual || (item.jenisBahan && item.jenisBahan !== 'Manual' ? item.jenisBahan : ''))
@@ -525,6 +540,26 @@ const EditEstimasi = () => {
   };
 
   const handleBarangSelect = (index, barangId, namaManual = '') => {
+    const matched = barangList.find((b) => String(b.id) === String(barangId));
+    if (matched && matched.jenisBentuk === 'custom') {
+      const updated = [...selectedItems];
+      updated[index] = {
+        ...updated[index],
+        barangId: '__manual__',
+        isManual: true,
+        jenisBentukManual: 'custom',
+        namaManual: matched.nama,
+        supplierManual: matched.supplier || '',
+        satuanBarangManual: matched.satuan || 'Bh',
+        satuanManual: matched.satuan || 'Bh',
+        hargamodalManual: matched.hargamodal ? String(matched.hargamodal) : '',
+        hargajasaManual: matched.hargajasa ? String(matched.hargajasa) : '',
+        hargaManual: '',
+        kodeItem: '',
+      };
+      setSelectedItems(updated);
+      return;
+    }
     const updated = [...selectedItems];
     updated[index] = { ...updated[index], barangId, namaManual, hargaManual: '' };
     setSelectedItems(updated);
@@ -664,6 +699,7 @@ const EditEstimasi = () => {
     const validItems = [];
     let hasInvalid = false;
     let errorMessage = '';
+    const seenCustomManuals = new Set();
 
     for (let i = 0; i < selectedItems.length; i++) {
       const item = selectedItems[i];
@@ -676,20 +712,25 @@ const EditEstimasi = () => {
       const isCustomManual = isManual && jb === 'custom';
 
       if (isCustomManual) {
+        if (seenCustomManuals.has(item.namaManual)) continue;
+        seenCustomManuals.add(item.namaManual);
+      }
+
+      if (isCustomManual) {
         const qty = parseInt(item.jumlahKeperluan);
         if (!qty || qty <= 0) {
           hasInvalid = true;
-          errorMessage = `Baris ${i + 1} (Manual): Jumlah keperluan harus lebih dari 0.`;
+          errorMessage = `Baris ${i + 1} (Custom): Jumlah keperluan harus lebih dari 0.`;
           break;
         }
         if (!item.namaManual || item.namaManual.trim() === '') {
           hasInvalid = true;
-          errorMessage = `Baris ${i + 1} (Manual): Nama barang wajib diisi.`;
+          errorMessage = `Baris ${i + 1} (Custom): Nama barang wajib diisi.`;
           break;
         }
         if (item.hargamodalManual === undefined || item.hargamodalManual === null || String(item.hargamodalManual).trim() === '') {
           hasInvalid = true;
-          errorMessage = `Baris ${i + 1} (Manual): Harga Modal wajib diisi.`;
+          errorMessage = `Baris ${i + 1} (Custom): Harga Satuan wajib diisi.`;
           break;
         }
         validItems.push(item);
@@ -1367,15 +1408,7 @@ const EditEstimasi = () => {
 
                   if (isCustomDB) {
                     return (
-                      <div key={actualIdx} className="grid grid-cols-2 gap-3 items-end p-3 bg-white rounded-lg border">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Kode Item</Label>
-                          <Input
-                            placeholder="B-01"
-                            value={cur.kodeItem || ''}
-                            onChange={(e) => handleItemChange(actualIdx, 'kodeItem', e.target.value)}
-                          />
-                        </div>
+                      <div key={actualIdx} className="p-3 bg-white rounded-lg border">
                         <div className="space-y-1">
                           <Label className="text-xs">Jumlah ({satuan}) <span className="text-red-500">*</span></Label>
                           <div className="flex gap-1.5">

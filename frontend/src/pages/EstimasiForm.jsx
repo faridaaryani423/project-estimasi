@@ -309,6 +309,26 @@ const EstimasiForm = () => {
   };
 
   const handleBarangSelect = (index, barangId, namaManual = '') => {
+    const matched = barangList.find((b) => String(b.id) === String(barangId));
+    if (matched && matched.jenisBentuk === 'custom') {
+      const updated = [...selectedItems];
+      updated[index] = {
+        ...updated[index],
+        barangId: '__manual__',
+        isManual: true,
+        jenisBentukManual: 'custom',
+        namaManual: matched.nama,
+        supplierManual: matched.supplier || '',
+        satuanBarangManual: matched.satuan || 'Bh',
+        satuanManual: matched.satuan || 'Bh',
+        hargamodalManual: matched.hargamodal ? String(matched.hargamodal) : '',
+        hargajasaManual: matched.hargajasa ? String(matched.hargajasa) : '',
+        hargaManual: '',
+        kodeItem: '',
+      };
+      setSelectedItems(updated);
+      return;
+    }
     const updated = [...selectedItems];
     updated[index] = {
       ...updated[index],
@@ -1229,15 +1249,7 @@ const EstimasiForm = () => {
 
                     if (isCustomDB) {
                       return (
-                        <div key={actualIdx} className="grid grid-cols-2 gap-3 items-end p-3 bg-white rounded-lg border">
-                          <div className="space-y-1">
-                            <Label className="text-xs">Kode Item</Label>
-                            <Input
-                              placeholder="B-01"
-                              value={cur.kodeItem || ''}
-                              onChange={(e) => handleItemChange(actualIdx, 'kodeItem', e.target.value)}
-                            />
-                          </div>
+                        <div key={actualIdx} className="p-3 bg-white rounded-lg border">
                           <div className="space-y-1">
                             <Label className="text-xs">Jumlah ({satuan}) <span className="text-red-500">*</span></Label>
                             <Input

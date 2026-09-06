@@ -21,7 +21,15 @@ const ManualItemForm = ({
 
   const [isHargaJasaEnabled, setIsHargaJasaEnabled] = React.useState(!!item.hargajasaManual);
 
+  React.useEffect(() => {
+    setIsHargaJasaEnabled(!!item.hargajasaManual);
+  }, [item.hargajasaManual]);
+
   const SATUAN_OPTIONS = ['Bh', 'Pcs', 'Set', 'Unit', 'Box', 'Kg', 'Btg', 'M', 'M²', 'Ls'];
+  const currentSatuan = item.satuanBarangManual || item.satuanManual || 'Bh';
+  const effectiveSatuanOptions = SATUAN_OPTIONS.includes(currentSatuan)
+    ? SATUAN_OPTIONS
+    : [currentSatuan, ...SATUAN_OPTIONS];
 
   return (
     <div className="mt-2 p-4 bg-sky-50 rounded-lg border border-sky-200 space-y-4">
@@ -74,13 +82,13 @@ const ManualItemForm = ({
             <Label className="text-xs">Satuan <span className="text-red-500">*</span></Label>
             <div className="flex gap-2">
               <select
-                value={item.satuanBarangManual || item.satuanManual || 'Bh'}
+                value={currentSatuan}
                 onChange={(e) => {
                   onItemChange(index, 'satuanBarangManual', e.target.value);
                 }}
                 className="w-full text-xs h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
-                {SATUAN_OPTIONS.map((opt) => (
+                {effectiveSatuanOptions.map((opt) => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
               </select>
