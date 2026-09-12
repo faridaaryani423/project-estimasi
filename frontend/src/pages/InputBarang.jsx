@@ -7,17 +7,31 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Package, Pencil, Trash2, Plus, Upload, Loader2, Search } from 'lucide-react';
-import { barangAPI } from '@/services/api';
+import { barangAPI, materialAPI } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { getEffectiveSatuanOptions } from '@/utils/unitResolver';
+
+const KATEGORI_OPTIONS = [
+  'Baja',
+  'Besi',
+  'Stainless',
+  'Kaca',
+  'Aksesoris',
+  'Aluminium',
+  'Lainnya'
+];
 
 const InputBarang = () => {
   const { currentUser } = useAuth();
   const [barangList, setBarangList] = useState([]);
+  const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isHargaJasaEnabled, setIsHargaJasaEnabled] = useState(false);
   const [formData, setFormData] = useState({
     nama: '',
+    kategoriBarang: '',
+    materialId: '',
     jenisBentuk: 'balok', // balok, tabung, wf, plat, custom
     panjang: '',
     lebar: '',
@@ -53,7 +67,17 @@ const InputBarang = () => {
 
   useEffect(() => {
     loadBarangData();
+    loadMaterials();
   }, []);
+
+  const loadMaterials = async () => {
+    try {
+      const data = await materialAPI.getAll();
+      setMaterials(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Gagal memuat master material:', error);
+    }
+  };
 
   const loadBarangData = async () => {
     try {
@@ -70,6 +94,29 @@ const InputBarang = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleMaterialChange = (e) => {
+    const selectedName = e.target.value;
+    if (!selectedName) {
+      setFormData(prev => ({
+        ...prev,
+        jenisBahan: '',
+        materialId: '',
+        beratJenis: ''
+      }));
+      return;
+    }
+
+    const selectedMat = materials.find(
+      m => m.namaMaterial && m.namaMaterial.toLowerCase() === selectedName.toLowerCase()
+    );
+    setFormData(prev => ({
+      ...prev,
+      jenisBahan: selectedMat ? selectedMat.namaMaterial : selectedName,
+      materialId: selectedMat ? selectedMat.id : '',
+      beratJenis: selectedMat ? String(selectedMat.masaJenis) : prev.beratJenis
+    }));
   };
 
   const handleFileChange = (e) => {
@@ -92,7 +139,7 @@ const InputBarang = () => {
 
   // Field-field yang termasuk "data barang" (bukan harga)
   const BARANG_FIELDS = [
-    'nama', 'jenisBentuk', 'panjang', 'lebar', 'tinggi', 'diameter', 'ketebalan',
+    'nama', 'kategoriBarang', 'materialId', 'jenisBentuk', 'panjang', 'lebar', 'tinggi', 'diameter', 'ketebalan',
     'tinggiWF', 'lebarFlange', 'ketebalanWeb', 'ketebalanFlange',
     'panjangPlat', 'lebarPlat', 'ketebalanPlat',
     'jenisBahan', 'beratJenis', 'beratbatang', 'minWelding', 'supplier', 'foto', 'satuan'
@@ -129,8 +176,11 @@ const InputBarang = () => {
 
       const barangData = {
         nama: formData.nama,
+        kategoriBarang: formData.kategoriBarang || null,
+        materialId: formData.materialId || null,
         jenisBentuk: formData.jenisBentuk,
-        satuan: isCustom ? (formData.satuan || 'Bh') : (formData.satuan || 'batang'),
+        satuan: isCustom ? (formData.satuan || 'Bh') : (formData.satuan || (formData.jenisBentuk === 'plat' ? 'Lbr' : 'Btg')),
+        satuanHargaModal: isCustom ? 'unit' : (formData.satuanHargaModal || 'batang'),
         panjang: isCustom ? null : (formData.panjang || null),
         lebar: isCustom ? null : (formData.lebar || null),
         tinggi: isCustom ? null : (formData.tinggi || null),
@@ -143,7 +193,7 @@ const InputBarang = () => {
         panjangPlat: isCustom ? null : (formData.panjangPlat || null),
         lebarPlat: isCustom ? null : (formData.lebarPlat || null),
         ketebalanPlat: isCustom ? null : (formData.ketebalanPlat || null),
-        jenisBahan: isCustom ? (formData.jenisBahan || 'Custom') : formData.jenisBahan,
+        jenisBahan: isCustom ? (formData.jenisBahan || 'Custom') : (formData.jenisBahan || null),
         beratJenis: isCustom ? null : (formData.beratJenis || null),
         beratbatang: isCustom ? null : (formData.beratbatang || null),
         minWelding: isCustom ? '0' : (formData.minWelding || '50'),
@@ -182,8 +232,20 @@ const InputBarang = () => {
   };
 
   const handleEdit = (item) => {
+    let matchedMaterialId = item.materialId || '';
+    if (!matchedMaterialId && item.jenisBahan && materials.length > 0) {
+      const foundMat = materials.find(
+        m => m.namaMaterial && m.namaMaterial.toLowerCase() === item.jenisBahan.toLowerCase()
+      );
+      if (foundMat) {
+        matchedMaterialId = foundMat.id;
+      }
+    }
+
     const data = {
       nama: item.nama,
+      kategoriBarang: item.kategoriBarang || '',
+      materialId: matchedMaterialId,
       jenisBentuk: item.jenisBentuk || 'balok',
       satuan: item.satuan || 'Bh',
       panjang: item.panjang || '',
@@ -231,6 +293,8 @@ const InputBarang = () => {
   const resetForm = () => {
     setFormData({
       nama: '',
+      kategoriBarang: '',
+      materialId: '',
       jenisBentuk: 'balok',
       satuan: 'Bh',
       panjang: '',
@@ -271,9 +335,10 @@ const InputBarang = () => {
 
   const filteredBarangList = barangList.filter(item =>
     item.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (item.kategoriBarang && item.kategoriBarang.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (item.jenisBentuk && item.jenisBentuk.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (item.jenisBahan && item.jenisBahan.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (item.supplier && item.supplier.toLowerCase().includes(searchQuery.toLowerCase()))  // ← BARU
+    (item.supplier && item.supplier.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -315,18 +380,40 @@ const InputBarang = () => {
                 />
               </div>
 
-              {/* ── SUPPLIER ── */}
-              <div className="space-y-2">
-                <Label htmlFor="supplier">Supplier</Label>
-                <Input
-                  id="supplier"
-                  name="supplier"
-                  data-testid="supplier-input"
-                  value={formData.supplier}
-                  onChange={handleInputChange}
-                  placeholder="Contoh: CV. Besi Jaya, PT. Sumber Baja"
-                  className="input-focus"
-                />
+              {/* ── KATEGORI & SUPPLIER ── */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="kategoriBarang">Kategori Barang</Label>
+                  <select
+                    id="kategoriBarang"
+                    name="kategoriBarang"
+                    data-testid="kategori-barang-select"
+                    value={formData.kategoriBarang}
+                    onChange={handleInputChange}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 input-focus"
+                  >
+                    <option value="">-- Pilih Kategori --</option>
+                    {KATEGORI_OPTIONS.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                    {formData.kategoriBarang && !KATEGORI_OPTIONS.includes(formData.kategoriBarang) && (
+                      <option value={formData.kategoriBarang}>{formData.kategoriBarang} (Custom)</option>
+                    )}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="supplier">Supplier</Label>
+                  <Input
+                    id="supplier"
+                    name="supplier"
+                    data-testid="supplier-input"
+                    value={formData.supplier}
+                    onChange={handleInputChange}
+                    placeholder="Contoh: CV. Besi Jaya, PT. Sumber Baja"
+                    className="input-focus"
+                  />
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -438,19 +525,44 @@ const InputBarang = () => {
                 <div className="border-t pt-4 space-y-4">
                   <h3 className="font-semibold text-gray-900">Informasi Material</h3>
                   <div className="grid grid-cols-2 gap-4">
-                  {formData.jenisBentuk !== 'custom' && (
                     <div className="space-y-2">
-                      <Label htmlFor="jenisBahan">Jenis Bahan <span className="text-red-500">*</span></Label>
-                      <Input id="jenisBahan" name="jenisBahan" data-testid="jenisBahan-input" value={formData.jenisBahan} onChange={handleInputChange} placeholder="Contoh: Baja ST37, Kayu Jati" required className="input-focus" />
+                      <Label htmlFor="jenisBahan">Jenis Bahan</Label>
+                      <select
+                        id="jenisBahan"
+                        name="jenisBahan"
+                        data-testid="jenisBahan-select"
+                        value={formData.jenisBahan}
+                        onChange={handleMaterialChange}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 input-focus"
+                      >
+                        <option value="">-- Pilih Jenis Bahan (Opsional) --</option>
+                        {materials.map((mat) => (
+                          <option key={mat.id} value={mat.namaMaterial}>
+                            {mat.namaMaterial} ({Number(mat.masaJenis).toLocaleString('id-ID')} kg/m³)
+                          </option>
+                        ))}
+                        {/* Fallback jika data existing belum ada di master material */}
+                        {formData.jenisBahan && !materials.some(m => m.namaMaterial && m.namaMaterial.toLowerCase() === formData.jenisBahan.toLowerCase()) && (
+                          <option value={formData.jenisBahan}>
+                            {formData.jenisBahan} (Data Lama)
+                          </option>
+                        )}
+                      </select>
                     </div>
-                  )}
-                  {formData.jenisBentuk !== 'custom' && (
                     <div className="space-y-2">
-                      <Label htmlFor="beratJenis">Berat Jenis (kg/m³) <span className="text-red-500">*</span></Label>
-                      <Input id="beratJenis" name="beratJenis" data-testid="beratJenis-input" type="number" value={formData.beratJenis} onChange={handleInputChange} placeholder="7850" required className="input-focus" />
+                      <Label htmlFor="beratJenis">Berat Jenis (kg/m³)</Label>
+                      <Input
+                        id="beratJenis"
+                        name="beratJenis"
+                        data-testid="beratJenis-input"
+                        type="number"
+                        value={formData.beratJenis}
+                        onChange={handleInputChange}
+                        placeholder="7850"
+                        className="input-focus"
+                      />
                     </div>
-                  )}
-                </div>
+                  </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="beratbatang">Berat per Batang (kg) <span className="text-red-500">*</span></Label>
@@ -514,7 +626,7 @@ const InputBarang = () => {
                       onChange={handleInputChange}
                       className="w-full text-sm h-10 rounded-md border border-input bg-background px-3 py-2 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                      {['Bh', 'Pcs', 'Set', 'Unit', 'Box', 'Kg', 'Btg', 'M', 'M²', 'Ls'].map((opt) => (
+                      {getEffectiveSatuanOptions(formData.satuan || 'Bh').map((opt) => (
                         <option key={opt} value={opt}>{opt}</option>
                       ))}
                     </select>
@@ -635,10 +747,11 @@ const InputBarang = () => {
                 <TableRow>
                   <TableHead className="w-12">No</TableHead>
                   <TableHead>Nama Barang</TableHead>
+                  <TableHead>Kategori</TableHead>
                   <TableHead>Jenis Bentuk</TableHead>
                   <TableHead>Ukuran</TableHead>
                   <TableHead>Jenis Bahan</TableHead>
-                  <TableHead>Supplier</TableHead>        {/* ← BARU */}
+                  <TableHead>Supplier</TableHead>
                   <TableHead>Berat/Batang</TableHead>
                   <TableHead>Harga Modal</TableHead>
                   <TableHead>Harga Jasa</TableHead>
@@ -650,7 +763,7 @@ const InputBarang = () => {
               <TableBody>
                 {filteredBarangList.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={12} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={13} className="text-center py-8 text-gray-500">
                       Belum ada data barang. Klik tombol "Tambah Barang" untuk mulai.
                     </TableCell>
                   </TableRow>
@@ -660,6 +773,11 @@ const InputBarang = () => {
                       <TableCell className="font-medium">{index + 1}</TableCell>
                       <TableCell className="font-medium">{item.nama}</TableCell>
                       <TableCell>
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-xs font-medium rounded-full">
+                          {item.kategoriBarang || '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
                         <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full capitalize">
                           {item.jenisBentuk || 'balok'}
                         </span>
@@ -668,7 +786,7 @@ const InputBarang = () => {
                         {item.jenisBentuk === 'custom' ? (item.satuan || 'Bh') : (item.ukuran || '-')}
                       </TableCell>
                       <TableCell className="text-sm text-gray-600">{item.jenisBahan || '-'}</TableCell>
-                      <TableCell className="text-sm text-gray-600">{item.supplier || '-'}</TableCell>  {/* ← BARU */}
+                      <TableCell className="text-sm text-gray-600">{item.supplier || '-'}</TableCell>
                       <TableCell className="font-semibold text-blue-600">{item.beratbatang ? `${parseFloat(item.beratbatang).toLocaleString('id-ID')} kg` : '-'}</TableCell>
                       <TableCell className="font-semibold text-emerald-600">
                         Rp {parseFloat(item.hargamodal || 0).toLocaleString('id-ID')}

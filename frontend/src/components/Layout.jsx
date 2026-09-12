@@ -5,7 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { LayoutDashboard, Package, Calculator, FileText, Users, LogOut, User, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Package, Layers, Calculator, FileText, Users, LogOut, User, Menu, X } from 'lucide-react';
 
 const Layout = ({ children }) => {
   const navigate = useNavigate();
@@ -21,6 +21,7 @@ const Layout = ({ children }) => {
 
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'user'] },
+    { path: '/jenis-material', icon: Layers, label: 'Jenis Material', roles: ['admin', 'user'] },
     { path: '/input-barang', icon: Package, label: 'Input Barang', roles: ['admin', 'user'] },
     { path: '/estimasi', icon: Calculator, label: 'Estimasi', roles: ['admin', 'user'] },
     { path: '/penawaran', icon: FileText, label: 'Penawaran', roles: ['admin', 'user'] },

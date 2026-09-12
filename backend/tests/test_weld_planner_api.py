@@ -155,12 +155,35 @@ class TestBarang:
         data = response.json()
         assert data["jenisBentuk"] == "tabung"
         assert "Ø75" in data["ukuran"]
+
+    def test_create_barang_with_kategori_and_material_id(self, auth_token):
+        """Test creating a barang with kategoriBarang and materialId"""
+        barang_data = {
+            "nama": "TEST_Dynabolt M10",
+            "kategoriBarang": "Aksesoris",
+            "materialId": "1",
+            "jenisBentuk": "custom",
+            "jenisBahan": "Baja",
+            "satuan": "Bh",
+            "hargamodal": "5000"
+        }
+        response = requests.post(f"{BASE_URL}/api/barang",
+            headers={"Authorization": f"Bearer {auth_token}"},
+            json=barang_data
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["nama"] == "TEST_Dynabolt M10"
+        assert data["kategoriBarang"] == "Aksesoris"
+        assert data["materialId"] == "1"
+        assert data["jenisBahan"] == "Baja"
         
     def test_update_barang(self, auth_token):
         """Test updating a barang"""
         # First create a barang
         create_data = {
             "nama": "TEST_Update Barang",
+            "kategoriBarang": "Besi",
             "jenisBentuk": "balok",
             "panjang": "5000",
             "lebar": "30",
@@ -483,6 +506,121 @@ class TestPenawaran:
         assert found is None
 
 
+class TestMaterials:
+    """Material CRUD and validation tests"""
+
+    @pytest.fixture
+    def auth_token(self):
+        """Get auth token for tests"""
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
+            "username": "admin",
+            "password": "admin123"
+        })
+        return response.json()["token"]
+
+    def test_get_materials(self, auth_token):
+        """Test getting all materials"""
+        response = requests.get(f"{BASE_URL}/api/materials", headers={
+            "Authorization": f"Bearer {auth_token}"
+        })
+        assert response.status_code == 200
+        materials = response.json()
+        assert isinstance(materials, list)
+
+    def test_create_material_success(self, auth_token):
+        """Test creating a new material"""
+        data = {
+            "namaMaterial": "TEST_Titanium",
+            "masaJenis": 4500.0
+        }
+        response = requests.post(f"{BASE_URL}/api/materials",
+            headers={"Authorization": f"Bearer {auth_token}"},
+            json=data
+        )
+        assert response.status_code == 200
+        result = response.json()
+        assert result["namaMaterial"] == "TEST_Titanium"
+        assert result["masaJenis"] == 4500.0
+        assert "id" in result
+        assert "createdAt" in result
+
+    def test_create_material_duplicate_fails(self, auth_token):
+        """Test duplicate material name is rejected case-insensitively"""
+        data = {
+            "namaMaterial": "test_titanium",
+            "masaJenis": 4510.0
+        }
+        response = requests.post(f"{BASE_URL}/api/materials",
+            headers={"Authorization": f"Bearer {auth_token}"},
+            json=data
+        )
+        assert response.status_code == 400
+        assert "sudah ada" in response.text.lower()
+
+    def test_create_material_invalid_name_fails(self, auth_token):
+        """Test empty material name is rejected"""
+        data = {
+            "namaMaterial": "   ",
+            "masaJenis": 3000.0
+        }
+        response = requests.post(f"{BASE_URL}/api/materials",
+            headers={"Authorization": f"Bearer {auth_token}"},
+            json=data
+        )
+        assert response.status_code == 400
+
+    def test_create_material_invalid_masajenis_fails(self, auth_token):
+        """Test masa jenis <= 0 is rejected"""
+        data = {
+            "namaMaterial": "TEST_Tembaga",
+            "masaJenis": 0
+        }
+        response = requests.post(f"{BASE_URL}/api/materials",
+            headers={"Authorization": f"Bearer {auth_token}"},
+            json=data
+        )
+        assert response.status_code == 400
+
+    def test_update_material_success(self, auth_token):
+        """Test updating a material"""
+        # Find TEST_Titanium
+        get_res = requests.get(f"{BASE_URL}/api/materials", headers={"Authorization": f"Bearer {auth_token}"})
+        mat = next((m for m in get_res.json() if m["namaMaterial"] == "TEST_Titanium"), None)
+        assert mat is not None, "TEST_Titanium should exist"
+
+        update_data = {
+            "namaMaterial": "TEST_Titanium_Updated",
+            "masaJenis": 4506.0
+        }
+        res = requests.put(f"{BASE_URL}/api/materials/{mat['id']}",
+            headers={"Authorization": f"Bearer {auth_token}"},
+            json=update_data
+        )
+        assert res.status_code == 200
+        updated = res.json()
+        assert updated["namaMaterial"] == "TEST_Titanium_Updated"
+        assert updated["masaJenis"] == 4506.0
+
+    def test_delete_material_success(self, auth_token):
+        """Test deleting a material"""
+        # Create a material to delete
+        create_res = requests.post(f"{BASE_URL}/api/materials",
+            headers={"Authorization": f"Bearer {auth_token}"},
+            json={"namaMaterial": "TEST_ToDelete", "masaJenis": 2500.0}
+        )
+        mat_id = create_res.json()["id"]
+
+        del_res = requests.delete(f"{BASE_URL}/api/materials/{mat_id}",
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+        assert del_res.status_code == 200
+
+        # Verify not in list
+        get_res = requests.get(f"{BASE_URL}/api/materials", headers={"Authorization": f"Bearer {auth_token}"})
+        found = next((m for m in get_res.json() if m["id"] == mat_id), None)
+        assert found is None
+
+
 class TestInit:
     """Test data initialization"""
     
@@ -529,5 +667,13 @@ def cleanup_test_data():
                 for pnw in penawaran_response.json():
                     if pnw.get("namaProject", "").startswith("TEST_"):
                         requests.delete(f"{BASE_URL}/api/penawaran/{pnw['id']}", headers=headers)
+
+            # Cleanup materials
+            materials_response = requests.get(f"{BASE_URL}/api/materials", headers=headers)
+            if materials_response.status_code == 200:
+                for mat in materials_response.json():
+                    if mat.get("namaMaterial", "").startswith("TEST_"):
+                        requests.delete(f"{BASE_URL}/api/materials/{mat['id']}", headers=headers)
     except Exception as e:
         print(f"Cleanup error: {e}")
+

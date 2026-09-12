@@ -11,6 +11,7 @@ from typing import List, Optional, Any
 from datetime import datetime, timezone
 import jwt
 import hashlib
+import re
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -57,6 +58,7 @@ class PasswordUpdate(BaseModel):
 
 class BarangBase(BaseModel):
     nama: str
+    kategoriBarang: Optional[str] = None
     jenisBentuk: str = "balok"
     panjang: Optional[str] = None
     lebar: Optional[str] = None
@@ -73,6 +75,7 @@ class BarangBase(BaseModel):
     supplier: Optional[str] = None
     jenisBahan: Optional[str] = None   # ✅ ubah dari str → Optional[str]
     beratJenis: Optional[str] = None   # ✅ ubah dari str → Optional[str]
+    materialId: Optional[str] = None
     hargamodal: Optional[str] = None
     satuanHargaModal: Optional[str] = "batang"
     beratbatang: Optional[str] = None
@@ -97,6 +100,20 @@ class BarangResponse(BarangBase):
     lastUpdatedBy: Optional[str] = None
     lastUpdatedByHarga: Optional[str] = None
     createdAt: str
+
+class MaterialBase(BaseModel):
+    namaMaterial: str
+    masaJenis: float
+
+class MaterialCreate(MaterialBase):
+    pass
+
+class MaterialResponse(MaterialBase):
+    id: str
+    createdAt: str
+    updatedAt: Optional[str] = None
+    createdBy: Optional[str] = None
+    lastUpdatedBy: Optional[str] = None
 
 class EstimasiItem(BaseModel):
     barangId: str
@@ -561,6 +578,97 @@ async def delete_penawaran(penawaran_id: str, current_user: dict = Depends(get_c
         raise HTTPException(status_code=404, detail="Penawaran not found")
     return {"message": "Penawaran deleted"}
 
+# ========================= MATERIAL ROUTES =========================
+
+@api_router.get("/materials", response_model=List[MaterialResponse])
+async def get_materials(current_user: dict = Depends(get_current_user)):
+    materials_list = await db.materials.find({}, {"_id": 0}).to_list(1000)
+    return materials_list
+
+@api_router.post("/materials", response_model=MaterialResponse)
+async def create_material(data: MaterialCreate, current_user: dict = Depends(get_current_user)):
+    cleaned_name = data.namaMaterial.strip()
+    if not cleaned_name:
+        raise HTTPException(status_code=400, detail="Nama material wajib diisi")
+
+    if data.masaJenis is None or data.masaJenis <= 0:
+        raise HTTPException(status_code=400, detail="Masa jenis harus lebih besar dari 0")
+
+    # Pencegahan duplikat nama material secara case-insensitive
+    existing = await db.materials.find_one(
+        {"namaMaterial": {"$regex": f"^{re.escape(cleaned_name)}$", "$options": "i"}},
+        {"_id": 0}
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="Jenis material dengan nama tersebut sudah ada")
+
+    now = datetime.now(timezone.utc).isoformat()
+    user_name = current_user.get("name") or current_user.get("username") or "System"
+
+    material = {
+        "id": str(int(datetime.now(timezone.utc).timestamp() * 1000)),
+        "namaMaterial": cleaned_name,
+        "masaJenis": float(data.masaJenis),
+        "createdBy": user_name,
+        "lastUpdatedBy": user_name,
+        "createdAt": now,
+        "updatedAt": now
+    }
+
+    await db.materials.insert_one(material)
+    del material["_id"]
+    return material
+
+@api_router.put("/materials/{material_id}", response_model=MaterialResponse)
+async def update_material(material_id: str, data: MaterialCreate, current_user: dict = Depends(get_current_user)):
+    cleaned_name = data.namaMaterial.strip()
+    if not cleaned_name:
+        raise HTTPException(status_code=400, detail="Nama material wajib diisi")
+
+    if data.masaJenis is None or data.masaJenis <= 0:
+        raise HTTPException(status_code=400, detail="Masa jenis harus lebih besar dari 0")
+
+    # Cegah duplikat terhadap dokumen material lain
+    existing = await db.materials.find_one(
+        {
+            "id": {"$ne": material_id},
+            "namaMaterial": {"$regex": f"^{re.escape(cleaned_name)}$", "$options": "i"}
+        },
+        {"_id": 0}
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="Jenis material dengan nama tersebut sudah ada")
+
+    now = datetime.now(timezone.utc).isoformat()
+    user_name = current_user.get("name") or current_user.get("username") or "System"
+
+    update_data = {
+        "namaMaterial": cleaned_name,
+        "masaJenis": float(data.masaJenis),
+        "updatedAt": now,
+        "lastUpdatedBy": user_name
+    }
+
+    result = await db.materials.find_one_and_update(
+        {"id": material_id},
+        {"$set": update_data},
+        return_document=True
+    )
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Material not found")
+
+    del result["_id"]
+    return result
+
+@api_router.delete("/materials/{material_id}")
+async def delete_material(material_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.materials.delete_one({"id": material_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Material not found")
+    return {"message": "Material deleted"}
+
+
 # ========================= INIT DATA =========================
 
 async def _do_initialize_data():
@@ -681,6 +789,51 @@ async def _do_initialize_data():
         ]
         await db.barang.insert_many(default_barang)
         logger.info("Default barang created")
+
+    # Check if materials exist (hanya inisialisasi jika masih kosong, jangan overwrite existing)
+    material_count = await db.materials.count_documents({})
+    if material_count == 0:
+        now = datetime.now(timezone.utc).isoformat()
+        default_materials = [
+            {
+                "id": "1",
+                "namaMaterial": "Baja",
+                "masaJenis": 7850.0,
+                "createdBy": "System",
+                "lastUpdatedBy": "System",
+                "createdAt": now,
+                "updatedAt": now
+            },
+            {
+                "id": "2",
+                "namaMaterial": "Besi",
+                "masaJenis": 7850.0,
+                "createdBy": "System",
+                "lastUpdatedBy": "System",
+                "createdAt": now,
+                "updatedAt": now
+            },
+            {
+                "id": "3",
+                "namaMaterial": "Stainless Steel",
+                "masaJenis": 7930.0,
+                "createdBy": "System",
+                "lastUpdatedBy": "System",
+                "createdAt": now,
+                "updatedAt": now
+            },
+            {
+                "id": "4",
+                "namaMaterial": "Aluminium",
+                "masaJenis": 2700.0,
+                "createdBy": "System",
+                "lastUpdatedBy": "System",
+                "createdAt": now,
+                "updatedAt": now
+            }
+        ]
+        await db.materials.insert_many(default_materials)
+        logger.info("Default materials created")
 
 
 @api_router.post("/init")

@@ -213,3 +213,40 @@ export const penawaranAPI = {
     return handleResponse(response);
   }
 };
+
+// ========================= MATERIALS =========================
+
+export const materialAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_URL}/api/materials`, {
+      headers: getHeaders()
+    });
+    return handleResponse(response);
+  },
+
+  create: async (data) => {
+    const response = await fetch(`${API_URL}/api/materials`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    });
+    return handleResponse(response);
+  },
+
+  update: async (id, data) => {
+    const response = await fetch(`${API_URL}/api/materials/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    });
+    return handleResponse(response);
+  },
+
+  delete: async (id) => {
+    const response = await fetch(`${API_URL}/api/materials/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+    return handleResponse(response);
+  }
+};

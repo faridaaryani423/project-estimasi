@@ -112,6 +112,22 @@ export const initializeBarangData = () => {
   return JSON.parse(barangData);
 };
 
+// Initialize default material data if not exists or empty
+export const initializeMaterialData = () => {
+  const materialData = localStorage.getItem('materialData');
+  if (!materialData || materialData === '[]') {
+    const defaultMaterials = [
+      { id: '1', namaMaterial: 'Baja', masaJenis: 7850.0, createdAt: new Date().toISOString() },
+      { id: '2', namaMaterial: 'Besi', masaJenis: 7850.0, createdAt: new Date().toISOString() },
+      { id: '3', namaMaterial: 'Stainless Steel', masaJenis: 7930.0, createdAt: new Date().toISOString() },
+      { id: '4', namaMaterial: 'Aluminium', masaJenis: 2700.0, createdAt: new Date().toISOString() }
+    ];
+    localStorage.setItem('materialData', JSON.stringify(defaultMaterials));
+    return defaultMaterials;
+  }
+  return JSON.parse(materialData);
+};
+
 // Generate unique number for estimasi/penawaran
 export const generateUniqueNumber = (prefix) => {
   const date = new Date();
@@ -121,3 +137,4 @@ export const generateUniqueNumber = (prefix) => {
   
   return `${prefix}/${year}${month}/${random}`;
 };
+
