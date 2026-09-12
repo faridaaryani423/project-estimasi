@@ -1,4 +1,5 @@
 // Calculation Engine for Estimasi - dengan logika Welding + Waste Reuse
+import { resolveItemSatuan } from './unitResolver.js';
 
 /**
  * Calculate berat per batang based on shape and material
@@ -744,9 +745,10 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
     if (group.barang.jenisBentuk === 'custom') {
       const hargaModal = parseFloat(group.barang.hargamodal || 0) || 0;
       const hargaJasa = parseFloat(group.barang.hargajasa || 0) || 0;
-      const satuan = group.barang.satuan || 'Bh';
+      const defaultGroupSatuan = resolveItemSatuan(group.barang, 'Bh');
 
       group.items.forEach((item, index) => {
+        const itemSatuan = resolveItemSatuan(item, defaultGroupSatuan);
         const qty = parseInt(item.jumlahKeperluan) || 0;
         const subtotalMaterial = qty * hargaModal;
         const subtotalJasa = hargaJasa > 0 && luasPekerjaan > 0 ? Math.round(hargaJasa * luasPekerjaan) : Math.round(hargaJasa * qty);
@@ -758,19 +760,27 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
           barangId: group.barang.id,
           kodeItem: item.kodeItem || null,
           namaBarang: item.namaBarang || group.barang.nama,
+          namaManual: item.namaManual || group.barang.nama,
+          isManual: true,
           jenisBentuk: 'custom',
+          jenisBentukManual: 'custom',
           supplier: group.barang.supplier || item.supplier || null,
+          supplierManual: item.supplierManual || item.supplier || null,
           ukuranMentah: null,
           panjangMentah: 0,
           panjangJadi: 0,
           jenisBahan: group.barang.jenisBahan || 'Custom',
+          jenisBahanManual: group.barang.jenisBahan || 'Custom',
           beratJenis: null,
           beratbatang: null,
           minWelding: '0',
           jumlahKeperluan: qty,
-          satuan: satuan,
-          satuanBarang: satuan,
+          satuan: itemSatuan,
+          satuanBarang: itemSatuan,
+          satuanManual: itemSatuan,
+          satuanBarangManual: itemSatuan,
           satuanHargaModal: 'unit',
+          satuanHargaModalManual: 'unit',
           volume: null,
           hargaSatuan: Math.round(hargaModal),
           hargaModal: Math.round(hargaModal),
@@ -899,7 +909,9 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
     const isCustomShape = (item.jenisBentukManual || 'custom') === 'custom';
     const jumlahKeperluan = parseInt(item.jumlahKeperluan) || 0;
     const hargaModal = parseFloat(item.hargamodalManual || item.hargaSatuan || 0) || 0;
-    const satuan = item.satuanBarangManual || item.satuanManual || item.satuan || (isCustomShape ? 'Bh' : 'batang');
+    const satuan = isCustomShape
+      ? resolveItemSatuan(item, 'Bh')
+      : (item.satuanBarangManual || item.satuanManual || item.satuan || 'batang');
     const satuanHargaModal = isCustomShape ? 'unit' : (item.satuanHargaModalManual || 'batang');
     const hargaJasa = parseFloat(item.hargajasaManual || 0) || 0;
 

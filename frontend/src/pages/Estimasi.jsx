@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Calculator, Plus, Trash2, Weight, Ruler, Pencil, Download, Eye, Loader2, Search, User, MapPin, Phone, Square } from 'lucide-react';
 import { estimasiAPI } from '@/services/api';
 import { formatNumberWithSeparator } from '@/lib/utils';
+import { resolveItemSatuan } from '@/utils/unitResolver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -199,7 +200,7 @@ const Estimasi = () => {
 
       // ── Custom Items (baut, mur, aksesoris custom dll) ──
       if (isCustomGroup) {
-        const customSatuan = repItem.satuan || repItem.satuanBarang || repItem.satuanManual || repItem.satuanBarangManual || 'Bh';
+        const customSatuan = resolveItemSatuan(repItem, 'Bh');
         const customHargaSatuan = parseFloat(repItem.hargaSatuan || repItem.hargaModal || repItem.hargamodal || repItem.hargamodalManual || summary.hargaSatuan || 0) || 0;
         const matLabel = `${repItem.namaBarang}  Harga Satuan : ${fmtRp(customHargaSatuan)} / ${customSatuan}`;
 
@@ -1275,7 +1276,7 @@ const Estimasi = () => {
                         return 0;
                       })();
                       const satuanGroup = isCustom
-                        ? (group.satuan || group.satuanBarang || group.satuanManual || group.satuanBarangManual || 'Bh')
+                        ? resolveItemSatuan(group, 'Bh')
                         : (group.satuanHargaModal === 'kg' || group.breakdown?.satuanHargaModal === 'kg' ? 'Kg' : (group.jenisBentuk === 'plat' ? 'Lbr' : 'Btg'));
 
                       return (
@@ -1315,7 +1316,7 @@ const Estimasi = () => {
                             )}
                           </TableCell>
                           <TableCell className="font-semibold text-purple-600">
-                            {isCustom ? `${group.totalJumlah} ${group.satuan || group.satuanBarang || 'Bh'}` : (isManualRow && group.totalBahan === 0 ? group.totalJumlah : group.totalBahan)}
+                            {isCustom ? `${group.totalJumlah} ${resolveItemSatuan(group, 'Bh')}` : (isManualRow && group.totalBahan === 0 ? group.totalJumlah : group.totalBahan)}
                           </TableCell>
                           <TableCell className="font-semibold text-emerald-700">
                             {!isCustom && typeof group.finalPanjangReal === 'number' && group.finalPanjangReal > 0

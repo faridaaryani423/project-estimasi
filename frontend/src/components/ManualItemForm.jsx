@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { resolveItemSatuan, getEffectiveSatuanOptions } from '@/utils/unitResolver';
 
 const ManualItemForm = ({
   item,
@@ -25,11 +26,8 @@ const ManualItemForm = ({
     setIsHargaJasaEnabled(!!item.hargajasaManual);
   }, [item.hargajasaManual]);
 
-  const SATUAN_OPTIONS = ['Bh', 'Pcs', 'Set', 'Unit', 'Box', 'Kg', 'Btg', 'M', 'M²', 'Ls'];
-  const currentSatuan = item.satuanBarangManual || item.satuanManual || 'Bh';
-  const effectiveSatuanOptions = SATUAN_OPTIONS.includes(currentSatuan)
-    ? SATUAN_OPTIONS
-    : [currentSatuan, ...SATUAN_OPTIONS];
+  const currentSatuan = resolveItemSatuan(item, 'Bh');
+  const effectiveSatuanOptions = getEffectiveSatuanOptions(currentSatuan);
 
   return (
     <div className="mt-2 p-4 bg-sky-50 rounded-lg border border-sky-200 space-y-4">

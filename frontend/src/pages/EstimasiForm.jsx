@@ -12,6 +12,7 @@ import BarangCombobox from '@/components/BarangCombobox';
 import { calculateLuasPermukaan, calculateMaterialGroupAllocation, calculateBerat, calculateWithWasteReuse } from '@/utils/calculationEngine';
 import { formatNumberWithSeparator } from '@/lib/utils';
 import ManualItemForm from '@/components/ManualItemForm';
+import { resolveItemSatuan } from '@/utils/unitResolver';
 
 // ── Template untuk item kosong ─────────────────────────────────────────────────
 const emptyItem = () => ({
@@ -24,7 +25,7 @@ const emptyItem = () => ({
   namaManual: '',
   hargaManual: '',
   hargamodalManual: '',
-  satuanHargaModalManual: 'batang',
+  satuanHargaModalManual: 'unit',
   hargajasaManual: '',
   jenisBentukManual: 'custom',
   supplierManual: '',
@@ -46,6 +47,8 @@ const emptyItem = () => ({
   ketebalanPlatManual: '',
   satuanBarangManual: 'Bh',
   satuanManual: 'Bh',
+  satuan: 'Bh',
+  satuanBarang: 'Bh',
 });
 
 const isSameBarang = (itemA, itemB) => {
@@ -167,11 +170,20 @@ const EstimasiForm = () => {
         return updated.map((item) => {
           if (item.barangId === '__manual__' && item.namaManual === oldName) {
             const newItem = { ...item, [field]: value };
-            if (field === 'satuanBarangManual') newItem.satuanManual = value;
-            if (field === 'satuanManual') newItem.satuanBarangManual = value;
-            if (field === 'jenisBentukManual' && value === 'custom' && !item.satuanBarangManual) {
-              newItem.satuanBarangManual = 'Bh';
-              newItem.satuanManual = 'Bh';
+            if (field === 'satuanBarangManual' || field === 'satuanManual') {
+              newItem.satuanBarangManual = value;
+              newItem.satuanManual = value;
+              newItem.satuan = value;
+              newItem.satuanBarang = value;
+            }
+            if (field === 'jenisBentukManual' && value === 'custom') {
+              if (!item.satuanBarangManual) {
+                newItem.satuanBarangManual = 'Bh';
+                newItem.satuanManual = 'Bh';
+                newItem.satuan = 'Bh';
+                newItem.satuanBarang = 'Bh';
+              }
+              newItem.satuanHargaModalManual = 'unit';
             }
             return newItem;
           }
@@ -180,11 +192,20 @@ const EstimasiForm = () => {
       } else {
         const currentItem = updated[index];
         const newItem = { ...currentItem, [field]: value };
-        if (field === 'satuanBarangManual') newItem.satuanManual = value;
-        if (field === 'satuanManual') newItem.satuanBarangManual = value;
-        if (field === 'jenisBentukManual' && value === 'custom' && !currentItem.satuanBarangManual) {
-          newItem.satuanBarangManual = 'Bh';
-          newItem.satuanManual = 'Bh';
+        if (field === 'satuanBarangManual' || field === 'satuanManual') {
+          newItem.satuanBarangManual = value;
+          newItem.satuanManual = value;
+          newItem.satuan = value;
+          newItem.satuanBarang = value;
+        }
+        if (field === 'jenisBentukManual' && value === 'custom') {
+          if (!currentItem.satuanBarangManual) {
+            newItem.satuanBarangManual = 'Bh';
+            newItem.satuanManual = 'Bh';
+            newItem.satuan = 'Bh';
+            newItem.satuanBarang = 'Bh';
+          }
+          newItem.satuanHargaModalManual = 'unit';
         }
         updated[index] = newItem;
         return updated;
@@ -212,8 +233,10 @@ const EstimasiForm = () => {
         hargaManual: currentItem.hargaManual,
         supplierManual: currentItem.supplierManual,
         jenisBentukManual: currentItem.jenisBentukManual,
-        satuanBarangManual: currentItem.satuanBarangManual || currentItem.satuanManual || 'Bh',
-        satuanManual: currentItem.satuanManual || currentItem.satuanBarangManual || 'Bh',
+        satuanBarangManual: resolveItemSatuan(currentItem, 'Bh'),
+        satuanManual: resolveItemSatuan(currentItem, 'Bh'),
+        satuan: resolveItemSatuan(currentItem, 'Bh'),
+        satuanBarang: resolveItemSatuan(currentItem, 'Bh'),
         jumlahManual: currentItem.jumlahManual,
         beratManual: currentItem.beratManual,
         panjangManual: currentItem.panjangManual,
@@ -311,6 +334,7 @@ const EstimasiForm = () => {
   const handleBarangSelect = (index, barangId, namaManual = '') => {
     const matched = barangList.find((b) => String(b.id) === String(barangId));
     if (matched && matched.jenisBentuk === 'custom') {
+      const exactSatuan = resolveItemSatuan(matched, 'Bh');
       const updated = [...selectedItems];
       updated[index] = {
         ...updated[index],
@@ -319,8 +343,11 @@ const EstimasiForm = () => {
         jenisBentukManual: 'custom',
         namaManual: matched.nama,
         supplierManual: matched.supplier || '',
-        satuanBarangManual: matched.satuan || 'Bh',
-        satuanManual: matched.satuan || 'Bh',
+        satuanBarangManual: exactSatuan,
+        satuanManual: exactSatuan,
+        satuan: exactSatuan,
+        satuanBarang: exactSatuan,
+        satuanHargaModalManual: 'unit',
         hargamodalManual: matched.hargamodal ? String(matched.hargamodal) : '',
         hargajasaManual: matched.hargajasa ? String(matched.hargajasa) : '',
         hargaManual: '',
@@ -711,8 +738,11 @@ const EstimasiForm = () => {
       nama: namaBarang,
       jenisBentuk: item.jenisBentukManual || 'custom',
       satuan: (item.jenisBentukManual === 'custom' || !item.jenisBentukManual)
-        ? (item.satuanBarangManual || item.satuanManual || 'Bh')
+        ? resolveItemSatuan(item, 'Bh')
         : (item.jenisBentukManual === 'plat' ? 'Lbr' : 'Btg'),
+      satuanHargaModal: (item.jenisBentukManual === 'custom' || !item.jenisBentukManual)
+        ? 'unit'
+        : (item.satuanHargaModalManual || 'batang'),
       panjang: item.panjangManual || null,
       lebar: item.lebarManual || null,
       tinggi: item.tinggiManual || null,
