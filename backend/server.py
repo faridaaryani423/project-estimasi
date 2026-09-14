@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 import jwt
 import hashlib
 import re
+import uuid
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -79,6 +80,7 @@ class BarangBase(BaseModel):
     hargamodal: Optional[str] = None
     satuanHargaModal: Optional[str] = "batang"
     beratbatang: Optional[str] = None
+    beratbatangMode: Optional[str] = None
     minWelding: Optional[str] = "50"
     hargajasa: Optional[str] = None
     satuan: Optional[str] = "batang"
@@ -117,6 +119,7 @@ class MaterialResponse(MaterialBase):
 
 class EstimasiItem(BaseModel):
     barangId: str
+    urutan: Optional[int] = None
     kodeItem: Optional[str] = None
     isManual: Optional[bool] = None
     namaBarang: str
@@ -401,7 +404,7 @@ async def create_barang(data: BarangCreate, current_user: dict = Depends(get_cur
         ukuran = f"{data.panjang} × t{data.ketebalan} mm"
     
     barang = {
-        "id": str(int(datetime.now(timezone.utc).timestamp() * 1000)),
+        "id": f"{int(datetime.now(timezone.utc).timestamp() * 1000)}_{uuid.uuid4().hex[:6]}",
         **data.model_dump(),
         "ukuran": ukuran,
         "createdBy": updated_by,
@@ -706,6 +709,7 @@ async def _do_initialize_data():
             {
                 "id": "1",
                 "nama": "Besi Hollow 40x40",
+                "kategoriBarang": "Besi",
                 "jenisBentuk": "balok",
                 "ukuran": "6000 × 40 × 40 mm",
                 "panjang": "6000",
@@ -715,6 +719,7 @@ async def _do_initialize_data():
                 "jenisBahan": "Baja ST37",
                 "beratJenis": "7850",
                 "beratbatang": "18.5",
+                "beratbatangMode": "auto",
                 "minWelding": "50",
                 "hargamodal": "150000",
                 "hargajasa": "50000",
@@ -727,6 +732,7 @@ async def _do_initialize_data():
             {
                 "id": "2",
                 "nama": "Pipa Besi 2 inch",
+                "kategoriBarang": "Besi",
                 "jenisBentuk": "tabung",
                 "ukuran": "Ø50 × 6000 mm",
                 "panjang": "6000",
@@ -735,6 +741,7 @@ async def _do_initialize_data():
                 "jenisBahan": "Baja ST37",
                 "beratJenis": "7850",
                 "beratbatang": "22.8",
+                "beratbatangMode": "auto",
                 "minWelding": "40",
                 "hargamodal": "180000",
                 "hargajasa": "60000",
@@ -747,6 +754,7 @@ async def _do_initialize_data():
             {
                 "id": "3",
                 "nama": "WF 200x100",
+                "kategoriBarang": "Baja",
                 "jenisBentuk": "wf",
                 "ukuran": "WF 200 × 100 × 5.5 × 8 mm",
                 "panjang": "12000",
@@ -757,6 +765,7 @@ async def _do_initialize_data():
                 "jenisBahan": "Baja SS400",
                 "beratJenis": "7850",
                 "beratbatang": "238",
+                "beratbatangMode": "auto",
                 "minWelding": "100",
                 "hargamodal": "2500000",
                 "hargajasa": "500000",
@@ -769,6 +778,7 @@ async def _do_initialize_data():
             {
                 "id": "4",
                 "nama": "Plat Besi 6mm",
+                "kategoriBarang": "Besi",
                 "jenisBentuk": "plat",
                 "ukuran": "2400 × 1200 × t6 mm",
                 "panjangPlat": "2400",
@@ -777,9 +787,54 @@ async def _do_initialize_data():
                 "jenisBahan": "Baja ST37",
                 "beratJenis": "7850",
                 "beratbatang": "135.4",
+                "beratbatangMode": "auto",
                 "minWelding": "50",
                 "hargamodal": "850000",
                 "hargajasa": "150000",
+                "createdBy": "System",
+                "lastUpdatedBy": "System",
+                "lastUpdatedbarang": now,
+                "lastUpdatedharga": now,
+                "createdAt": now
+            },
+            {
+                "id": "5",
+                "nama": "Pipa Stainless 2 inch",
+                "kategoriBarang": "Stainless",
+                "jenisBentuk": "tabung",
+                "ukuran": "Ø50 × 6000 mm",
+                "panjang": "6000",
+                "diameter": "50",
+                "ketebalan": "2",
+                "jenisBahan": "Stainless Steel",
+                "beratJenis": "7930",
+                "beratbatang": "14.96",
+                "beratbatangMode": "auto",
+                "minWelding": "40",
+                "hargamodal": "450000",
+                "hargajasa": "80000",
+                "createdBy": "System",
+                "lastUpdatedBy": "System",
+                "lastUpdatedbarang": now,
+                "lastUpdatedharga": now,
+                "createdAt": now
+            },
+            {
+                "id": "6",
+                "nama": "Plat Stainless 2mm",
+                "kategoriBarang": "Stainless",
+                "jenisBentuk": "plat",
+                "ukuran": "2400 × 1200 × t2 mm",
+                "panjangPlat": "2400",
+                "lebarPlat": "1200",
+                "ketebalanPlat": "2",
+                "jenisBahan": "Stainless Steel",
+                "beratJenis": "7930",
+                "beratbatang": "45.68",
+                "beratbatangMode": "auto",
+                "minWelding": "50",
+                "hargamodal": "1200000",
+                "hargajasa": "200000",
                 "createdBy": "System",
                 "lastUpdatedBy": "System",
                 "lastUpdatedbarang": now,
@@ -789,6 +844,80 @@ async def _do_initialize_data():
         ]
         await db.barang.insert_many(default_barang)
         logger.info("Default barang created")
+    else:
+        # Migrate existing barang without kategoriBarang or Stainless items
+        now = datetime.now(timezone.utc).isoformat()
+        cursor = db.barang.find({
+            "$or": [
+                {"kategoriBarang": None},
+                {"kategoriBarang": ""},
+                {"kategoriBarang": {"$exists": False}}
+            ]
+        })
+        async for doc in cursor:
+            nama_lower = (doc.get("nama") or "").lower()
+            kat = "Besi"
+            if "stainless" in nama_lower:
+                kat = "Stainless"
+            elif "wf" in nama_lower or "baja" in nama_lower:
+                kat = "Baja"
+            elif "kaca" in nama_lower:
+                kat = "Kaca"
+            elif "alum" in nama_lower:
+                kat = "Aluminium"
+            await db.barang.update_one({"_id": doc["_id"]}, {"$set": {"kategoriBarang": kat}})
+
+        # Ensure default Stainless Steel exists if none present
+        stainless_count = await db.barang.count_documents({"nama": {"$regex": "stainless", "$options": "i"}})
+        if stainless_count == 0:
+            default_stainless = [
+                {
+                    "id": "5",
+                    "nama": "Pipa Stainless 2 inch",
+                    "kategoriBarang": "Stainless",
+                    "jenisBentuk": "tabung",
+                    "ukuran": "Ø50 × 6000 mm",
+                    "panjang": "6000",
+                    "diameter": "50",
+                    "ketebalan": "2",
+                    "jenisBahan": "Stainless Steel",
+                    "beratJenis": "7930",
+                    "beratbatang": "14.96",
+                    "beratbatangMode": "auto",
+                    "minWelding": "40",
+                    "hargamodal": "450000",
+                    "hargajasa": "80000",
+                    "createdBy": "System",
+                    "lastUpdatedBy": "System",
+                    "lastUpdatedbarang": now,
+                    "lastUpdatedharga": now,
+                    "createdAt": now
+                },
+                {
+                    "id": "6",
+                    "nama": "Plat Stainless 2mm",
+                    "kategoriBarang": "Stainless",
+                    "jenisBentuk": "plat",
+                    "ukuran": "2400 × 1200 × t2 mm",
+                    "panjangPlat": "2400",
+                    "lebarPlat": "1200",
+                    "ketebalanPlat": "2",
+                    "jenisBahan": "Stainless Steel",
+                    "beratJenis": "7930",
+                    "beratbatang": "45.68",
+                    "beratbatangMode": "auto",
+                    "minWelding": "50",
+                    "hargamodal": "1200000",
+                    "hargajasa": "200000",
+                    "createdBy": "System",
+                    "lastUpdatedBy": "System",
+                    "lastUpdatedbarang": now,
+                    "lastUpdatedharga": now,
+                    "createdAt": now
+                }
+            ]
+            await db.barang.insert_many(default_stainless)
+            logger.info("Default stainless barang added")
 
     # Check if materials exist (hanya inisialisasi jika masih kosong, jangan overwrite existing)
     material_count = await db.materials.count_documents({})

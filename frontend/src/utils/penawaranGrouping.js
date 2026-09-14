@@ -61,7 +61,7 @@ export const buildGroupedItemsByBarang = (items = []) => {
       group.totalSubtotal += item.subtotal || 0;
     } else {
       group.totalSubtotal =
-        parseFloat(item.breakdown?.summary?.totalHargaReal || 0) || 0;
+        parseFloat(item.breakdown?.summary?.totalHargaPlusWaste ?? item.breakdown?.summary?.totalHargaReal ?? 0) || 0;
     }
 
     group.count += 1;

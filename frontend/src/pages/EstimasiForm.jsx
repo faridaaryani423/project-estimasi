@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Calculator, Plus, Trash2, Send, Zap, Download, Loader2, FileUp, Settings } from 'lucide-react';
+import { Calculator, Plus, Trash2, Send, Zap, Download, Loader2, FileUp, Settings, ChevronUp, ChevronDown } from 'lucide-react';
 import { barangAPI, estimasiAPI } from '@/services/api';
 import * as XLSX from 'xlsx';
 import BarangCombobox from '@/components/BarangCombobox';
@@ -16,6 +16,7 @@ import { resolveItemSatuan } from '@/utils/unitResolver';
 
 // ── Template untuk item kosong ─────────────────────────────────────────────────
 const emptyItem = () => ({
+  urutan: null,
   barangId: '',
   kodeItem: '',
   panjangJadi: '',
@@ -49,6 +50,8 @@ const emptyItem = () => ({
   satuanManual: 'Bh',
   satuan: 'Bh',
   satuanBarang: 'Bh',
+  urutan: null,
+  savedDbId: null,
 });
 
 const isSameBarang = (itemA, itemB) => {
@@ -99,6 +102,25 @@ const groupAdjacentItems = (items) => {
   });
 
   return grouped;
+};
+
+const getItemGroupRanges = (items = []) => {
+  const groups = [];
+  let i = 0;
+  while (i < items.length) {
+    const start = i;
+    const currentItem = items[start];
+    const isGroupable = currentItem?.barangId && (currentItem.barangId !== '__manual__' || (currentItem.namaManual || '').trim() !== '');
+    let end = start;
+    if (isGroupable) {
+      while (end + 1 < items.length && isSameBarang(items[end + 1], currentItem)) {
+        end++;
+      }
+    }
+    groups.push({ start, end, items: items.slice(start, end + 1) });
+    i = end + 1;
+  }
+  return groups;
 };
 
 const EstimasiForm = () => {
@@ -155,40 +177,40 @@ const EstimasiForm = () => {
     setSelectedItems((prev) => {
       const updated = [...prev];
       const targetItem = updated[index];
+      if (!targetItem) return prev;
+
+      const groups = getItemGroupRanges(updated);
+      const targetGroup = groups.find((g) => index >= g.start && index <= g.end);
 
       if (
-        targetItem &&
+        targetGroup &&
         targetItem.barangId === '__manual__' &&
         field !== 'kodeItem' &&
         field !== 'jumlahKeperluan' &&
         field !== 'panjangJadi' &&
-        field !== 'volume' &&
-        targetItem.namaManual &&
-        targetItem.namaManual.trim() !== ''
+        field !== 'volume'
       ) {
-        const oldName = targetItem.namaManual;
-        return updated.map((item) => {
-          if (item.barangId === '__manual__' && item.namaManual === oldName) {
-            const newItem = { ...item, [field]: value };
-            if (field === 'satuanBarangManual' || field === 'satuanManual') {
-              newItem.satuanBarangManual = value;
-              newItem.satuanManual = value;
-              newItem.satuan = value;
-              newItem.satuanBarang = value;
-            }
-            if (field === 'jenisBentukManual' && value === 'custom') {
-              if (!item.satuanBarangManual) {
-                newItem.satuanBarangManual = 'Bh';
-                newItem.satuanManual = 'Bh';
-                newItem.satuan = 'Bh';
-                newItem.satuanBarang = 'Bh';
-              }
-              newItem.satuanHargaModalManual = 'unit';
-            }
-            return newItem;
+        for (let i = targetGroup.start; i <= targetGroup.end; i++) {
+          const item = updated[i];
+          const newItem = { ...item, [field]: value };
+          if (field === 'satuanBarangManual' || field === 'satuanManual') {
+            newItem.satuanBarangManual = value;
+            newItem.satuanManual = value;
+            newItem.satuan = value;
+            newItem.satuanBarang = value;
           }
-          return item;
-        });
+          if (field === 'jenisBentukManual' && value === 'custom') {
+            if (!item.satuanBarangManual) {
+              newItem.satuanBarangManual = 'Bh';
+              newItem.satuanManual = 'Bh';
+              newItem.satuan = 'Bh';
+              newItem.satuanBarang = 'Bh';
+            }
+            newItem.satuanHargaModalManual = 'unit';
+          }
+          updated[i] = newItem;
+        }
+        return updated;
       } else {
         const currentItem = updated[index];
         const newItem = { ...currentItem, [field]: value };
@@ -299,6 +321,34 @@ const EstimasiForm = () => {
     }
   };
 
+  const moveItemGroup = (targetGroupOrIndex, direction) => {
+    setSelectedItems((prev) => {
+      const groups = getItemGroupRanges(prev);
+      let groupIndex = -1;
+      if (typeof targetGroupOrIndex === 'number') {
+        groupIndex = targetGroupOrIndex;
+      } else if (targetGroupOrIndex && typeof targetGroupOrIndex === 'object') {
+        groupIndex = groups.findIndex(g => g.items.some(it => isSameBarang(it, targetGroupOrIndex)));
+      }
+      if (groupIndex < 0 || groupIndex >= groups.length) return prev;
+      
+      const targetIndex = direction === 'up' ? groupIndex - 1 : groupIndex + 1;
+      if (targetIndex < 0 || targetIndex >= groups.length) return prev;
+
+      const newGroups = [...groups];
+      const temp = newGroups[groupIndex];
+      newGroups[groupIndex] = newGroups[targetIndex];
+      newGroups[targetIndex] = temp;
+
+      return newGroups.flatMap((g, gIdx) =>
+        g.items.map((it) => ({
+          ...it,
+          urutan: gIdx + 1,
+        }))
+      );
+    });
+  };
+
   const getSelectedBarangIds = () => {
     const selectedIds = new Set();
     selectedItems.forEach((item, index) => {
@@ -340,6 +390,8 @@ const EstimasiForm = () => {
         ...updated[index],
         barangId: '__manual__',
         isManual: true,
+        savedDbId: String(matched.id),
+        kategoriBarangManual: matched.kategoriBarang || 'Lainnya',
         jenisBentukManual: 'custom',
         namaManual: matched.nama,
         supplierManual: matched.supplier || '',
@@ -362,6 +414,7 @@ const EstimasiForm = () => {
       barangId,
       namaManual: barangId === '__manual__' ? namaManual : '',
       hargaManual: '',
+      savedDbId: barangId === '__manual__' ? null : String(barangId),
     };
     setSelectedItems(updated);
   };
@@ -617,6 +670,12 @@ const EstimasiForm = () => {
 
     try {
       setSaving(true);
+      const currentGroups = getItemGroupRanges(validItems);
+      currentGroups.forEach((g, gIdx) => {
+        g.items.forEach((it) => {
+          it.urutan = gIdx + 1;
+        });
+      });
       const { itemDetails, totalEstimasi, totalBeratReal, totalLuasPermukaan, totalTitikWelding } =
         calculateWithWasteReuse(validItems, luasPekerjaan, effectiveBarangList);
 
@@ -736,6 +795,7 @@ const EstimasiForm = () => {
 
     const barangData = {
       nama: namaBarang,
+      kategoriBarang: item.kategoriBarangManual || 'Lainnya',
       jenisBentuk: item.jenisBentukManual || 'custom',
       satuan: (item.jenisBentukManual === 'custom' || !item.jenisBentukManual)
         ? resolveItemSatuan(item, 'Bh')
@@ -758,6 +818,7 @@ const EstimasiForm = () => {
       jenisBahan: item.jenisBahanManual || null,
       beratJenis: item.beratJenisManual || null,
       beratbatang: item.beratbatangManual || null,
+      beratbatangMode: 'auto',
       minWelding: item.minWeldingManual || '50',
       hargamodal: item.hargamodalManual || item.hargaManual || null,
       hargajasa: item.hargajasaManual || null,
@@ -767,11 +828,46 @@ const EstimasiForm = () => {
 
     try {
       setSavingManualBarang((prev) => ({ ...prev, [index]: true }));
-      await barangAPI.create(barangData);
+
+      // Cek apakah item sudah pernah disimpan ke DB sebelumnya (berdasarkan savedDbId atau nama yang persis sama)
+      const existingDbBarang = item.savedDbId
+        ? barangList.find((b) => String(b.id) === String(item.savedDbId))
+        : barangList.find((b) => (b.nama || '').trim().toLowerCase() === namaBarang.toLowerCase());
+
+      let savedResult;
+      if (existingDbBarang) {
+        savedResult = await barangAPI.update(existingDbBarang.id, barangData);
+        toast.success(`Barang "${namaBarang}" berhasil diperbarui di database!`);
+      } else {
+        savedResult = await barangAPI.create(barangData);
+        toast.success(`Barang "${namaBarang}" berhasil disimpan ke database!`);
+      }
+
+      const savedId = String(savedResult?.id || existingDbBarang?.id || '');
+
       // Reload daftar barang supaya langsung muncul di combobox
-      const data = await barangAPI.getAll();
-      setBarangList(data);
-      toast.success(`Barang "${namaBarang}" berhasil disimpan ke database!`);
+      const freshData = await barangAPI.getAll();
+      setBarangList(freshData);
+
+      // Simpan ID hasil create/update kembali ke item yang bersangkutan dan seluruh potongan di grupnya
+      if (savedId) {
+        const groups = getItemGroupRanges(selectedItems);
+        const targetGroup = groups.find((g) => index >= g.start && index <= g.end);
+        const start = targetGroup ? targetGroup.start : index;
+        const end = targetGroup ? targetGroup.end : index;
+
+        setSelectedItems((prev) =>
+          prev.map((it, idx) => {
+            if (idx >= start && idx <= end) {
+              return {
+                ...it,
+                savedDbId: savedId,
+              };
+            }
+            return it;
+          })
+        );
+      }
     } catch (error) {
       toast.error('Gagal menyimpan ke database: ' + error.message);
     } finally {
@@ -967,15 +1063,9 @@ const EstimasiForm = () => {
             </div>
 
             {(() => {
-              // Hitung jumlah grup yang terlihat untuk kontrol visibilitas tombol Delete
-              let visibleGroupCount = 0;
-              selectedItems.forEach((item, index) => {
-                const isGroupable = item.barangId && (item.barangId !== '__manual__' || (item.namaManual || '').trim() !== '');
-                const isSameAsPrev = isGroupable && index > 0 && isSameBarang(item, selectedItems[index - 1]);
-                if (!isSameAsPrev) visibleGroupCount++;
-              });
-
-              let displayGroupIndex = 0;
+              const groups = getItemGroupRanges(selectedItems);
+              const visibleGroupCount = groups.length;
+              let currentGroupIndexCounter = 0;
 
               return selectedItems.map((item, index) => {
                 const barangInfo     = getSelectedBarangInfo(item.barangId);
@@ -983,7 +1073,9 @@ const EstimasiForm = () => {
                 const isSameAsPrev   = isGroupable && index > 0 && isSameBarang(item, selectedItems[index - 1]);
                 if (isSameAsPrev) return null;
 
-                displayGroupIndex++;
+                const currentGroupIndex = currentGroupIndexCounter;
+                currentGroupIndexCounter++;
+                const displayGroupNumber = currentGroupIndex + 1;
 
                 const itemsWithSame = [item];
                 if (isGroupable) {
@@ -996,11 +1088,35 @@ const EstimasiForm = () => {
               const isManual = item.barangId === '__manual__';
 
                 return (
-                  <React.Fragment key={index}>
+                  <React.Fragment key={`group-${item.barangId || 'empty'}-${item.namaManual || ''}-${currentGroupIndex}`}>
                     <div className="p-4 border rounded-lg bg-gray-50 space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label className="font-semibold">Item #{displayGroupIndex}</Label>
-                      <div className="flex items-center gap-2">
+                      <Label className="font-semibold">Item #{displayGroupNumber}</Label>
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 w-8 p-0 border-gray-300 text-gray-700 hover:bg-gray-200"
+                          disabled={currentGroupIndex === 0}
+                          onClick={() => moveItemGroup(currentGroupIndex, 'up')}
+                          title="Pindahkan item ke atas"
+                          data-testid={`move-up-item-${displayGroupNumber}`}
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 w-8 p-0 border-gray-300 text-gray-700 hover:bg-gray-200"
+                          disabled={currentGroupIndex === visibleGroupCount - 1}
+                          onClick={() => moveItemGroup(currentGroupIndex, 'down')}
+                          title="Pindahkan item ke bawah"
+                          data-testid={`move-down-item-${displayGroupNumber}`}
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </Button>
                         {/* Merah: hapus form ini — hanya tampil jika ada lebih dari 1 grup */}
                         {visibleGroupCount > 1 && (
                           <Button
@@ -1113,9 +1229,23 @@ const EstimasiForm = () => {
                                   <Input type="number" {...field('hargamodal')} />
                                 </div>
                               </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs">Supplier</Label>
-                                <Input {...field('supplier')} placeholder="Contoh: CV. Baut Sentosa" />
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                  <Label className="text-xs">Kategori Barang</Label>
+                                  <select
+                                    value={eb.kategoriBarang || 'Lainnya'}
+                                    onChange={(e) => handleBarangFieldChange(item.barangId, 'kategoriBarang', e.target.value)}
+                                    className="w-full text-xs h-9 rounded-md border border-input bg-background px-3 py-1 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                  >
+                                    {['Baja', 'Besi', 'Stainless', 'Kaca', 'Aksesoris', 'Aluminium', 'Lainnya'].map((cat) => (
+                                      <option key={cat} value={cat}>{cat}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-xs">Supplier</Label>
+                                  <Input {...field('supplier')} placeholder="Contoh: CV. Baut Sentosa" />
+                                </div>
                               </div>
                               <div className="flex gap-2 pt-2 border-t">
                                 <Button
@@ -1184,10 +1314,24 @@ const EstimasiForm = () => {
                               )}
                             </div>
 
-                            {/* Supplier */}
-                            <div className="space-y-1">
-                              <Label className="text-xs">Supplier</Label>
-                              <Input {...field('supplier')} placeholder="Contoh: CV. Baut Sentosa" />
+                            {/* Kategori & Supplier */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <Label className="text-xs">Kategori Barang</Label>
+                                <select
+                                  value={eb.kategoriBarang || 'Lainnya'}
+                                  onChange={(e) => handleBarangFieldChange(item.barangId, 'kategoriBarang', e.target.value)}
+                                  className="w-full text-xs h-9 rounded-md border border-input bg-background px-3 py-1 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                >
+                                  {['Baja', 'Besi', 'Stainless', 'Kaca', 'Aksesoris', 'Aluminium', 'Lainnya'].map((cat) => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Supplier</Label>
+                                <Input {...field('supplier')} placeholder="Contoh: CV. Baut Sentosa" />
+                              </div>
                             </div>
 
                             {/* Material */}

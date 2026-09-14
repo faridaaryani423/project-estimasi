@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { resolveItemSatuan, getEffectiveSatuanOptions } from '@/utils/unitResolver';
+import { calculateBerat } from '@/utils/calculationEngine';
 
 const ManualItemForm = ({
   item,
@@ -25,6 +26,29 @@ const ManualItemForm = ({
   React.useEffect(() => {
     setIsHargaJasaEnabled(!!item.hargajasaManual);
   }, [item.hargajasaManual]);
+
+  const handleAutoHitungBeratManual = () => {
+    const mockBarang = {
+      jenisBentuk,
+      panjang: item.panjangManual,
+      lebar: item.lebarManual,
+      tinggi: item.tinggiManual,
+      diameter: item.diameterManual,
+      ketebalan: item.ketebalanManual,
+      tinggiWF: item.tinggiWFManual,
+      lebarFlange: item.lebarFlangeManual,
+      ketebalanWeb: item.ketebalanWebManual,
+      ketebalanFlange: item.ketebalanFlangeManual,
+      panjangPlat: item.panjangPlatManual,
+      lebarPlat: item.lebarPlatManual,
+      ketebalanPlat: item.ketebalanPlatManual,
+      beratJenis: item.beratJenisManual || '7850',
+    };
+    const calculated = calculateBerat(mockBarang);
+    if (calculated > 0) {
+      onItemChange(index, 'beratbatangManual', String(calculated));
+    }
+  };
 
   const currentSatuan = resolveItemSatuan(item, 'Bh');
   const effectiveSatuanOptions = getEffectiveSatuanOptions(currentSatuan);
@@ -61,6 +85,21 @@ const ManualItemForm = ({
       <div className="space-y-1">
         <Label className="text-xs">Nama Barang <span className="text-red-500">*</span></Label>
         <Input placeholder="Contoh: Baud HTB M16" {...f('namaManual')} />
+      </div>
+
+      {/* Kategori Barang */}
+      <div className="space-y-1">
+        <Label className="text-xs">Kategori Barang <span className="text-red-500">*</span></Label>
+        <select
+          data-testid={`kategori-manual-${index}`}
+          value={item.kategoriBarangManual || 'Lainnya'}
+          onChange={(e) => onItemChange(index, 'kategoriBarangManual', e.target.value)}
+          className="w-full text-xs h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          {['Baja', 'Besi', 'Stainless', 'Kaca', 'Aksesoris', 'Aluminium', 'Lainnya'].map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
       </div>
 
       {/* Supplier */}
@@ -141,7 +180,54 @@ const ManualItemForm = ({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Jenis Bahan <span className="text-red-500">*</span></Label>
-                <Input placeholder="Contoh: Baja ST37" {...f('jenisBahanManual')} />
+                <div className="space-y-1.5">
+                  <select
+                    className="w-full text-xs h-8 rounded-md border border-input bg-background px-2 py-1 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    value={
+                      ['Baja', 'Besi', 'Stainless Steel', 'Aluminium'].includes(item.jenisBahanManual)
+                        ? item.jenisBahanManual
+                        : (item.jenisBahanManual ? 'Custom' : '')
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'Baja') {
+                        onItemChange(index, 'jenisBahanManual', 'Baja');
+                        onItemChange(index, 'beratJenisManual', '7850');
+                        if (!item.kategoriBarangManual || item.kategoriBarangManual === 'Lainnya') {
+                          onItemChange(index, 'kategoriBarangManual', 'Baja');
+                        }
+                      } else if (val === 'Besi') {
+                        onItemChange(index, 'jenisBahanManual', 'Besi');
+                        onItemChange(index, 'beratJenisManual', '7850');
+                        if (!item.kategoriBarangManual || item.kategoriBarangManual === 'Lainnya') {
+                          onItemChange(index, 'kategoriBarangManual', 'Besi');
+                        }
+                      } else if (val === 'Stainless Steel') {
+                        onItemChange(index, 'jenisBahanManual', 'Stainless Steel');
+                        onItemChange(index, 'beratJenisManual', '7930');
+                        if (!item.kategoriBarangManual || item.kategoriBarangManual === 'Lainnya') {
+                          onItemChange(index, 'kategoriBarangManual', 'Stainless');
+                        }
+                      } else if (val === 'Aluminium') {
+                        onItemChange(index, 'jenisBahanManual', 'Aluminium');
+                        onItemChange(index, 'beratJenisManual', '2700');
+                        if (!item.kategoriBarangManual || item.kategoriBarangManual === 'Lainnya') {
+                          onItemChange(index, 'kategoriBarangManual', 'Aluminium');
+                        }
+                      } else if (val === 'Custom') {
+                        onItemChange(index, 'jenisBahanManual', '');
+                      }
+                    }}
+                  >
+                    <option value="">-- Pilih Bahan --</option>
+                    <option value="Baja">Baja (7.850 kg/m³)</option>
+                    <option value="Besi">Besi (7.850 kg/m³)</option>
+                    <option value="Stainless Steel">Stainless Steel (7.930 kg/m³)</option>
+                    <option value="Aluminium">Aluminium (2.700 kg/m³)</option>
+                    <option value="Custom">Lainnya / Manual</option>
+                  </select>
+                  <Input placeholder="Contoh: Baja ST37" {...f('jenisBahanManual')} />
+                </div>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Berat Jenis (kg/m³) <span className="text-red-500">*</span></Label>
@@ -150,7 +236,16 @@ const ManualItemForm = ({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs">Berat per Batang (kg) <span className="text-red-500">*</span></Label>
+                <div className="flex justify-between items-center">
+                  <Label className="text-xs">Berat per Batang (kg) <span className="text-red-500">*</span></Label>
+                  <button
+                    type="button"
+                    onClick={handleAutoHitungBeratManual}
+                    className="text-[10px] text-sky-600 hover:underline"
+                  >
+                    Hitung Otomatis
+                  </button>
+                </div>
                 <Input type="number" placeholder="50" {...f('beratbatangManual')} />
               </div>
               <div className="space-y-1">

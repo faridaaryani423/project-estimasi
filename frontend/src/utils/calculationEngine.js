@@ -363,6 +363,7 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
         totalUsedLength: 0,
         totalWasteLength: 0,
         totalHargaReal: 0,
+        totalHargaPlusWaste: 0,
         totalHargaPemakaian: 0,
         selisihBiayaWaste: 0,
         totalBeratReal: 0,
@@ -417,9 +418,10 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
       return [bar.barNo, getUsageBasedBarPrice(usedLength, stockLength, hargaSatuan)];
     })
   );
-  const totalHargaReal = totalBars * hargaSatuan;
-  const totalHargaPemakaian = [...barHargaPemakaianMap.values()].reduce((sum, value) => sum + value, 0);
-  const selisihBiayaWaste = Math.max(totalHargaReal - totalHargaPemakaian, 0);
+  const totalHargaPlusWaste = totalBars * hargaSatuan;
+  const totalHargaReal = [...barHargaPemakaianMap.values()].reduce((sum, value) => sum + value, 0);
+  const totalHargaPemakaian = totalHargaReal;
+  const selisihBiayaWaste = Math.max(totalHargaPlusWaste - totalHargaReal, 0);
   // Keep BFD allocation, but follow requirement-table welding definition per item.
   const totalTitikWelding = normalizedItems.reduce((sum, item) => {
     const qty = parseInt(item?.jumlahKeperluan) || 0;
@@ -573,6 +575,7 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
       totalBeratReal: round2(totalBeratReal),
       totalBeratWaste: round2(totalBeratWaste),
       totalHargaReal: round2(totalHargaReal),
+      totalHargaPlusWaste: round2(totalHargaPlusWaste),
       totalHargaPemakaian: round2(totalHargaPemakaian),
       selisihBiayaWaste: round2(selisihBiayaWaste),
       totalPieces: pieces.length
@@ -758,6 +761,7 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
 
         itemDetails.push({
           barangId: group.barang.id,
+          urutan: item.urutan ?? group.items[0]?.urutan ?? null,
           kodeItem: item.kodeItem || null,
           namaBarang: item.namaBarang || group.barang.nama,
           namaManual: item.namaManual || group.barang.nama,
@@ -817,6 +821,7 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
               totalBeratReal: 0,
               totalBeratWaste: 0,
               totalHargaReal: Math.round(subtotalMaterial),
+              totalHargaPlusWaste: Math.round(subtotalMaterial),
               totalHargaPemakaian: Math.round(subtotalMaterial),
               selisihBiayaWaste: 0,
               totalPieces: qty,
@@ -857,6 +862,7 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
 
       itemDetails.push({
         barangId: sourceItem.barangId,
+        urutan: entry.urutan ?? sourceItem.urutan ?? null,
         kodeItem: entry.kodeItem || sourceItem.kodeItem || null,
         namaBarang: entry.namaBarang || group.barang.nama,
         jenisBentuk: group.barang.jenisBentuk || 'balok',
@@ -924,6 +930,7 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
 
       return {
         barangId: '__manual__',
+        urutan: item.urutan ?? null,
         kodeItem: item.kodeItem || null,
         isManual: true,
         namaBarang: item.namaManual || 'Barang Custom',
@@ -990,6 +997,7 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
             totalBeratReal: 0,
             totalBeratWaste: 0,
             totalHargaReal: Math.round(subtotalMaterial),
+            totalHargaPlusWaste: Math.round(subtotalMaterial),
             totalHargaPemakaian: Math.round(subtotalMaterial),
             selisihBiayaWaste: 0,
             totalPieces: jumlahKeperluan,
@@ -1040,6 +1048,7 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
 
     return {
       barangId: '__manual__',
+      urutan: item.urutan ?? null,
       kodeItem: item.kodeItem || null,
       isManual: true,
       namaBarang: item.namaManual || 'Barang Manual',
@@ -1112,7 +1121,9 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
   });
 
   return {
-    itemDetails: [...itemDetails, ...manualDetails].filter(Boolean),
+    itemDetails: [...itemDetails, ...manualDetails]
+      .filter(Boolean)
+      .sort((a, b) => (Number(a.urutan ?? 999999) - Number(b.urutan ?? 999999))),
     totalEstimasi,
     totalBeratReal,
     totalLuasPermukaan,

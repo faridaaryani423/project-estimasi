@@ -104,7 +104,7 @@ export const usePenawaran = () => {
           }));
           const subtotalEst = (est.items || []).reduce((s, item) => {
             const val = parseFloat(
-              item.breakdown?.summary?.totalHargaReal || item.subtotal || 0
+              item.breakdown?.summary?.totalHargaPlusWaste ?? item.breakdown?.summary?.totalHargaReal ?? item.subtotal ?? 0
             );
             return s + val;
           }, 0);
@@ -167,7 +167,7 @@ export const usePenawaran = () => {
             // - non-manual: totalHargaReal / beratMaterial → per Kg
             // - manual: subtotal / jumlahKeperluan
             const subtotalItem = Number(
-              item.breakdown?.summary?.totalHargaReal || item.subtotal || 0
+              item.breakdown?.summary?.totalHargaPlusWaste ?? item.breakdown?.summary?.totalHargaReal ?? item.subtotal ?? 0
             );
             const hargaPerUnit =
               volume > 0 ? Math.round(subtotalItem / volume) : 0;

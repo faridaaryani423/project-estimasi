@@ -141,7 +141,7 @@ const exportDetailToExcel = (penawaran, wb) => {
   const totalHargaJual = Number(penawaran.totalHarga || 0);
   const totalModal = items.reduce(
     (s, item) =>
-      s + Number(item.breakdown?.summary?.totalHargaReal || item.subtotal || 0),
+      s + Number(item.breakdown?.summary?.totalHargaPlusWaste ?? item.breakdown?.summary?.totalHargaReal ?? item.subtotal ?? 0),
     0
   );
   const jualRatio = totalModal > 0 ? totalHargaJual / totalModal : 1;

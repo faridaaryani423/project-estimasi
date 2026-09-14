@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Package, Pencil, Trash2, Plus, Upload, Loader2, Search } from 'lucide-react';
+import { Package, Pencil, Trash2, Plus, Upload, Loader2, Search, RefreshCw } from 'lucide-react';
 import { barangAPI, materialAPI } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { getEffectiveSatuanOptions } from '@/utils/unitResolver';
+import { calculateBerat } from '@/utils/calculationEngine';
 
 const KATEGORI_OPTIONS = [
   'Baja',
@@ -51,6 +52,7 @@ const InputBarang = () => {
     jenisBahan: '',
     beratJenis: '', // kg/m3
     beratbatang: '', // kg per batang
+    beratbatangMode: 'auto',
     minWelding: '', // minimum panjang untuk welding (mm)
     hargamodal: '',
     satuanHargaModal: 'batang',
@@ -119,6 +121,45 @@ const InputBarang = () => {
     }));
   };
 
+  // Requirement 4: Auto-calculate berat per batang
+  useEffect(() => {
+    if (formData.beratbatangMode === 'auto') {
+      const calculated = calculateBerat(formData);
+      if (!isNaN(calculated) && calculated > 0 && isFinite(calculated)) {
+        setFormData(prev => {
+          if (parseFloat(prev.beratbatang) !== calculated) {
+            return { ...prev, beratbatang: String(calculated) };
+          }
+          return prev;
+        });
+      }
+    }
+  }, [
+    formData.beratbatangMode,
+    formData.panjang,
+    formData.lebar,
+    formData.tinggi,
+    formData.diameter,
+    formData.tinggiWF,
+    formData.lebarFlange,
+    formData.ketebalanWeb,
+    formData.ketebalanFlange,
+    formData.panjangPlat,
+    formData.lebarPlat,
+    formData.ketebalanPlat,
+    formData.ketebalan,
+    formData.beratJenis,
+    formData.jenisBentuk
+  ]);
+
+  const handleBeratBatangChange = (e) => {
+    setFormData(prev => ({ ...prev, beratbatangMode: 'manual', beratbatang: e.target.value }));
+  };
+
+  const handleResetToAuto = () => {
+    setFormData(prev => ({ ...prev, beratbatangMode: 'auto' }));
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -142,7 +183,7 @@ const InputBarang = () => {
     'nama', 'kategoriBarang', 'materialId', 'jenisBentuk', 'panjang', 'lebar', 'tinggi', 'diameter', 'ketebalan',
     'tinggiWF', 'lebarFlange', 'ketebalanWeb', 'ketebalanFlange',
     'panjangPlat', 'lebarPlat', 'ketebalanPlat',
-    'jenisBahan', 'beratJenis', 'beratbatang', 'minWelding', 'supplier', 'foto', 'satuan'
+    'jenisBahan', 'beratJenis', 'beratbatang', 'beratbatangMode', 'minWelding', 'supplier', 'foto', 'satuan'
   ];
 
   // Field-field yang termasuk "harga"
@@ -196,6 +237,7 @@ const InputBarang = () => {
         jenisBahan: isCustom ? (formData.jenisBahan || 'Custom') : (formData.jenisBahan || null),
         beratJenis: isCustom ? null : (formData.beratJenis || null),
         beratbatang: isCustom ? null : (formData.beratbatang || null),
+        beratbatangMode: formData.beratbatangMode || 'auto',
         minWelding: isCustom ? '0' : (formData.minWelding || '50'),
         hargamodal: formData.hargamodal,
         hargajasa: formData.hargajasa || null,
@@ -263,6 +305,17 @@ const InputBarang = () => {
       jenisBahan: item.jenisBahan || '',
       beratJenis: item.beratJenis || '',
       beratbatang: item.beratbatang || '',
+      beratbatangMode: (() => {
+        if (item.beratbatangMode === 'manual') return 'manual';
+        if (item.beratbatangMode === 'auto') return 'auto';
+        // Fallback jika beratbatangMode belum ada di data DB / legacy:
+        const calculated = calculateBerat(item);
+        const currentWeight = parseFloat(item.beratbatang) || 0;
+        if (currentWeight > 0 && Math.abs(currentWeight - calculated) >= 0.1) {
+          return 'manual';
+        }
+        return 'auto';
+      })(),
       minWelding: item.minWelding || '',
       hargamodal: item.hargamodal || '',
       hargajasa: item.hargajasa || '',
@@ -312,6 +365,7 @@ const InputBarang = () => {
       jenisBahan: '',
       beratJenis: '',
       beratbatang: '',
+      beratbatangMode: 'auto',
       minWelding: '',
       hargamodal: '',
       hargajasa: '',
@@ -565,8 +619,21 @@ const InputBarang = () => {
                   </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="beratbatang">Berat per Batang (kg) <span className="text-red-500">*</span></Label>
-                    <Input id="beratbatang" name="beratbatang" data-testid="beratbatang-input" type="number" value={formData.beratbatang} onChange={handleInputChange} placeholder="50" className="input-focus" required />
+                    <div className="flex justify-between items-center mb-1">
+                      <Label htmlFor="beratbatang" className="mb-0">Berat per Batang (kg) <span className="text-red-500">*</span></Label>
+                      {formData.beratbatangMode === 'manual' && (
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={handleResetToAuto}
+                          className="h-5 text-[10px] text-blue-600 px-2 py-0 hover:bg-blue-50"
+                        >
+                          <RefreshCw className="w-3 h-3 mr-1" /> Hitung Otomatis
+                        </Button>
+                      )}
+                    </div>
+                    <Input id="beratbatang" name="beratbatang" data-testid="beratbatang-input" type="number" value={formData.beratbatang} onChange={handleBeratBatangChange} placeholder="50" className="input-focus" required />
                   </div>
                   {formData.jenisBentuk !== 'custom' && (
                     <div className="space-y-2">

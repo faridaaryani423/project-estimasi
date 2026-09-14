@@ -147,7 +147,7 @@ export const calculateCorrectTotal = (estimasi) => {
     }
     if (itemIdx >= group.lastItemIndex) {
       group.finalHargaPlusWaste =
-        parseFloat(item.breakdown?.summary?.totalHargaReal || 0) || 0;
+        parseFloat(item.breakdown?.summary?.totalHargaPlusWaste ?? item.breakdown?.summary?.totalHargaReal ?? 0) || 0;
       group.lastItemIndex = itemIdx;
     }
     group.count++;

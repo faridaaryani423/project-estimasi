@@ -171,6 +171,12 @@ const Estimasi = () => {
       groups[key].rows.push(item);
     });
 
+    groupOrder.sort((keyA, keyB) => {
+      const minUA = Math.min(...groups[keyA].rows.map((r) => (r.urutan !== undefined && r.urutan !== null ? r.urutan : 999999)));
+      const minUB = Math.min(...groups[keyB].rows.map((r) => (r.urutan !== undefined && r.urutan !== null ? r.urutan : 999999)));
+      return minUA - minUB;
+    });
+
     let grandBeratSisa      = 0;
     let grandBeratReal      = 0;
     let grandBeratPlusWaste = 0;
@@ -270,7 +276,7 @@ const Estimasi = () => {
           head: [[
             'Spesifikasi / Uraian', 'Pemakaian', 'Panjang\nSisa', 'Berat\nSisa',
             'Berat\nReal', 'Berat\n+ Waste', 'Luas\n(M2)',
-            'Harga\n+ Waste', 'Harga\nReal', 'Potongan',
+            'Harga\nReal', 'Harga\n+ Waste', 'Potongan',
           ]],
           body       : tableBody,
           theme      : 'grid',
@@ -379,7 +385,7 @@ const Estimasi = () => {
           head: [[
             'Spesifikasi / Uraian', 'Pemakaian', 'Panjang\nSisa', 'Berat\nSisa',
             'Berat\nReal', 'Berat\n+ Waste', 'Luas\n(M2)',
-            'Harga\n+ Waste', 'Harga\nReal', 'Potongan',
+            'Harga\nReal', 'Harga\n+ Waste', 'Potongan',
           ]],
           body       : tableBody,
           theme      : 'grid',
@@ -537,7 +543,8 @@ const Estimasi = () => {
           const sisaM             = sisaMm / 1000;
           const usageRatio        = panjangMentah > 0 ? panjangTerpakaiMm / panjangMentah : 1;
           const billedRatio       = usageRatio <= 0.5 ? 0.5 : usageRatio <= 0.75 ? 0.75 : 1;
-          const hargaPemakaian    = billedRatio * hargaSatuan;
+          const hargaReal         = billedRatio * hargaSatuan;
+          const hargaPlusWaste    = hargaSatuan;
           const beratReal         = (panjangTerpakaiMm / panjangMentah) * beratStandar;
           const beratSisa         = beratStandar - beratReal;
           const pieces            = bar.items || [];
@@ -557,22 +564,30 @@ const Estimasi = () => {
             fmtN(beratReal, 2),
             fmtN(beratStandar, 2),
             luasPek,
-            fmtRp(hargaPemakaian),
-            fmtRp(hargaSatuan),
+            fmtRp(hargaReal),
+            fmtRp(hargaPlusWaste),
             potonganStr,
           ]);
         });
       });
 
-      let stBeratReal      = summary.totalBeratReal    || 0;
-      let stBeratWaste     = summary.totalBeratWaste   || 0;
-      let stHargaReal      = summary.totalHargaReal    || 0;
-      let stHargaPemakaian = summary.totalHargaPemakaian || 0;
+      let stBeratReal      = summary.totalBeratReal      || 0;
+      let stBeratWaste     = summary.totalBeratWaste     || 0;
+      let stHargaReal      = 0;
+      let stHargaPlusWaste = 0;
+
+      if (summary.totalHargaPlusWaste !== undefined && summary.totalHargaPlusWaste !== null) {
+        stHargaReal = Number(summary.totalHargaReal ?? summary.totalHargaPemakaian ?? 0) || 0;
+        stHargaPlusWaste = Number(summary.totalHargaPlusWaste) || 0;
+      } else {
+        stHargaReal = Number(summary.totalHargaPemakaian ?? summary.totalHargaReal ?? 0) || 0;
+        stHargaPlusWaste = Number(summary.totalHargaReal ?? (summary.totalBars * (summary.hargaSatuan || 0)) ?? 0) || 0;
+      }
 
       if (repItem.isManual) {
         stBeratReal = group.rows.reduce((s, r) => s + (r.beratTotal || 0), 0);
         stHargaReal = group.rows.reduce((s, r) => s + (r.subtotal || 0), 0);
-        stHargaPemakaian = stHargaReal;
+        stHargaPlusWaste = stHargaReal;
         
         let totalPanjangReal = 0;
         group.rows.forEach(r => {
@@ -591,8 +606,8 @@ const Estimasi = () => {
       grandBeratSisa      += stBeratWaste;
       grandBeratReal      += stBeratReal;
       grandBeratPlusWaste += stBeratPlusWaste;
-      grandHargaPlusWaste += stHargaReal;
-      grandHargaReal      += stHargaPemakaian;
+      grandHargaReal      += stHargaReal;
+      grandHargaPlusWaste += stHargaPlusWaste;
 
       const subTotalStyle = { fontStyle: 'bold', fillColor: [240, 240, 240] };
       tableBody.push([
@@ -602,8 +617,8 @@ const Estimasi = () => {
         { content: fmtN(stBeratReal, 2),       styles: { ...subTotalStyle, halign: 'right' } },
         { content: fmtN(stBeratPlusWaste, 2),  styles: { ...subTotalStyle, halign: 'right' } },
         { content: '-',                        styles: { ...subTotalStyle, halign: 'right' } },
-        { content: fmtRp(stHargaPemakaian),    styles: { ...subTotalStyle, halign: 'right' } },
         { content: fmtRp(stHargaReal),         styles: { ...subTotalStyle, halign: 'right' } },
+        { content: fmtRp(stHargaPlusWaste),    styles: { ...subTotalStyle, halign: 'right' } },
         { content: '',                         styles: subTotalStyle },
       ]);
 
@@ -612,7 +627,7 @@ const Estimasi = () => {
         head: [[
           'Spesifikasi / Uraian', 'Pemakaian', 'Panjang\nSisa', 'Berat\nSisa',
           'Berat\nReal', 'Berat\n+ Waste', 'Luas\n(M2)',
-          'Harga\n+ Waste', 'Harga\nReal', 'Potongan',
+          'Harga\nReal', 'Harga\n+ Waste', 'Potongan',
         ]],
         body       : tableBody,
         theme      : 'grid',
@@ -656,9 +671,9 @@ const Estimasi = () => {
 
     if (hargaSatuanPDF !== null) {
       const hsStyle = { fontStyle: 'bold', fillColor: [209, 231, 255] };
+      const hargaSatuanReal   = grandHargaReal      / Number(nilaiDim);
       const hargaSatuanWaste  = grandHargaPlusWaste / Number(nilaiDim);
-      const hargaSatuanReal   = grandTotalForPDF    / Number(nilaiDim);
-      // Baris 1: HARGA / SATUAN  (Harga + Waste ÷ Dimensi Kerja)
+      // Baris 1: HARGA / SATUAN (Harga Real & Harga + Waste ÷ Dimensi Kerja)
       grandTotalBody.push([
         { content: 'HARGA / SATUAN', colSpan: 2, styles: { ...hsStyle, halign: 'left' } },
         { content: '-', styles: { ...hsStyle, halign: 'right' } },
@@ -666,8 +681,8 @@ const Estimasi = () => {
         { content: '-', styles: { ...hsStyle, halign: 'right' } },
         { content: '-', styles: { ...hsStyle, halign: 'right' } },
         { content: '-', styles: { ...hsStyle, halign: 'right' } },
-        { content: fmtN(hargaSatuanWaste, 0), styles: { ...hsStyle, halign: 'right' } },
         { content: fmtN(hargaSatuanReal, 0),  styles: { ...hsStyle, halign: 'right' } },
+        { content: fmtN(hargaSatuanWaste, 0), styles: { ...hsStyle, halign: 'right' } },
         { content: '',                         styles: { fillColor: [209, 231, 255] } },
       ]);
     }
@@ -676,7 +691,7 @@ const Estimasi = () => {
       startY,
       showHead  : 'never',
       head      : [['Spesifikasi / Uraian','Pemakaian','Panjang\nSisa','Berat\nSisa',
-                    'Berat\nReal','Berat\n+ Waste','Luas\n(M2)','Harga\n+ Waste','Harga\nReal','Potongan']],
+                    'Berat\nReal','Berat\n+ Waste','Luas\n(M2)','Harga\nReal','Harga\n+ Waste','Potongan']],
       headStyles: { minCellHeight: 0, cellPadding: 0, fontSize: 0, lineWidth: 0 },
       body: grandTotalBody,
       theme      : 'grid',
@@ -728,7 +743,7 @@ const Estimasi = () => {
       }
       
       if (itemIdx >= group.lastItemIndex) {
-        group.finalHargaPlusWaste = parseFloat(item.breakdown?.summary?.totalHargaReal || 0) || 0;
+        group.finalHargaPlusWaste = parseFloat(item.breakdown?.summary?.totalHargaPlusWaste ?? item.breakdown?.summary?.totalHargaReal ?? 0) || 0;
         group.lastItemIndex = itemIdx;
       }
       
@@ -1142,8 +1157,8 @@ const Estimasi = () => {
                     <TableHead>Berat Real</TableHead>
                     <TableHead>Berat + Waste</TableHead>
                     <TableHead>Luas Permukaan</TableHead>
-                    <TableHead>Harga + Waste</TableHead>
                     <TableHead>Harga Real</TableHead>
+                    <TableHead>Harga + Waste</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1160,6 +1175,7 @@ const Estimasi = () => {
                       if (!groupedItems[groupingKey]) {
                         groupedItems[groupingKey] = {
                           ...item,
+                          urutan              : item.urutan !== undefined && item.urutan !== null ? item.urutan : null,
                           totalBahan          : 0,
                           totalJumlah         : 0,
                           finalWaste          : 0,
@@ -1175,6 +1191,9 @@ const Estimasi = () => {
                         };
                       }
                       const group = groupedItems[groupingKey];
+                      if (group.urutan === null && item.urutan !== undefined && item.urutan !== null) {
+                        group.urutan = item.urutan;
+                      }
                       group.totalBahan          += item.breakdown?.kebutuhanBahan || 0;
                       group.totalJumlah         += item.jumlahKeperluan || 0;
                       group.finalLuasPermukaan  += parseFloat(item.luasPermukaanTotal || 0) || 0; // ← BARU
@@ -1209,8 +1228,18 @@ const Estimasi = () => {
                           group.finalPanjangReal      = item.breakdown?.panjangRealTerpakai || 0;
                           const totalBeratReal       = parseFloat(item.breakdown?.summary?.totalBeratReal       || 0) || 0;
                           const totalBeratWaste      = parseFloat(item.breakdown?.summary?.totalBeratWaste      || 0) || 0;
-                          const totalHargaReal       = parseFloat(item.breakdown?.summary?.totalHargaPemakaian  || 0) || 0;
-                          const totalHargaPlusWaste  = parseFloat(item.breakdown?.summary?.totalHargaReal       || 0) || 0;
+                          const summary              = item.breakdown?.summary;
+                          let totalHargaReal         = 0;
+                          let totalHargaPlusWaste    = 0;
+                          if (summary) {
+                            if (summary.totalHargaPlusWaste !== undefined && summary.totalHargaPlusWaste !== null) {
+                              totalHargaReal        = parseFloat(summary.totalHargaReal ?? summary.totalHargaPemakaian ?? 0) || 0;
+                              totalHargaPlusWaste   = parseFloat(summary.totalHargaPlusWaste) || 0;
+                            } else {
+                              totalHargaReal        = parseFloat(summary.totalHargaPemakaian ?? summary.totalHargaReal ?? 0) || 0;
+                              totalHargaPlusWaste   = parseFloat(summary.totalHargaReal ?? (summary.totalBars * (summary.hargaSatuan || 0)) ?? 0) || 0;
+                            }
+                          }
                           group.finalBeratReal       = totalBeratReal;
                           group.finalBeratPlusWaste  = totalBeratReal + totalBeratWaste;
                           group.finalHargaReal       = totalHargaReal;
@@ -1221,7 +1250,11 @@ const Estimasi = () => {
                       group.count++;
                     });
 
-                    const groupedValues = Object.values(groupedItems);
+                    const groupedValues = Object.values(groupedItems).sort((a, b) => {
+                      const uA = a.urutan !== undefined && a.urutan !== null ? a.urutan : 999999;
+                      const uB = b.urutan !== undefined && b.urutan !== null ? b.urutan : 999999;
+                      return uA - uB;
+                    });
                     const totals = groupedValues.reduce(
                       (acc, group) => {
                         const isManualRow =
@@ -1348,14 +1381,16 @@ const Estimasi = () => {
                           </TableCell>
 
                           <TableCell className="font-semibold text-emerald-600">
-                            {Number(group.subtotal || group.finalHargaPlusWaste || 0) > 0
-                              ? `Rp ${Number(group.subtotal || group.finalHargaPlusWaste || 0).toLocaleString('id-ID')}`
-                              : '-'}
+                            {(() => {
+                              const val = isManualRow || isCustom ? Number(group.subtotal || 0) : Number(group.finalHargaReal ?? group.subtotal ?? 0);
+                              return val > 0 ? `Rp ${val.toLocaleString('id-ID')}` : '-';
+                            })()}
                           </TableCell>
                           <TableCell className="font-semibold text-amber-700">
-                            {Number(group.subtotal || group.finalHargaReal || 0) > 0
-                              ? `Rp ${Number(group.subtotal || group.finalHargaReal || 0).toLocaleString('id-ID')}`
-                              : '-'}
+                            {(() => {
+                              const val = isManualRow || isCustom ? Number(group.subtotal || 0) : Number(group.finalHargaPlusWaste ?? group.subtotal ?? 0);
+                              return val > 0 ? `Rp ${val.toLocaleString('id-ID')}` : '-';
+                            })()}
                           </TableCell>
                         </TableRow>
                       );
@@ -1388,10 +1423,10 @@ const Estimasi = () => {
                             : '-'}
                         </TableCell>
                         <TableCell className="font-bold text-emerald-600">
-                          Rp {Math.round(totals.hargaPlusWaste || 0).toLocaleString('id-ID')}
+                          Rp {Math.round(totals.hargaReal || 0).toLocaleString('id-ID')}
                         </TableCell>
                         <TableCell className="font-bold text-amber-700">
-                          Rp {Math.round(totals.hargaReal || 0).toLocaleString('id-ID')}
+                          Rp {Math.round(totals.hargaPlusWaste || 0).toLocaleString('id-ID')}
                         </TableCell>
                       </TableRow>
                     );
@@ -1415,11 +1450,11 @@ const Estimasi = () => {
                           <TableCell colSpan={12} className="text-left font-bold text-sky-800 text-sm tracking-wide">
                             HARGA / SATUAN
                           </TableCell>
-                          <TableCell className="font-bold text-sky-700 text-base text-right">
-                            {Math.round(hargaSatuanPerDimensi).toLocaleString('id-ID')}
+                          <TableCell className="font-bold text-emerald-700 text-base text-right">
+                            {Math.round(hargaSatuanReal || 0).toLocaleString('id-ID')}
                           </TableCell>
                           <TableCell className="font-bold text-amber-700 text-base text-right">
-                            {Math.round(hargaSatuanReal || 0).toLocaleString('id-ID')}
+                            {Math.round(hargaSatuanPerDimensi).toLocaleString('id-ID')}
                           </TableCell>
                         </TableRow>
                       );
