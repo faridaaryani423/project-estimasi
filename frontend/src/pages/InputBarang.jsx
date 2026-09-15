@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { KategoriSelect } from '@/components/ui/kategori-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -438,22 +439,14 @@ const InputBarang = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="kategoriBarang">Kategori Barang</Label>
-                  <select
+                  <KategoriSelect
                     id="kategoriBarang"
                     name="kategoriBarang"
-                    data-testid="kategori-barang-select"
+                    testId="kategori-barang-select"
                     value={formData.kategoriBarang}
                     onChange={handleInputChange}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 input-focus"
-                  >
-                    <option value="">-- Pilih Kategori --</option>
-                    {KATEGORI_OPTIONS.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                    {formData.kategoriBarang && !KATEGORI_OPTIONS.includes(formData.kategoriBarang) && (
-                      <option value={formData.kategoriBarang}>{formData.kategoriBarang} (Custom)</option>
-                    )}
-                  </select>
+                  />
                 </div>
 
                 <div className="space-y-2">

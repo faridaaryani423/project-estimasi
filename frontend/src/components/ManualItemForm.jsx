@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { KategoriSelect } from '@/components/ui/kategori-select';
 import { resolveItemSatuan, getEffectiveSatuanOptions } from '@/utils/unitResolver';
 import { calculateBerat } from '@/utils/calculationEngine';
 
@@ -90,16 +91,13 @@ const ManualItemForm = ({
       {/* Kategori Barang */}
       <div className="space-y-1">
         <Label className="text-xs">Kategori Barang <span className="text-red-500">*</span></Label>
-        <select
-          data-testid={`kategori-manual-${index}`}
+        <KategoriSelect
+          name="kategoriBarangManual"
+          testId={`kategori-manual-${index}`}
           value={item.kategoriBarangManual || 'Lainnya'}
           onChange={(e) => onItemChange(index, 'kategoriBarangManual', e.target.value)}
           className="w-full text-xs h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          {['Baja', 'Besi', 'Stainless', 'Kaca', 'Aksesoris', 'Aluminium', 'Lainnya'].map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
+        />
       </div>
 
       {/* Supplier */}

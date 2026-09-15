@@ -4,6 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { KategoriSelect } from '@/components/ui/kategori-select';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Calculator, Plus, Trash2, Send, Zap, Download, Loader2, FileUp, Settings, ChevronUp, ChevronDown } from 'lucide-react';
 import { barangAPI, estimasiAPI } from '@/services/api';
@@ -1232,15 +1237,12 @@ const EstimasiForm = () => {
                               <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1">
                                   <Label className="text-xs">Kategori Barang</Label>
-                                  <select
+                                  <KategoriSelect
+                                    name="kategoriBarang"
                                     value={eb.kategoriBarang || 'Lainnya'}
                                     onChange={(e) => handleBarangFieldChange(item.barangId, 'kategoriBarang', e.target.value)}
                                     className="w-full text-xs h-9 rounded-md border border-input bg-background px-3 py-1 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                  >
-                                    {['Baja', 'Besi', 'Stainless', 'Kaca', 'Aksesoris', 'Aluminium', 'Lainnya'].map((cat) => (
-                                      <option key={cat} value={cat}>{cat}</option>
-                                    ))}
-                                  </select>
+                                  />
                                 </div>
                                 <div className="space-y-1">
                                   <Label className="text-xs">Supplier</Label>
@@ -1318,15 +1320,12 @@ const EstimasiForm = () => {
                             <div className="grid grid-cols-2 gap-3">
                               <div className="space-y-1">
                                 <Label className="text-xs">Kategori Barang</Label>
-                                <select
+                                <KategoriSelect
+                                  name="kategoriBarang"
                                   value={eb.kategoriBarang || 'Lainnya'}
                                   onChange={(e) => handleBarangFieldChange(item.barangId, 'kategoriBarang', e.target.value)}
                                   className="w-full text-xs h-9 rounded-md border border-input bg-background px-3 py-1 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                >
-                                  {['Baja', 'Besi', 'Stainless', 'Kaca', 'Aksesoris', 'Aluminium', 'Lainnya'].map((cat) => (
-                                    <option key={cat} value={cat}>{cat}</option>
-                                  ))}
-                                </select>
+                                />
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-xs">Supplier</Label>
