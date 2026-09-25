@@ -68,6 +68,13 @@ const ManualItemForm = ({
   const selectedMaterialId = item.materialIdManual || materialByName?.id || '';
   const isMasterMaterial = Boolean(selectedMaterialId);
 
+  const [isCustomMode, setIsCustomMode] = React.useState(() => {
+    if (!item.jenisBahanManual) return false;
+    const isHardcoded = ['Baja', 'Besi', 'Stainless Steel', 'Aluminium'].includes(item.jenisBahanManual);
+    const isMaster = Boolean(item.materialIdManual || materialByName?.id);
+    return !isHardcoded && !isMaster;
+  });
+
   return (
     <div className="mt-2 p-4 bg-sky-50 rounded-lg border border-sky-200 space-y-4">
       <div className="flex justify-between items-center">
@@ -196,10 +203,13 @@ const ManualItemForm = ({
                   <select
                     className="w-full text-xs h-8 rounded-md border border-input bg-background px-2 py-1 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     value={
-                      item.materialIdManual || materialByName?.id || (
-                      ['Baja', 'Besi', 'Stainless Steel', 'Aluminium'].includes(item.jenisBahanManual)
-                        ? item.jenisBahanManual
-                        : (item.jenisBahanManual ? 'Custom' : ''))
+                      isCustomMode
+                        ? 'Custom'
+                        : (item.materialIdManual || materialByName?.id || (
+                            ['Baja', 'Besi', 'Stainless Steel', 'Aluminium'].includes(item.jenisBahanManual)
+                              ? item.jenisBahanManual
+                              : ''
+                          ))
                     }
                     onChange={(e) => {
                       const val = e.target.value;
@@ -237,8 +247,11 @@ const ManualItemForm = ({
                           onItemChange(index, 'kategoriBarangManual', 'Aluminium');
                         }
                       } else if (val === 'Custom') {
+                        setIsCustomMode(true);
                         onItemChange(index, 'materialIdManual', '');
                         onItemChange(index, 'jenisBahanManual', '');
+                      } else {
+                        setIsCustomMode(false);
                       }
                     }}
                   >
@@ -254,7 +267,14 @@ const ManualItemForm = ({
                     ))}
                     <option value="Custom">Lainnya / Manual</option>
                   </select>
-                  <Input placeholder="Contoh: Baja ST37" {...f('jenisBahanManual')} disabled={isMasterMaterial} />
+                  {isCustomMode && (
+                    <Input
+                      placeholder="Contoh: Baja ST37"
+                      {...f('jenisBahanManual')}
+                      className="mt-1.5"
+                      autoFocus
+                    />
+                  )}
                 </div>
               </div>
               <div className="space-y-1">

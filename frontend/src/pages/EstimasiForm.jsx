@@ -1404,12 +1404,20 @@ const EstimasiForm = () => {
                                 <option value="">Lainnya / Manual</option>
                                 {materials.map((material) => <option key={material.id} value={material.id}>{material.namaMaterial}</option>)}
                               </select>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div><Label className="text-xs">Jenis Bahan</Label></div>
-                                <div><Label className="text-xs">Berat Jenis (kg/m³)</Label><Input type="number" {...field('beratJenis')} placeholder="7850" /></div>
-                                <div><Label className="text-xs">Berat/Batang (kg)</Label><Input type="number" {...field('beratbatang')} /></div>
-                                <div><Label className="text-xs">Min. Welding (mm)</Label><Input type="number" {...field('minWelding')} /></div>
-                              </div>
+                              {!selectedMaterialId ? (
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div><Label className="text-xs">Jenis Bahan</Label><Input {...field('jenisBahan')} placeholder="Contoh: Baja ST37" /></div>
+                                  <div><Label className="text-xs">Berat Jenis (kg/m³)</Label><Input type="number" {...field('beratJenis')} placeholder="7850" /></div>
+                                  <div><Label className="text-xs">Berat/Batang (kg)</Label><Input type="number" {...field('beratbatang')} /></div>
+                                  <div><Label className="text-xs">Min. Welding (mm)</Label><Input type="number" {...field('minWelding')} /></div>
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-3 gap-2">
+                                  <div><Label className="text-xs">Berat Jenis (kg/m³)</Label><Input type="number" {...field('beratJenis')} placeholder="7850" disabled /></div>
+                                  <div><Label className="text-xs">Berat/Batang (kg)</Label><Input type="number" {...field('beratbatang')} /></div>
+                                  <div><Label className="text-xs">Min. Welding (mm)</Label><Input type="number" {...field('minWelding')} /></div>
+                                </div>
+                              )}
                             </div>
 
                             {/* Harga */}
