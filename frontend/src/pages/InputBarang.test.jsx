@@ -55,8 +55,8 @@ describe('Requirement 4: InputBarang Behavioral UI Test', () => {
     const materialSelect = screen.getByTestId('jenisBahan-select');
     const beratInput = screen.getByTestId('beratbatang-input');
 
-    // Initial Balok input: 1000 x 1000 x 10 mm, Baja (7850 kg/m3)
-    fireEvent.change(panjangInput, { target: { value: '1000' } });
+    // Initial Balok input: 1 M (1000mm) x 1000 x 10 mm, Baja (7850 kg/m3)
+    fireEvent.change(panjangInput, { target: { value: '1' } });
     fireEvent.change(lebarInput, { target: { value: '1000' } });
     fireEvent.change(tinggiInput, { target: { value: '10' } });
     fireEvent.change(materialSelect, { target: { value: 'Baja' } });
@@ -82,7 +82,7 @@ describe('Requirement 4: InputBarang Behavioral UI Test', () => {
     const materialSelect = screen.getByTestId('jenisBahan-select');
     const beratInput = screen.getByTestId('beratbatang-input');
 
-    fireEvent.change(panjangInput, { target: { value: '1000' } });
+    fireEvent.change(panjangInput, { target: { value: '1' } });
     fireEvent.change(lebarInput, { target: { value: '1000' } });
     fireEvent.change(tinggiInput, { target: { value: '30' } });
     fireEvent.change(materialSelect, { target: { value: 'Baja' } });
@@ -122,7 +122,7 @@ describe('Requirement 4: InputBarang Behavioral UI Test', () => {
     const materialSelect = screen.getByTestId('jenisBahan-select');
     const beratInput = screen.getByTestId('beratbatang-input');
 
-    fireEvent.change(panjangInput, { target: { value: '1000' } });
+    fireEvent.change(panjangInput, { target: { value: '1' } });
     fireEvent.change(lebarInput, { target: { value: '1000' } });
     fireEvent.change(tinggiInput, { target: { value: '40' } });
     fireEvent.change(materialSelect, { target: { value: 'Baja' } }); // 7850

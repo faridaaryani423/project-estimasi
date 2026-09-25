@@ -899,6 +899,103 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
       return;
     }
 
+    // Jika barang master bertipe plat, hitung per lembar tanpa 1D cutting allocation
+    if (group.barang.jenisBentuk === 'plat') {
+      const hargaModal = parseFloat(group.barang.hargamodal || 0) || 0;
+      const hargaJasa = parseFloat(group.barang.hargajasa || 0) || 0;
+      const satuanHargaModal = group.barang.satuanHargaModal || 'lembar';
+      const beratStandar = parseFloat(group.barang.beratbatang || 0) > 0
+        ? parseFloat(group.barang.beratbatang)
+        : calculateBerat(group.barang) || 0;
+      const hargaSatuan = satuanHargaModal === 'kg' ? Math.round(hargaModal * beratStandar) : Math.round(hargaModal);
+      const platSatuan = group.barang.satuan || 'Lbr';
+
+      group.items.forEach((item) => {
+        const qty = parseInt(item.jumlahKeperluan) || 0;
+        const subtotalMaterial = qty * hargaSatuan;
+        const subtotalJasa = hargaJasa > 0 && luasPekerjaan > 0 ? Math.round(hargaJasa * luasPekerjaan) : Math.round(hargaJasa * qty);
+        const subtotal = subtotalMaterial + subtotalJasa;
+        const beratTotal = Math.round((qty * beratStandar) * 100) / 100;
+        const luasPermukaan = calculateLuasPermukaan(group.barang, null);
+
+        totalEstimasi += subtotal;
+        totalBeratReal += beratTotal;
+        totalLuasPermukaan += Math.round((luasPermukaan * qty) * 100) / 100;
+
+        itemDetails.push({
+          barangId: group.barang.id,
+          materialId: group.barang.materialId || item.materialId || null,
+          urutan: item.urutan ?? group.items[0]?.urutan ?? null,
+          kodeItem: item.kodeItem || null,
+          namaBarang: item.namaBarang || group.barang.nama,
+          namaManual: item.namaManual || group.barang.nama,
+          isManual: false,
+          jenisBentuk: 'plat',
+          supplier: group.barang.supplier || item.supplier || null,
+          ukuranMentah: group.barang.ukuran || `${group.barang.panjangPlat || 0} × ${group.barang.lebarPlat || 0} × t${group.barang.tebalPlat || 0} mm`,
+          panjangMentah: parseFloat(group.barang.panjangPlat || 0) || null,
+          panjangJadi: 0,
+          panjangPlat: group.barang.panjangPlat,
+          lebarPlat: group.barang.lebarPlat,
+          tebalPlat: group.barang.tebalPlat || group.barang.ketebalanPlat,
+          jenisBahan: group.barang.jenisBahan,
+          beratJenis: group.barang.beratJenis,
+          beratbatang: group.barang.beratbatang || (beratStandar ? String(beratStandar) : null),
+          minWelding: '0',
+          jumlahKeperluan: qty,
+          satuan: platSatuan,
+          satuanBarang: platSatuan,
+          satuanHargaModal: satuanHargaModal,
+          volume: null,
+          hargaSatuan: hargaSatuan,
+          hargaModal: Math.round(hargaModal),
+          hargaJasa: Math.round(hargaJasa),
+          luasPekerjaan,
+          subtotalMaterial: Math.round(subtotalMaterial),
+          subtotalMaterialPemakaian: Math.round(subtotalMaterial),
+          subtotalMaterialWaste: 0,
+          subtotalJasa: Math.round(subtotalJasa),
+          subtotal: Math.round(subtotal),
+          beratPerBatang: beratStandar,
+          beratTotal: beratTotal,
+          beratWaste: 0,
+          luasPermukaan: luasPermukaan,
+          luasPermukaanTotal: Math.round((luasPermukaan * qty) * 100) / 100,
+          breakdown: {
+            isPlat: true,
+            kebutuhanBahan: qty,
+            panjangRealTerpakai: 0,
+            waste: 0,
+            wastePercentage: 0,
+            totalTitikWelding: 0,
+            cuttingGuide: [],
+            barAllocations: [],
+            individualCuts: [],
+            needsWelding: false,
+            summary: {
+              stockLength: 0,
+              minWelding: 0,
+              hargaSatuan: hargaSatuan,
+              beratStandar,
+              totalBars: qty,
+              totalUsedLength: 0,
+              totalWasteLength: 0,
+              totalBeratReal: beratTotal,
+              totalBeratWaste: 0,
+              totalHargaReal: Math.round(subtotalMaterial),
+              totalHargaPlusWaste: Math.round(subtotalMaterial),
+              totalHargaPemakaian: Math.round(subtotalMaterial),
+              selisihBiayaWaste: 0,
+              totalPieces: qty,
+            },
+            satuanHargaModal: satuanHargaModal,
+          },
+          usedExistingWaste: 0,
+        });
+      });
+      return;
+    }
+
     const allocation = calculateMaterialGroupAllocation(
       group.barang,
       group.items,

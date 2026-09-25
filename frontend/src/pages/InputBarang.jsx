@@ -125,7 +125,15 @@ const InputBarang = () => {
   // Requirement 4: Auto-calculate berat per batang
   useEffect(() => {
     if (formData.beratbatangMode === 'auto') {
-      const calculated = calculateBerat(formData);
+      // UI menerima panjang dalam meter, sedangkan calculationEngine memakai
+      // kontrak internal mm. Jangan kirim nilai UI mentah ke engine.
+      const calculationData = {
+        ...formData,
+        panjang: formData.panjang === '' ? '' : String(parseFloat(formData.panjang) * 1000),
+        panjangPlat: formData.panjangPlat === '' ? '' : String(parseFloat(formData.panjangPlat) * 1000),
+        lebarPlat: formData.lebarPlat === '' ? '' : String(parseFloat(formData.lebarPlat) * 1000),
+      };
+      const calculated = calculateBerat(calculationData);
       if (!isNaN(calculated) && calculated > 0 && isFinite(calculated)) {
         setFormData(prev => {
           if (parseFloat(prev.beratbatang) !== calculated) {

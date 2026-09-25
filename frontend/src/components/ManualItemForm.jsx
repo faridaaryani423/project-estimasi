@@ -14,6 +14,7 @@ const ManualItemForm = ({
   onItemChange,        // (index, field, value) => void
   onSavePermanent,     // (index) => Promise<void>
   saving = {},         // { [index]: boolean }
+  materials = [],
 }) => {
   const jenisBentuk = item.jenisBentukManual || 'custom';
 
@@ -61,6 +62,11 @@ const ManualItemForm = ({
 
   const currentSatuan = resolveItemSatuan(item, 'Bh');
   const effectiveSatuanOptions = getEffectiveSatuanOptions(currentSatuan);
+  const materialByName = materials.find(
+    (material) => material.namaMaterial?.toLowerCase() === item.jenisBahanManual?.toLowerCase()
+  );
+  const selectedMaterialId = item.materialIdManual || materialByName?.id || '';
+  const isMasterMaterial = Boolean(selectedMaterialId);
 
   return (
     <div className="mt-2 p-4 bg-sky-50 rounded-lg border border-sky-200 space-y-4">
@@ -190,37 +196,48 @@ const ManualItemForm = ({
                   <select
                     className="w-full text-xs h-8 rounded-md border border-input bg-background px-2 py-1 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     value={
+                      item.materialIdManual || materialByName?.id || (
                       ['Baja', 'Besi', 'Stainless Steel', 'Aluminium'].includes(item.jenisBahanManual)
                         ? item.jenisBahanManual
-                        : (item.jenisBahanManual ? 'Custom' : '')
+                        : (item.jenisBahanManual ? 'Custom' : ''))
                     }
                     onChange={(e) => {
                       const val = e.target.value;
-                      if (val === 'Baja') {
+                      const material = materials.find((entry) => String(entry.id) === String(val));
+                      if (material) {
+                        onItemChange(index, 'materialIdManual', material.id);
+                        onItemChange(index, 'jenisBahanManual', material.namaMaterial);
+                        onItemChange(index, 'beratJenisManual', String(material.masaJenis));
+                      } else if (val === 'Baja') {
+                        onItemChange(index, 'materialIdManual', '');
                         onItemChange(index, 'jenisBahanManual', 'Baja');
                         onItemChange(index, 'beratJenisManual', '7850');
                         if (!item.kategoriBarangManual || item.kategoriBarangManual === 'Lainnya') {
                           onItemChange(index, 'kategoriBarangManual', 'Baja');
                         }
                       } else if (val === 'Besi') {
+                        onItemChange(index, 'materialIdManual', '');
                         onItemChange(index, 'jenisBahanManual', 'Besi');
                         onItemChange(index, 'beratJenisManual', '7850');
                         if (!item.kategoriBarangManual || item.kategoriBarangManual === 'Lainnya') {
                           onItemChange(index, 'kategoriBarangManual', 'Besi');
                         }
                       } else if (val === 'Stainless Steel') {
+                        onItemChange(index, 'materialIdManual', '');
                         onItemChange(index, 'jenisBahanManual', 'Stainless Steel');
                         onItemChange(index, 'beratJenisManual', '7930');
                         if (!item.kategoriBarangManual || item.kategoriBarangManual === 'Lainnya') {
                           onItemChange(index, 'kategoriBarangManual', 'Stainless');
                         }
                       } else if (val === 'Aluminium') {
+                        onItemChange(index, 'materialIdManual', '');
                         onItemChange(index, 'jenisBahanManual', 'Aluminium');
                         onItemChange(index, 'beratJenisManual', '2700');
                         if (!item.kategoriBarangManual || item.kategoriBarangManual === 'Lainnya') {
                           onItemChange(index, 'kategoriBarangManual', 'Aluminium');
                         }
                       } else if (val === 'Custom') {
+                        onItemChange(index, 'materialIdManual', '');
                         onItemChange(index, 'jenisBahanManual', '');
                       }
                     }}
@@ -230,14 +247,19 @@ const ManualItemForm = ({
                     <option value="Besi">Besi (7.850 kg/m³)</option>
                     <option value="Stainless Steel">Stainless Steel (7.930 kg/m³)</option>
                     <option value="Aluminium">Aluminium (2.700 kg/m³)</option>
+                    {materials.map((material) => (
+                      <option key={material.id} value={material.id}>
+                        {material.namaMaterial} ({Number(material.masaJenis).toLocaleString('id-ID')} kg/m³)
+                      </option>
+                    ))}
                     <option value="Custom">Lainnya / Manual</option>
                   </select>
-                  <Input placeholder="Contoh: Baja ST37" {...f('jenisBahanManual')} />
+                  <Input placeholder="Contoh: Baja ST37" {...f('jenisBahanManual')} disabled={isMasterMaterial} />
                 </div>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Berat Jenis (kg/m³) <span className="text-red-500">*</span></Label>
-                <Input type="number" placeholder="7850" {...f('beratJenisManual')} />
+                <Input type="number" placeholder="7850" {...f('beratJenisManual')} disabled={isMasterMaterial} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

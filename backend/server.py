@@ -7,7 +7,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Union
 from datetime import datetime, timezone
 import jwt
 import hashlib
@@ -119,6 +119,7 @@ class MaterialResponse(MaterialBase):
 
 class EstimasiItem(BaseModel):
     barangId: str
+    materialId: Optional[str] = None
     urutan: Optional[int] = None
     kodeItem: Optional[str] = None
     isManual: Optional[bool] = None

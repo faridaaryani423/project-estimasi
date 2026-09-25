@@ -11,7 +11,7 @@ import { KategoriSelect } from '@/components/ui/kategori-select';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Calculator, Plus, Trash2, Send, Zap, Download, Loader2, FileUp, Settings, ChevronUp, ChevronDown } from 'lucide-react';
-import { barangAPI, estimasiAPI } from '@/services/api';
+import { barangAPI, estimasiAPI, materialAPI } from '@/services/api';
 import * as XLSX from 'xlsx';
 import BarangCombobox from '@/components/BarangCombobox';
 import { calculateLuasPermukaan, calculateMaterialGroupAllocation, calculateBerat, calculateWithWasteReuse } from '@/utils/calculationEngine';
@@ -36,6 +36,7 @@ const emptyItem = () => ({
   jenisBentukManual: 'custom',
   supplierManual: '',
   jenisBahanManual: '',
+  materialIdManual: '',
   beratJenisManual: '',
   beratbatangManual: '',
   minWeldingManual: '',
@@ -133,6 +134,7 @@ const EstimasiForm = () => {
   const importFileRef = useRef(null);
 
   const [barangList, setBarangList] = useState([]);
+  const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -162,7 +164,17 @@ const EstimasiForm = () => {
 
   useEffect(() => {
     loadBarang();
+    loadMaterials();
   }, []);
+
+  const loadMaterials = async () => {
+    try {
+      const data = await materialAPI.getAll();
+      setMaterials(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Gagal memuat master material:', error);
+    }
+  };
 
   const loadBarang = async () => {
     try {
@@ -282,6 +294,7 @@ const EstimasiForm = () => {
         lebarPlatManual: currentItem.lebarPlatManual,
         ketebalanPlatManual: currentItem.ketebalanPlatManual,
         jenisBahanManual: currentItem.jenisBahanManual,
+        materialIdManual: currentItem.materialIdManual,
         beratJenisManual: currentItem.beratJenisManual,
         beratbatangManual: currentItem.beratbatangManual,
         minWeldingManual: currentItem.minWeldingManual,
@@ -570,6 +583,7 @@ const EstimasiForm = () => {
       const isCustomManual = isManual && jb === 'custom';
       const barang = !isManual ? getEffectiveBarang(item.barangId) : null;
       const isCustomDB = !isManual && barang?.jenisBentuk === 'custom';
+      const isPlatDB = !isManual && barang?.jenisBentuk === 'plat';
 
       // Dedup: items custom manual
       if (isCustomManual) {
@@ -640,12 +654,14 @@ const EstimasiForm = () => {
         if (!check(item.hargamodalManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Harga Modal wajib diisi.`; break; }
 
         validItems.push(item);
-      } else {
+      } else if (!isPlatDB) {
         if (!item.panjangJadi || parseFloat(item.panjangJadi) <= 0) {
           hasInvalid = true;
           errorMessage = `Baris ${i + 1}: Panjang Jadi wajib diisi lebih dari 0.`;
           break;
         }
+        validItems.push(item);
+      } else {
         validItems.push(item);
       }
     }
@@ -811,6 +827,7 @@ const EstimasiForm = () => {
     const barangData = {
       nama: namaBarang,
       kategoriBarang: item.kategoriBarangManual || 'Lainnya',
+      materialId: item.materialIdManual || null,
       jenisBentuk: item.jenisBentukManual || 'custom',
       satuan: (item.jenisBentukManual === 'custom' || !item.jenisBentukManual)
         ? resolveItemSatuan(item, 'Bh')
@@ -1191,6 +1208,7 @@ const EstimasiForm = () => {
                       onItemChange={handleItemChange}
                       onSavePermanent={saveManualBarangPermanent}
                       saving={savingManualBarang}
+                      materials={materials}
                     />
                   )}
 
@@ -1244,10 +1262,15 @@ const EstimasiForm = () => {
                       {expandedBarang[item.barangId] && (() => {
                         const eb = getEffectiveBarang(item.barangId);
                         if (!eb) return null;
+                        const matchedMaterial = materials.find((material) =>
+                          material.namaMaterial?.toLowerCase() === eb.jenisBahan?.toLowerCase()
+                        );
+                        const selectedMaterialId = eb.materialId || matchedMaterial?.id || '';
                         const field = (f) => ({
                           value: eb[f] ?? '',
                           onChange: (e) => handleBarangFieldChange(item.barangId, f, e.target.value),
                           className: 'input-focus',
+                          disabled: f === 'beratJenis' && Boolean(selectedMaterialId),
                         });
 
                         if (eb.jenisBentuk === 'custom') {
@@ -1366,8 +1389,23 @@ const EstimasiForm = () => {
                             {/* Material */}
                             <div className="space-y-2">
                               <Label className="text-xs text-gray-500 uppercase tracking-wide">Material</Label>
+                              <select
+                                value={selectedMaterialId}
+                                onChange={(e) => {
+                                  const material = materials.find((entry) => String(entry.id) === String(e.target.value));
+                                  handleBarangFieldChange(item.barangId, 'materialId', material?.id || null);
+                                  if (material) {
+                                    handleBarangFieldChange(item.barangId, 'jenisBahan', material.namaMaterial);
+                                    handleBarangFieldChange(item.barangId, 'beratJenis', String(material.masaJenis));
+                                  }
+                                }}
+                                className="w-full text-xs h-8 rounded-md border border-input bg-background px-2 py-1"
+                              >
+                                <option value="">Lainnya / Manual</option>
+                                {materials.map((material) => <option key={material.id} value={material.id}>{material.namaMaterial}</option>)}
+                              </select>
                               <div className="grid grid-cols-2 gap-2">
-                                <div><Label className="text-xs">Jenis Bahan</Label><Input {...field('jenisBahan')} placeholder="Baja ST37" /></div>
+                                <div><Label className="text-xs">Jenis Bahan</Label></div>
                                 <div><Label className="text-xs">Berat Jenis (kg/m³)</Label><Input type="number" {...field('beratJenis')} placeholder="7850" /></div>
                                 <div><Label className="text-xs">Berat/Batang (kg)</Label><Input type="number" {...field('beratbatang')} /></div>
                                 <div><Label className="text-xs">Min. Welding (mm)</Label><Input type="number" {...field('minWelding')} /></div>
@@ -1579,7 +1617,7 @@ const EstimasiForm = () => {
                   })}
 
                   {/* Kode item + jumlah untuk barang manual */}
-                  {isManual && (item.jenisBentukManual || 'custom') !== 'custom' && itemsWithSame.map((cur, sub) => {
+                  {isManual && !['custom', 'plat'].includes(item.jenisBentukManual || 'custom') && itemsWithSame.map((cur, sub) => {
                     const actualIdx = index + sub;
                     return (
                       <div key={actualIdx} className="grid grid-cols-3 gap-3 items-end p-3 bg-white rounded-lg border">
@@ -1634,6 +1672,22 @@ const EstimasiForm = () => {
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {isManual && (item.jenisBentukManual || 'custom') === 'plat' && itemsWithSame.map((cur, sub) => {
+                    const actualIdx = index + sub;
+                    return (
+                      <div key={actualIdx} className="grid grid-cols-2 gap-3 items-end p-3 bg-white rounded-lg border">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Kode Item</Label>
+                          <Input value={cur.kodeItem || ''} onChange={(e) => handleItemChange(actualIdx, 'kodeItem', e.target.value)} placeholder="P-01" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Jumlah (Lembar) <span className="text-red-500">*</span></Label>
+                          <Input type="number" value={cur.jumlahKeperluan || ''} onChange={(e) => handleItemChange(actualIdx, 'jumlahKeperluan', e.target.value)} placeholder="5" />
                         </div>
                       </div>
                     );
