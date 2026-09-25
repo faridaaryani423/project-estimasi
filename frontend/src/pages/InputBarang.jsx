@@ -223,7 +223,7 @@ const InputBarang = () => {
         jenisBentuk: formData.jenisBentuk,
         satuan: isCustom ? (formData.satuan || 'Bh') : (formData.satuan || (formData.jenisBentuk === 'plat' ? 'Lbr' : 'Btg')),
         satuanHargaModal: isCustom ? 'unit' : (formData.satuanHargaModal || 'batang'),
-        panjang: isCustom ? null : (formData.panjang || null),
+        panjang: isCustom ? null : (formData.panjang ? String(Math.round(parseFloat(formData.panjang) * 1000)) : null),
         lebar: isCustom ? null : (formData.lebar || null),
         tinggi: isCustom ? null : (formData.tinggi || null),
         diameter: isCustom ? null : (formData.diameter || null),
@@ -232,8 +232,8 @@ const InputBarang = () => {
         lebarFlange: isCustom ? null : (formData.lebarFlange || null),
         ketebalanWeb: isCustom ? null : (formData.ketebalanWeb || null),
         ketebalanFlange: isCustom ? null : (formData.ketebalanFlange || null),
-        panjangPlat: isCustom ? null : (formData.panjangPlat || null),
-        lebarPlat: isCustom ? null : (formData.lebarPlat || null),
+        panjangPlat: isCustom ? null : (formData.panjangPlat ? String(Math.round(parseFloat(formData.panjangPlat) * 1000)) : null),
+        lebarPlat: isCustom ? null : (formData.lebarPlat ? String(Math.round(parseFloat(formData.lebarPlat) * 1000)) : null),
         ketebalanPlat: isCustom ? null : (formData.ketebalanPlat || null),
         jenisBahan: isCustom ? (formData.jenisBahan || 'Custom') : (formData.jenisBahan || null),
         beratJenis: isCustom ? null : (formData.beratJenis || null),
@@ -291,7 +291,7 @@ const InputBarang = () => {
       materialId: matchedMaterialId,
       jenisBentuk: item.jenisBentuk || 'balok',
       satuan: item.satuan || 'Bh',
-      panjang: item.panjang || '',
+      panjang: (item.panjang && !isNaN(item.panjang)) ? String(item.panjang / 1000) : '',
       lebar: item.lebar || '',
       tinggi: item.tinggi || '',
       diameter: item.diameter || '',
@@ -300,8 +300,8 @@ const InputBarang = () => {
       lebarFlange: item.lebarFlange || '',
       ketebalanWeb: item.ketebalanWeb || '',
       ketebalanFlange: item.ketebalanFlange || '',
-      panjangPlat: item.panjangPlat || '',
-      lebarPlat: item.lebarPlat || '',
+      panjangPlat: (item.panjangPlat && !isNaN(item.panjangPlat)) ? String(item.panjangPlat / 1000) : '',
+      lebarPlat: (item.lebarPlat && !isNaN(item.lebarPlat)) ? String(item.lebarPlat / 1000) : '',
       ketebalanPlat: item.ketebalanPlat || '',
       jenisBahan: item.jenisBahan || '',
       beratJenis: item.beratJenis || '',
@@ -485,21 +485,21 @@ const InputBarang = () => {
 
               {formData.jenisBentuk !== 'custom' && (
                 <div className="space-y-2">
-                  <Label>Ukuran Barang (mm) <span className="text-red-500">*</span></Label>
+                  <Label>Ukuran Barang <span className="text-red-500">*</span></Label>
                   
                   {formData.jenisBentuk === 'balok' && (
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <Label htmlFor="panjang" className="text-xs text-gray-600">Panjang</Label>
-                      <Input id="panjang" name="panjang" data-testid="panjang-input" type="number" value={formData.panjang} onChange={handleInputChange} placeholder="1000" required className="input-focus" />
+                      <Label htmlFor="panjang" className="text-xs text-gray-600">Panjang (M)</Label>
+                      <Input id="panjang" name="panjang" data-testid="panjang-input" type="number" value={formData.panjang} onChange={handleInputChange} placeholder="6" required className="input-focus" />
                     </div>
                     <div>
-                      <Label htmlFor="lebar" className="text-xs text-gray-600">Lebar</Label>
-                      <Input id="lebar" name="lebar" data-testid="lebar-input" type="number" value={formData.lebar} onChange={handleInputChange} placeholder="600" required className="input-focus" />
+                      <Label htmlFor="lebar" className="text-xs text-gray-600">Lebar (mm)</Label>
+                      <Input id="lebar" name="lebar" data-testid="lebar-input" type="number" value={formData.lebar} onChange={handleInputChange} placeholder="40" required className="input-focus" />
                     </div>
                     <div>
-                      <Label htmlFor="tinggi" className="text-xs text-gray-600">Tinggi</Label>
-                      <Input id="tinggi" name="tinggi" data-testid="tinggi-input" type="number" value={formData.tinggi} onChange={handleInputChange} placeholder="750" required className="input-focus" />
+                      <Label htmlFor="tinggi" className="text-xs text-gray-600">Tinggi (mm)</Label>
+                      <Input id="tinggi" name="tinggi" data-testid="tinggi-input" type="number" value={formData.tinggi} onChange={handleInputChange} placeholder="40" required className="input-focus" />
                     </div>
                   </div>
                 )}
@@ -507,12 +507,12 @@ const InputBarang = () => {
                 {formData.jenisBentuk === 'tabung' && (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label htmlFor="diameter" className="text-xs text-gray-600">Diameter</Label>
-                      <Input id="diameter" name="diameter" data-testid="diameter-input" type="number" value={formData.diameter} onChange={handleInputChange} placeholder="500" required className="input-focus" />
+                      <Label htmlFor="diameter" className="text-xs text-gray-600">Diameter (mm)</Label>
+                      <Input id="diameter" name="diameter" data-testid="diameter-input" type="number" value={formData.diameter} onChange={handleInputChange} placeholder="50" required className="input-focus" />
                     </div>
                     <div>
-                      <Label htmlFor="panjang" className="text-xs text-gray-600">Panjang</Label>
-                      <Input id="panjang" name="panjang" data-testid="panjang-input" type="number" value={formData.panjang} onChange={handleInputChange} placeholder="1000" required className="input-focus" />
+                      <Label htmlFor="panjang" className="text-xs text-gray-600">Panjang (M)</Label>
+                      <Input id="panjang" name="panjang" data-testid="panjang-input" type="number" value={formData.panjang} onChange={handleInputChange} placeholder="6" required className="input-focus" />
                     </div>
                   </div>
                 )}
@@ -522,19 +522,19 @@ const InputBarang = () => {
                 {formData.jenisBentuk === 'wf' && (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label htmlFor="tinggiWF" className="text-xs text-gray-600">Tinggi (H)</Label>
+                      <Label htmlFor="tinggiWF" className="text-xs text-gray-600">Tinggi (H) (mm)</Label>
                       <Input id="tinggiWF" name="tinggiWF" data-testid="tinggiWF-input" type="number" value={formData.tinggiWF} onChange={handleInputChange} placeholder="200" required className="input-focus" />
                     </div>
                     <div>
-                      <Label htmlFor="lebarFlange" className="text-xs text-gray-600">Lebar Flange (B)</Label>
+                      <Label htmlFor="lebarFlange" className="text-xs text-gray-600">Lebar Flange (B) (mm)</Label>
                       <Input id="lebarFlange" name="lebarFlange" data-testid="lebarFlange-input" type="number" value={formData.lebarFlange} onChange={handleInputChange} placeholder="100" required className="input-focus" />
                     </div>
                     <div>
-                      <Label htmlFor="ketebalanWeb" className="text-xs text-gray-600">Tebal Web (tw)</Label>
+                      <Label htmlFor="ketebalanWeb" className="text-xs text-gray-600">Tebal Web (tw) (mm)</Label>
                       <Input id="ketebalanWeb" name="ketebalanWeb" data-testid="ketebalanWeb-input" type="number" value={formData.ketebalanWeb} onChange={handleInputChange} placeholder="5.5" required className="input-focus" />
                     </div>
                     <div>
-                      <Label htmlFor="ketebalanFlange" className="text-xs text-gray-600">Tebal Flange (tf)</Label>
+                      <Label htmlFor="ketebalanFlange" className="text-xs text-gray-600">Tebal Flange (tf) (mm)</Label>
                       <Input id="ketebalanFlange" name="ketebalanFlange" data-testid="ketebalanFlange-input" type="number" value={formData.ketebalanFlange} onChange={handleInputChange} placeholder="8" required className="input-focus" />
                     </div>
                   </div>
@@ -543,15 +543,15 @@ const InputBarang = () => {
                 {formData.jenisBentuk === 'plat' && (
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <Label htmlFor="panjangPlat" className="text-xs text-gray-600">Panjang</Label>
-                      <Input id="panjangPlat" name="panjangPlat" data-testid="panjangPlat-input" type="number" value={formData.panjangPlat} onChange={handleInputChange} placeholder="6000" required className="input-focus" />
+                      <Label htmlFor="panjangPlat" className="text-xs text-gray-600">Panjang (M)</Label>
+                      <Input id="panjangPlat" name="panjangPlat" data-testid="panjangPlat-input" type="number" value={formData.panjangPlat} onChange={handleInputChange} placeholder="2.4" required className="input-focus" />
                     </div>
                     <div>
-                      <Label htmlFor="lebarPlat" className="text-xs text-gray-600">Lebar</Label>
-                      <Input id="lebarPlat" name="lebarPlat" data-testid="lebarPlat-input" type="number" value={formData.lebarPlat} onChange={handleInputChange} placeholder="1500" required className="input-focus" />
+                      <Label htmlFor="lebarPlat" className="text-xs text-gray-600">Lebar (M)</Label>
+                      <Input id="lebarPlat" name="lebarPlat" data-testid="lebarPlat-input" type="number" value={formData.lebarPlat} onChange={handleInputChange} placeholder="1.2" required className="input-focus" />
                     </div>
                     <div>
-                      <Label htmlFor="ketebalanPlat" className="text-xs text-gray-600">Ketebalan</Label>
+                      <Label htmlFor="ketebalanPlat" className="text-xs text-gray-600">Ketebalan (mm)</Label>
                       <Input id="ketebalanPlat" name="ketebalanPlat" data-testid="ketebalanPlat-input" type="number" value={formData.ketebalanPlat} onChange={handleInputChange} placeholder="6" required className="input-focus" />
                     </div>
                   </div>

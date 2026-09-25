@@ -128,6 +128,8 @@ const EditEstimasi = () => {
 
   const [formData, setFormData] = useState({
     namaEstimasi: '',
+    namaProyek: '',
+    noOrder: '',
     metodeDimensiKerja: 'langsung', // 'langsung' | 'pxl'
     nilaiDimensiKerja: '',
     satuanDimensiKerja: 'm²',
@@ -135,6 +137,7 @@ const EditEstimasi = () => {
     lebarRuangan: '',
     luasRuanganInput: '',
     namaClient: '',
+    perusahaan: '',
     lokasi: '',
     kontakPerson: '',
   });
@@ -162,7 +165,7 @@ const EditEstimasi = () => {
       ['Panjang Ruangan (m)', '← opsional'],
       ['Lebar Ruangan (m)', '← opsional'],
       [''],
-      ['Nama Barang *', 'Kode Item', 'Panjang Jadi (mm)', 'Jumlah *', 'Harga Manual (Rp)'],
+      ['Nama Barang *', 'Kode Item', 'Panjang Jadi (M)', 'Jumlah *', 'Harga Manual (Rp)'],
       ['(lihat sheet Daftar Barang)', '(bebas, misal A-01)', '(kosongkan jika barang manual)', '', '(isi jika barang tidak ada di Daftar Barang)'],
       ['Hollow 40x40x1.8', 'A-01', '600', '15', ''],
       ['Hollow 40x40x1.8', 'A-02', '800', '10', ''],
@@ -206,11 +209,14 @@ const EditEstimasi = () => {
         };
 
         const namaEstimasi = cleanExcelVal(rows[3]?.[1]);
-        const namaClient = cleanExcelVal(rows[4]?.[1]);
-        const lokasi = cleanExcelVal(rows[5]?.[1]);
-        const kontakPerson = cleanExcelVal(rows[6]?.[1]);
-        const panjangRuangan = cleanExcelVal(rows[7]?.[1]);
-        const lebarRuangan = cleanExcelVal(rows[8]?.[1]);
+        const namaProyek = cleanExcelVal(rows[4]?.[1]);
+        const namaClient = cleanExcelVal(rows[5]?.[1]);
+        const perusahaan = cleanExcelVal(rows[6]?.[1]);
+        const lokasi = cleanExcelVal(rows[7]?.[1]);
+        const kontakPerson = cleanExcelVal(rows[8]?.[1]);
+        const noOrder = cleanExcelVal(rows[9]?.[1]);
+        const panjangRuangan = cleanExcelVal(rows[10]?.[1]);
+        const lebarRuangan = cleanExcelVal(rows[11]?.[1]);
 
         if (!namaEstimasi) {
           toast.error('Nama Estimasi wajib diisi di template!');
@@ -225,7 +231,8 @@ const EditEstimasi = () => {
           const row = rows[i];
           const namaBarang = String(row[0] || '').trim();
           const kodeItem = String(row[1] || '').trim();
-          const panjangJadi = String(row[2] || '').trim();
+          const rawPanjang = parseFloat(String(row[2] || '').trim());
+          const panjangJadi = !isNaN(rawPanjang) ? String(Math.round(rawPanjang * 1000)) : '';
           const jumlah = String(row[3] || '').trim();
           const hargaManual = String(row[4] || '').trim();
 
@@ -235,7 +242,7 @@ const EditEstimasi = () => {
 
           if (matched) {
             if (!panjangJadi || parseFloat(panjangJadi) <= 0) {
-              toast.warning(`Baris ${i + 1}: "${namaBarang}" butuh Panjang Jadi (mm).`);
+              toast.warning(`Baris ${i + 1}: "${namaBarang}" butuh Panjang Jadi (M).`);
               continue;
             }
             items.push({ ...emptyItem(), barangId: String(matched.id), kodeItem, panjangJadi, jumlahKeperluan: jumlah });
@@ -251,7 +258,7 @@ const EditEstimasi = () => {
           return;
         }
 
-        setFormData((prev) => ({ ...prev, namaEstimasi, namaClient, lokasi, kontakPerson, panjangRuangan, lebarRuangan }));
+        setFormData((prev) => ({ ...prev, namaEstimasi, namaProyek, namaClient, perusahaan, lokasi, kontakPerson, noOrder, panjangRuangan, lebarRuangan }));
         setSelectedItems(groupAdjacentItems(items));
         toast.success(`Berhasil import ${items.length} item!`);
         if (notFoundNames.length > 0) {
@@ -296,6 +303,8 @@ const EditEstimasi = () => {
       );
       setFormData({
         namaEstimasi:       found.namaEstimasi || '',
+        namaProyek:         found.namaProyek || '',
+        noOrder:            found.noOrder || '',
         metodeDimensiKerja:  metodeDimensi,
         nilaiDimensiKerja:  nilaiDimensi ? String(nilaiDimensi) : '',
         satuanDimensiKerja: found.satuanDimensiKerja || 'm²',
@@ -303,6 +312,7 @@ const EditEstimasi = () => {
         lebarRuangan:       found.lebarRuangan?.toString()   || '',
         luasRuanganInput:   found.luasRuanganInput?.toString() || '',
         namaClient:         found.namaClient   || '',
+        perusahaan:         found.perusahaan || '',
         lokasi:             found.lokasi        || '',
         kontakPerson:       found.kontakPerson  || '',
       });
@@ -562,24 +572,24 @@ const EditEstimasi = () => {
     }
   };
 
-  const moveItemGroup = (targetGroupOrIndex, direction) => {
+  const changeGroupNumber = (currentGroupIndex, newNumber) => {
+    if (!newNumber || isNaN(newNumber) || newNumber < 1) return;
     setSelectedItems((prev) => {
       const groups = getItemGroupRanges(prev);
-      let groupIndex = -1;
-      if (typeof targetGroupOrIndex === 'number') {
-        groupIndex = targetGroupOrIndex;
-      } else if (targetGroupOrIndex && typeof targetGroupOrIndex === 'object') {
-        groupIndex = groups.findIndex(g => g.items.some(it => isSameBarang(it, targetGroupOrIndex)));
-      }
-      if (groupIndex < 0 || groupIndex >= groups.length) return prev;
+      const targetIndex = newNumber - 1;
+
+      if (currentGroupIndex < 0 || currentGroupIndex >= groups.length) return prev;
       
-      const targetIndex = direction === 'up' ? groupIndex - 1 : groupIndex + 1;
-      if (targetIndex < 0 || targetIndex >= groups.length) return prev;
+      let safeTargetIndex = targetIndex;
+      if (safeTargetIndex >= groups.length) {
+        safeTargetIndex = groups.length - 1;
+      }
+      
+      if (safeTargetIndex === currentGroupIndex) return prev;
 
       const newGroups = [...groups];
-      const temp = newGroups[groupIndex];
-      newGroups[groupIndex] = newGroups[targetIndex];
-      newGroups[targetIndex] = temp;
+      const [movedGroup] = newGroups.splice(currentGroupIndex, 1);
+      newGroups.splice(safeTargetIndex, 0, movedGroup);
 
       return newGroups.flatMap((g, gIdx) =>
         g.items.map((it) => ({
@@ -988,7 +998,10 @@ const EditEstimasi = () => {
 
       const payload = {
         namaEstimasi:       formData.namaEstimasi,
+        namaProyek:         formData.namaProyek || null,
+        noOrder:            formData.noOrder || null,
         namaClient:         formData.namaClient   || null,
+        perusahaan:         formData.perusahaan || null,
         lokasi:             formData.lokasi        || null,
         kontakPerson:       formData.kontakPerson  || null,
         metodeDimensiKerja: formData.metodeDimensiKerja || 'langsung',
@@ -1072,44 +1085,40 @@ const EditEstimasi = () => {
         </CardHeader>
         <CardContent className="space-y-4">
 
-          <div className="space-y-2">
-            <Label>Nama Estimasi <span className="text-red-500">*</span></Label>
-            <Input
-              name="namaEstimasi"
-              value={formData.namaEstimasi}
-              onChange={handleInputChange}
-              placeholder="Contoh: Rangka Kanopi"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Nama Client</Label>
-            <Input
-              name="namaClient"
-              value={formData.namaClient}
-              onChange={handleInputChange}
-              placeholder="Contoh: PT. Maju Jaya"
-            />
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Lokasi Proyek</Label>
-              <Input
-                name="lokasi"
-                value={formData.lokasi}
-                onChange={handleInputChange}
-                placeholder="Contoh: Jakarta Selatan"
-              />
+              <Label>Product <span className="text-red-500">*</span></Label>
+              <Input name="namaEstimasi" value={formData.namaEstimasi} onChange={handleInputChange} placeholder="Contoh: Rangka Kanopi" />
+            </div>
+            <div className="space-y-2">
+              <Label>Proyek</Label>
+              <Input name="namaProyek" value={formData.namaProyek} onChange={handleInputChange} placeholder="Contoh: Pembangunan Ruko" />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Customer</Label>
+              <Input name="namaClient" value={formData.namaClient} onChange={handleInputChange} placeholder="Contoh: Bapak Budi" />
+            </div>
+            <div className="space-y-2">
+              <Label>Perusahaan</Label>
+              <Input name="perusahaan" value={formData.perusahaan} onChange={handleInputChange} placeholder="Contoh: PT. Maju Jaya" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Alamat</Label>
+              <Input name="lokasi" value={formData.lokasi} onChange={handleInputChange} placeholder="Contoh: Jakarta Selatan" />
+            </div>
+            <div className="space-y-2">
+              <Label>No. Order</Label>
+              <Input name="noOrder" value={formData.noOrder} onChange={handleInputChange} placeholder="Contoh: ORD/2026/09/001" />
             </div>
             <div className="space-y-2">
               <Label>Kontak Person</Label>
-              <Input
-                name="kontakPerson"
-                value={formData.kontakPerson}
-                onChange={handleInputChange}
-                placeholder="Contoh: 08123456789 (Budi)"
-              />
+              <Input name="kontakPerson" value={formData.kontakPerson} onChange={handleInputChange} placeholder="Contoh: 08123456789 (Budi)" />
             </div>
           </div>
 
@@ -1273,32 +1282,34 @@ const EditEstimasi = () => {
                 <React.Fragment key={`group-${item.barangId || 'empty'}-${item.namaManual || ''}-${currentGroupIndex}`}>
                   <div className="p-4 border rounded-lg bg-gray-50 space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label className="font-semibold">Item #{displayGroupNumber}</Label>
+                      <div className="flex items-center gap-2">
+                        <Label className="font-semibold whitespace-nowrap">Item No.</Label>
+                        <Input
+                          key={`input-order-${displayGroupNumber}`}
+                          type="number"
+                          min={1}
+                          max={visibleGroupCount}
+                          defaultValue={displayGroupNumber}
+                          onBlur={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val) && val !== displayGroupNumber) {
+                              changeGroupNumber(currentGroupIndex, val);
+                            } else {
+                              e.target.value = displayGroupNumber;
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              e.target.blur();
+                            }
+                          }}
+                          className="w-16 h-8 text-center px-1 font-semibold"
+                          title="Ubah nomor dan tekan Enter"
+                          data-testid={`change-order-${displayGroupNumber}`}
+                        />
+                      </div>
                       <div className="flex items-center gap-1.5">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 border-gray-300 text-gray-700 hover:bg-gray-200"
-                          disabled={currentGroupIndex === 0}
-                          onClick={() => moveItemGroup(currentGroupIndex, 'up')}
-                          title="Pindahkan item ke atas"
-                          data-testid={`move-up-item-${displayGroupNumber}`}
-                        >
-                          <ChevronUp className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 border-gray-300 text-gray-700 hover:bg-gray-200"
-                          disabled={currentGroupIndex === visibleGroupCount - 1}
-                          onClick={() => moveItemGroup(currentGroupIndex, 'down')}
-                          title="Pindahkan item ke bawah"
-                          data-testid={`move-down-item-${displayGroupNumber}`}
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </Button>
                         {/* Merah: hapus form ini — hanya tampil jika ada lebih dari 1 grup */}
                         {visibleGroupCount > 1 && (
                           <Button
@@ -1352,7 +1363,7 @@ const EditEstimasi = () => {
                     <div className="p-3 bg-blue-50 rounded-lg text-sm mt-2 flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <span className="font-medium">Stok:</span>{' '}
-                        {formatNumberWithSeparator(barangInfo.panjangMentah)} mm
+                        {barangInfo.panjangMentah ? formatNumberWithSeparator(barangInfo.panjangMentah / 1000) : 0} M
                         {barangInfo.minWelding > 0 && (
                           <span className="ml-3">
                             <span className="font-medium">Min Welding:</span>{' '}
@@ -1684,13 +1695,13 @@ const EditEstimasi = () => {
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">
-                          Panjang Jadi (mm) <span className="text-red-500">*</span>
+                          Panjang Jadi (M) <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           type="number"
-                          value={cur.panjangJadi}
-                          onChange={(e) => handleItemChange(actualIdx, 'panjangJadi', e.target.value)}
-                          placeholder="600"
+                          value={(cur.panjangJadi && !isNaN(cur.panjangJadi)) ? String(cur.panjangJadi / 1000) : ''}
+                          onChange={(e) => handleItemChange(actualIdx, 'panjangJadi', e.target.value === '' ? '' : String(Math.round(parseFloat(e.target.value) * 1000)))}
+                          placeholder="0.6"
                         />
                         {curInfo && parseFloat(cur.panjangJadi) > parseFloat(curInfo.panjangMentah) && (
                           <p className="text-xs text-amber-600 flex items-center gap-1">
@@ -1755,12 +1766,12 @@ const EditEstimasi = () => {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Panjang Jadi (mm)</Label>
+                        <Label className="text-xs">Panjang Jadi (M)</Label>
                         <Input
                           type="number"
-                          placeholder="600"
-                          value={cur.panjangJadi || ''}
-                          onChange={(e) => handleItemChange(actualIdx, 'panjangJadi', e.target.value)}
+                          placeholder="0.6"
+                          value={(cur.panjangJadi && !isNaN(cur.panjangJadi)) ? String(cur.panjangJadi / 1000) : ''}
+                          onChange={(e) => handleItemChange(actualIdx, 'panjangJadi', e.target.value === '' ? '' : String(Math.round(parseFloat(e.target.value) * 1000)))}
                         />
                       </div>
                       <div className="flex gap-1.5 items-end">

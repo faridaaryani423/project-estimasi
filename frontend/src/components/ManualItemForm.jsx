@@ -22,6 +22,14 @@ const ManualItemForm = ({
     onChange: (e) => onItemChange(index, field, e.target.value),
   });
 
+  const lengthF = (field) => ({
+    value: (item[field] && !isNaN(item[field])) ? String(item[field] / 1000) : '',
+    onChange: (e) => {
+      const val = e.target.value;
+      onItemChange(index, field, val === '' ? '' : String(Math.round(parseFloat(val) * 1000)));
+    },
+  });
+
   const [isHargaJasaEnabled, setIsHargaJasaEnabled] = React.useState(!!item.hargajasaManual);
 
   React.useEffect(() => {
@@ -134,33 +142,33 @@ const ManualItemForm = ({
         <>
           {/* Dimensi & Ketebalan Non-Custom */}
           <div className="space-y-2">
-            <Label className="text-xs">Ukuran Barang (mm) <span className="text-red-500">*</span></Label>
+            <Label className="text-xs">Ukuran Barang <span className="text-red-500">*</span></Label>
             {jenisBentuk === 'balok' && (
               <div className="grid grid-cols-3 gap-2">
-                <div><Label className="text-[10px] text-gray-500">Panjang</Label><Input type="number" placeholder="1000" {...f('panjangManual')} /></div>
-                <div><Label className="text-[10px] text-gray-500">Lebar</Label><Input type="number" placeholder="600" {...f('lebarManual')} /></div>
-                <div><Label className="text-[10px] text-gray-500">Tinggi</Label><Input type="number" placeholder="750" {...f('tinggiManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Panjang (M)</Label><Input type="number" placeholder="1" {...lengthF('panjangManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Lebar (mm)</Label><Input type="number" placeholder="600" {...f('lebarManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Tinggi (mm)</Label><Input type="number" placeholder="750" {...f('tinggiManual')} /></div>
               </div>
             )}
             {jenisBentuk === 'tabung' && (
               <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-[10px] text-gray-500">Diameter</Label><Input type="number" placeholder="500" {...f('diameterManual')} /></div>
-                <div><Label className="text-[10px] text-gray-500">Panjang</Label><Input type="number" placeholder="1000" {...f('panjangManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Diameter (mm)</Label><Input type="number" placeholder="500" {...f('diameterManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Panjang (M)</Label><Input type="number" placeholder="1" {...lengthF('panjangManual')} /></div>
               </div>
             )}
             {jenisBentuk === 'wf' && (
               <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-[10px] text-gray-500">Tinggi (H)</Label><Input type="number" placeholder="200" {...f('tinggiWFManual')} /></div>
-                <div><Label className="text-[10px] text-gray-500">Lebar Flange (B)</Label><Input type="number" placeholder="100" {...f('lebarFlangeManual')} /></div>
-                <div><Label className="text-[10px] text-gray-500">Tebal Web (tw)</Label><Input type="number" placeholder="5.5" {...f('ketebalanWebManual')} /></div>
-                <div><Label className="text-[10px] text-gray-500">Tebal Flange (tf)</Label><Input type="number" placeholder="8" {...f('ketebalanFlangeManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Tinggi (H) (mm)</Label><Input type="number" placeholder="200" {...f('tinggiWFManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Lebar Flange (B) (mm)</Label><Input type="number" placeholder="100" {...f('lebarFlangeManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Tebal Web (tw) (mm)</Label><Input type="number" placeholder="5.5" {...f('ketebalanWebManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Tebal Flange (tf) (mm)</Label><Input type="number" placeholder="8" {...f('ketebalanFlangeManual')} /></div>
               </div>
             )}
             {jenisBentuk === 'plat' && (
               <div className="grid grid-cols-3 gap-2">
-                <div><Label className="text-[10px] text-gray-500">Panjang</Label><Input type="number" placeholder="6000" {...f('panjangPlatManual')} /></div>
-                <div><Label className="text-[10px] text-gray-500">Lebar</Label><Input type="number" placeholder="1500" {...f('lebarPlatManual')} /></div>
-                <div><Label className="text-[10px] text-gray-500">Ketebalan</Label><Input type="number" placeholder="6" {...f('ketebalanPlatManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Panjang (M)</Label><Input type="number" placeholder="6" {...lengthF('panjangPlatManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Lebar (M)</Label><Input type="number" placeholder="1.5" {...lengthF('lebarPlatManual')} /></div>
+                <div><Label className="text-[10px] text-gray-500">Ketebalan (mm)</Label><Input type="number" placeholder="6" {...f('ketebalanPlatManual')} /></div>
               </div>
             )}
           </div>

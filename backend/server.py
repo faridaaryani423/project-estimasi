@@ -185,9 +185,12 @@ class EstimasiItem(BaseModel):
 
 class EstimasiCreate(BaseModel):
     namaClient: Optional[str] = None
+    perusahaan: Optional[str] = None
     lokasi: Optional[str] = None
     kontakPerson: Optional[str] = None
     namaEstimasi: str
+    namaProyek: Optional[str] = None
+    noOrder: Optional[str] = None
     metodeDimensiKerja: Optional[str] = 'pxl'
     panjangRuangan: Optional[float] = None
     lebarRuangan: Optional[float] = None
@@ -206,8 +209,11 @@ class EstimasiResponse(BaseModel):
     nomorEstimasi: str
     namaEstimasi: str
     namaClient: Optional[str] = None
+    perusahaan: Optional[str] = None
     lokasi: Optional[str] = None
     kontakPerson: Optional[str] = None
+    namaProyek: Optional[str] = None
+    noOrder: Optional[str] = None
     metodeDimensiKerja: Optional[str] = 'pxl'
     panjangRuangan: Optional[float] = None
     lebarRuangan: Optional[float] = None

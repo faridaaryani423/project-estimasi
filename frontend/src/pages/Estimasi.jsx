@@ -126,7 +126,7 @@ const Estimasi = () => {
 
     const printHeader = () => {
       doc.setFillColor(246, 248, 251);
-      doc.rect(marginL, 7, pageWidth - marginL - marginR, 20, 'F');
+      doc.rect(marginL, 7, pageWidth - marginL - marginR, 30, 'F');
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.text('ESTIMASI HARGA DAN PEMAKAIAN BAHAN', pageWidth / 2, 12, { align: 'center' });
@@ -134,29 +134,59 @@ const Estimasi = () => {
       doc.setFont('helvetica', 'normal');
       doc.text('Rincian Pemakaian Batang, Berat, dan Biaya per Material', pageWidth / 2, 16, { align: 'center' });
       doc.setFontSize(8);
-      doc.text(`Tanggal : ${new Date(est.createdAt).toLocaleDateString('id-ID')}`, pageWidth - marginR, 12, { align: 'right' });
-      doc.text(`No. Bukti : ${est.nomorEstimasi}`, pageWidth - marginR, 17, { align: 'right' });
-      doc.text(`Nama Proyek : ${cleanText(est.namaEstimasi)}`, marginL + 2, 17);
-      if (cleanText(est.namaClient)) doc.text(`Client : ${cleanText(est.namaClient)}`, marginL + 2, 22);
+      
+      let rightY = 12;
+      doc.text(`Tanggal : ${new Date(est.createdAt).toLocaleDateString('id-ID')}`, pageWidth - marginR - 2, rightY, { align: 'right' });
+      rightY += 4.5;
+      doc.text(`No. Bukti : ${est.nomorEstimasi}`, pageWidth - marginR - 2, rightY, { align: 'right' });
+      rightY += 4.5;
+      if (est.noOrder) {
+        doc.text(`No. Order : ${cleanText(est.noOrder)}`, pageWidth - marginR - 2, rightY, { align: 'right' });
+        rightY += 4.5;
+      }
+      if (est.createdBy) {
+        doc.text(`Estimator : ${cleanText(est.createdBy)}`, pageWidth - marginR - 2, rightY, { align: 'right' });
+      }
+
+      let leftY = 12;
+      doc.text(`Product : ${cleanText(est.namaEstimasi)}`, marginL + 2, leftY);
+      leftY += 4.5;
+      if (cleanText(est.namaClient)) {
+        doc.text(`Customer : ${cleanText(est.namaClient)}`, marginL + 2, leftY);
+        leftY += 4.5;
+      }
+      if (cleanText(est.perusahaan)) {
+        doc.text(`Perusahaan : ${cleanText(est.perusahaan)}`, marginL + 2, leftY);
+        leftY += 4.5;
+      }
+      if (cleanText(est.lokasi)) {
+        doc.text(`Alamat : ${cleanText(est.lokasi)}`, marginL + 2, leftY);
+        leftY += 4.5;
+      }
+      if (cleanText(est.namaProyek)) {
+        doc.text(`Proyek : ${cleanText(est.namaProyek)}`, marginL + 2, leftY);
+        leftY += 4.5;
+      }
+      
       if (nilaiDim > 0) {
         let dimText = `Dimensi Kerja : ${Number(nilaiDim).toLocaleString('id-ID', { maximumFractionDigits: 2 })} ${satuanDim}`;
         if (est.panjangRuangan && est.lebarRuangan && satuanDim === 'm²') {
           dimText = `Dimensi Kerja : ${est.panjangRuangan} × ${est.lebarRuangan} m  (${Number(nilaiDim).toFixed(2)} m²)`;
         }
-        doc.text(dimText, pageWidth - marginR, 22, { align: 'right' });
+        doc.text(dimText, marginL + 2, leftY);
       }
       doc.setLineWidth(0.3);
-      doc.line(marginL, 28, pageWidth - marginR, 28);
+      doc.line(marginL, 38, pageWidth - marginR, 38);
     };
 
-    let startY = 32;
+    let startY = 41;
 
     const ensurePageSpace = (requiredHeight = 20) => {
       if (startY > pageHeight - requiredHeight) {
         doc.addPage();
         startY = 15;
         printHeader();
-        startY = 32;
+        startY = 41;
       }
     };
 
@@ -456,15 +486,70 @@ const Estimasi = () => {
               const pJadi = parseFloat(row.panjangJadi) || 0;
               const qty = parseInt(row.jumlahKeperluan) || 0;
               panjangReal = pJadi * qty;
-              if (panjangMentah > 0 && panjangReal > 0) {
-                kebutuhan = Math.ceil(panjangReal / panjangMentah);
-                wasteTotal = (kebutuhan * panjangMentah) - panjangReal;
+              
+              if (panjangMentah > 0 && pJadi > 0) {
+                 const manualBars = [];
+                 let currentRemaining = panjangMentah;
+                 let currentBarPieces = [];
+                 let barCount = 1;
+                 
+                 for (let i = 0; i < qty; i++) {
+                     let cutRemaining = pJadi;
+                     while(cutRemaining > 0) {
+                         const cutLength = Math.min(cutRemaining, panjangMentah);
+                         // tolerance for floating point errors
+                         if (currentRemaining < cutLength - 0.01) {
+                             manualBars.push({
+                                panjangTerpakai: panjangMentah - currentRemaining,
+                                sisa: currentRemaining,
+                                items: currentBarPieces
+                             });
+                             barCount++;
+                             currentRemaining = panjangMentah;
+                             currentBarPieces = [];
+                         }
+                         currentBarPieces.push({
+                             label: row.kodeItem || row.namaBarang || `Item${rIdx + 1}`,
+                             kodeItem: row.kodeItem || null,
+                             itemNo: rIdx + 1,
+                             length: cutLength
+                         });
+                         currentRemaining -= cutLength;
+                         cutRemaining -= cutLength;
+                     }
+                 }
+                 if (currentBarPieces.length > 0) {
+                     manualBars.push({
+                        panjangTerpakai: panjangMentah - currentRemaining,
+                        sisa: currentRemaining,
+                        items: currentBarPieces
+                     });
+                 }
+                 
+                 return manualBars.map((bar, i) => ({
+                    batangNo: rIdx * Math.max(1, manualBars.length) + i + 1,
+                    panjangTerpakai: bar.panjangTerpakai,
+                    sisa: bar.sisa,
+                    wasteReusable: bar.sisa >= minWelding,
+                    items: bar.items
+                 }));
               } else {
-                kebutuhan = qty || 1;
-                wasteTotal = 0;
+                 return [{
+                    batangNo: rIdx + 1,
+                    panjangTerpakai: panjangReal,
+                    sisa: 0,
+                    wasteReusable: false,
+                    items: Array.from({ length: Math.max(1, qty) }).map(() => ({
+                        label: row.kodeItem || row.namaBarang || `Item${rIdx + 1}`,
+                        kodeItem: row.kodeItem || null,
+                        itemNo: rIdx + 1,
+                        length: pJadi || panjangReal
+                    }))
+                 }];
               }
             }
 
+            // Fallback if not manual but also no barAllocations (e.g. custom)
             const panjangPerBatang = kebutuhan > 0 ? panjangReal / kebutuhan  : panjangMentah;
             const sisaPerBatang    = kebutuhan > 0 ? wasteTotal  / kebutuhan  : 0;
             return Array.from({ length: Math.max(1, kebutuhan) }, (_, i) => ({
@@ -719,44 +804,6 @@ const Estimasi = () => {
     toast.success('PDF berhasil diexport!');
   };
 
-  const calculateCorrectTotal = (estimasi) => {
-    if (!estimasi || !estimasi.items) return Math.round(estimasi?.totalEstimasi || 0);
-    
-    const groupedItems = {};
-    estimasi.items.forEach((item, itemIdx) => {
-      const isManualItem = !!item.isManual || item.barangId === '__manual__' || item.jenisBahan === 'Manual';
-      const groupingKey = isManualItem ? `manual-${item.namaBarang}` : item.barangId;
-      
-      if (!groupedItems[groupingKey]) {
-        groupedItems[groupingKey] = {
-          ...item,
-          finalHargaPlusWaste: 0,
-          count: 0,
-          lastItemIndex: -1,
-        };
-      }
-      
-      const group = groupedItems[groupingKey];
-      
-      if (isManualItem && group.count > 0) {
-        group.subtotal = (group.subtotal || 0) + (item.subtotal || 0);
-      }
-      
-      if (itemIdx >= group.lastItemIndex) {
-        group.finalHargaPlusWaste = parseFloat(item.breakdown?.summary?.totalHargaPlusWaste ?? item.breakdown?.summary?.totalHargaReal ?? 0) || 0;
-        group.lastItemIndex = itemIdx;
-      }
-      
-      group.count++;
-    });
-
-    const total = Object.values(groupedItems).reduce((acc, group) => {
-      const isManualRow = !!group.isManual || group.barangId === '__manual__' || group.jenisBahan === 'Manual';
-      return acc + Number(isManualRow ? group.subtotal || 0 : group.finalHargaPlusWaste || 0);
-    }, 0);
-    
-    return Math.round(total);
-  };
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
@@ -910,7 +957,7 @@ const Estimasi = () => {
                             </TableCell>
 
                             <TableCell className="font-semibold text-emerald-600">
-                              Rp {calculateCorrectTotal(est).toLocaleString('id-ID')}
+                              Rp {Math.round(est?.totalEstimasi || 0).toLocaleString('id-ID')}
                             </TableCell>
 
                             <TableCell>
@@ -1100,7 +1147,7 @@ const Estimasi = () => {
                     <div>
                       <p className="text-xs text-gray-600">Total</p>
                       <p className="text-lg font-bold text-emerald-600">
-                        Rp {calculateCorrectTotal(viewingEstimasi).toLocaleString('id-ID')}
+                        Rp {Math.round(viewingEstimasi?.totalEstimasi || 0).toLocaleString('id-ID')}
                       </p>
                     </div>
                   </CardContent>
@@ -1353,12 +1400,12 @@ const Estimasi = () => {
                           </TableCell>
                           <TableCell className="font-semibold text-emerald-700">
                             {!isCustom && typeof group.finalPanjangReal === 'number' && group.finalPanjangReal > 0
-                              ? `${formatNumberWithSeparator(Math.round(group.finalPanjangReal))} mm`
+                              ? `${formatNumberWithSeparator(group.finalPanjangReal / 1000)} M`
                               : '-'}
                           </TableCell>
                           <TableCell className="text-red-600">
                             {!isCustom && typeof group.finalWaste === 'number' && group.finalWaste > 0
-                              ? `${formatNumberWithSeparator(Math.round(group.finalWaste))} mm (${Math.round(wastePercentage || 0)}%)`
+                              ? `${formatNumberWithSeparator(group.finalWaste / 1000)} M (${Math.round(wastePercentage || 0)}%)`
                               : '-'}
                           </TableCell>
                           <TableCell className="font-semibold text-cyan-700">
@@ -1402,10 +1449,10 @@ const Estimasi = () => {
                           TOTAL
                         </TableCell>
                         <TableCell className="font-bold text-emerald-700">
-                          {formatNumberWithSeparator(Math.round(totals.panjangReal || 0))} mm
+                          {formatNumberWithSeparator((totals.panjangReal || 0) / 1000)} M
                         </TableCell>
                         <TableCell className="font-bold text-red-700">
-                          {formatNumberWithSeparator(Math.round(totals.panjangWaste || 0))} mm
+                          {formatNumberWithSeparator((totals.panjangWaste || 0) / 1000)} M
                         </TableCell>
                         <TableCell className="font-bold text-cyan-700">
                           {Number(totals.beratSisa || 0).toFixed(2)} kg

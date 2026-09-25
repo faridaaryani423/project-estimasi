@@ -14,11 +14,41 @@ export const calculateBerat = (barang) => {
       const p = parseFloat(barang.panjang) / 1000;
       const l = parseFloat(barang.lebar) / 1000;
       const t = parseFloat(barang.tinggi) / 1000;
-      volume = p * l * t;
+      const ketebalan = parseFloat(barang.ketebalan) / 1000 || 0;
+
+      if (ketebalan > 0) {
+        const l_dalam = l - (2 * ketebalan);
+        const t_dalam = t - (2 * ketebalan);
+        
+        if (l_dalam <= 0 || t_dalam <= 0) {
+          return NaN; // Invalid dimension
+        }
+        
+        const outerArea = l * t;
+        const innerArea = l_dalam * t_dalam;
+        volume = p * (outerArea - innerArea);
+      } else {
+        volume = p * l * t; // Solid
+      }
     } else if (jenisBentuk === 'tabung') {
-      const r = (parseFloat(barang.diameter) / 2) / 1000;
+      const d = parseFloat(barang.diameter) / 1000;
       const panjang = parseFloat(barang.panjang) / 1000;
-      volume = Math.PI * r * r * panjang;
+      const ketebalan = parseFloat(barang.ketebalan) / 1000 || 0;
+      
+      if (ketebalan > 0) {
+        const d_dalam = d - (2 * ketebalan);
+        
+        if (d_dalam <= 0) {
+          return NaN; // Invalid dimension
+        }
+        
+        const outerArea = (Math.PI / 4) * (d * d);
+        const innerArea = (Math.PI / 4) * (d_dalam * d_dalam);
+        volume = panjang * (outerArea - innerArea);
+      } else {
+        const r = d / 2;
+        volume = Math.PI * r * r * panjang; // Solid
+      }
     } else if (jenisBentuk === 'wf') {
       const H = parseFloat(barang.tinggiWF) / 1000;
       const B = parseFloat(barang.lebarFlange) / 1000;
@@ -254,16 +284,16 @@ const buildWeldingGuide = (jumlah, panjangTarget, weldingPointsPerItem, pieceToB
 const buildNonWeldingGuide = (bars, panjangTarget, panjangMentah, minWelding) => {
   return bars.map(bar => {
     const totalCut = bar.pieces.reduce((sum, piece) => sum + piece.length, 0);
-    const breakdownStr = bar.pieces.map(piece => `${piece.length}mm`).join(' + ');
+    const breakdownStr = bar.pieces.map(piece => `${piece.length / 1000} M`).join(' + ');
     return {
       batangNo: bar.barNo,
       potongan: bar.pieces.length,
-      ukuranPotongan: `${panjangTarget} mm`,
+      ukuranPotongan: `${panjangTarget / 1000} M`,
       panjangTerpakai: totalCut,
       waste: bar.remaining,
       wastePercentage: (bar.remaining / panjangMentah) * 100,
       wasteReusable: bar.remaining >= minWelding,
-      breakdownStr: breakdownStr || `${panjangTarget} mm`
+      breakdownStr: breakdownStr || `${panjangTarget / 1000} M`
     };
   });
 };
@@ -314,8 +344,13 @@ const round2 = (value) => Math.round((Number(value) || 0) * 100) / 100;
 
 const getUsageBasedBarPrice = (usedLength, stockLength, hargaSatuan) => {
   if (usedLength <= 0 || stockLength <= 0) return 0;
+  return (usedLength / stockLength) * hargaSatuan;
+};
+
+const getBilledBarPrice = (usedLength, stockLength, hargaSatuan) => {
+  if (usedLength <= 0 || stockLength <= 0) return 0;
   const usageRatio = usedLength / stockLength;
-  const billedRatio = usageRatio <= 0.5 ? 0.5 : usageRatio <= 0.75 ? 0.75 : 1;
+  const billedRatio = usageRatio <= 0.25 ? 0.25 : usageRatio <= 0.5 ? 0.5 : usageRatio <= 0.75 ? 0.75 : 1;
   return billedRatio * hargaSatuan;
 };
 
@@ -418,7 +453,13 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
       return [bar.barNo, getUsageBasedBarPrice(usedLength, stockLength, hargaSatuan)];
     })
   );
-  const totalHargaPlusWaste = totalBars * hargaSatuan;
+  const barHargaPlusWasteMap = new Map(
+    bars.map((bar) => {
+      const usedLength = barUsedLengthMap.get(bar.barNo) || 0;
+      return [bar.barNo, getBilledBarPrice(usedLength, stockLength, hargaSatuan)];
+    })
+  );
+  const totalHargaPlusWaste = [...barHargaPlusWasteMap.values()].reduce((sum, value) => sum + value, 0);
   const totalHargaReal = [...barHargaPemakaianMap.values()].reduce((sum, value) => sum + value, 0);
   const totalHargaPemakaian = totalHargaReal;
   const selisihBiayaWaste = Math.max(totalHargaPlusWaste - totalHargaReal, 0);
@@ -438,7 +479,7 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
     const usedLength = bar.pieces.reduce((sum, piece) => sum + piece.length, 0);
     const hargaPemakaian = barHargaPemakaianMap.get(bar.barNo) || 0;
     const breakdownStr = bar.pieces
-      .map((piece) => `${piece.label} ${piece.length}mm`)
+      .map((piece) => `${piece.label} ${piece.length / 1000} M`)
       .join(' + ');
 
     return {
@@ -459,12 +500,12 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
       beratSisa: round2(beratStandar - ((usedLength / stockLength) * beratStandar)),
       hargaReal: round2(hargaSatuan),
       hargaPemakaian: round2(hargaPemakaian),
-      selisihBiayaWaste: round2(hargaSatuan - hargaPemakaian),
+      selisihBiayaWaste: round2(barHargaPlusWasteMap.get(bar.barNo) - hargaPemakaian),
       titikWelding: Math.max(bar.pieces.length - 1, 0),
       wasteReusable: bar.remaining >= minWelding,
       wasteNote: bar.remaining >= minWelding
-        ? `${round2(bar.remaining)}mm (reusable)`
-        : `${round2(bar.remaining)}mm (non-reusable)`
+        ? `${round2(bar.remaining / 1000)} M (reusable)`
+        : `${round2(bar.remaining / 1000)} M (non-reusable)`
     };
   });
 
@@ -479,11 +520,12 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
       const barUsedLength = barUsedLengthMap.get(barNo) || 0;
       if (barUsedLength <= 0) return sum;
 
+      const barHargaPlusWaste = barHargaPlusWasteMap.get(barNo) || 0;
       const itemUsedOnBar = itemPieces
         .filter((piece) => piece.barNo === barNo)
         .reduce((pieceSum, piece) => pieceSum + piece.length, 0);
 
-      return sum + ((itemUsedOnBar / barUsedLength) * hargaSatuan);
+      return sum + ((itemUsedOnBar / barUsedLength) * barHargaPlusWaste);
     }, 0);
     const materialPemakaianCost = itemBarNos.reduce((sum, barNo) => {
       const barUsedLength = barUsedLengthMap.get(barNo) || 0;
@@ -500,7 +542,7 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
     const itemRealWeight = (itemUsedLength / stockLength) * beratStandar;
     const itemWasteWeight = totalUsedLength > 0 ? totalBeratWaste * costShareRatio : 0;
     const subtotalJasa = hargaJasa > 0 && luasPekerjaan > 0 ? hargaJasa * luasPekerjaan : 0;
-    const subtotal = materialPemakaianCost + subtotalJasa;
+    const subtotal = itemMaterialFullCost + subtotalJasa;
 
     return {
       barangId: item.barangId,
@@ -520,7 +562,7 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
         source: piece.source,
         label: piece.label
       })),
-      uraian: itemPieces.map((piece) => `${piece.length}mm -> batang ${piece.barNo}`).join(' | '),
+      uraian: itemPieces.map((piece) => `${piece.length / 1000} M -> batang ${piece.barNo}`).join(' | '),
       beratReal: round2(itemRealWeight),
       beratWaste: round2(itemWasteWeight),
       subtotalMaterial: round2(itemMaterialFullCost),
@@ -534,7 +576,7 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
   const cuttingGuide = barAllocations.map((bar) => ({
     batangNo: bar.batangNo,
     potongan: bar.items.length,
-    ukuranPotongan: `${stockLength} mm`,
+    ukuranPotongan: `${stockLength / 1000} M`,
     panjangTerpakai: bar.panjangTerpakai,
     waste: bar.sisa,
     wastePercentage: totalBars > 0 ? round2((bar.sisa / stockLength) * 100) : 0,
@@ -544,6 +586,28 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
     titikWelding: bar.titikWelding,
     pieces: bar.items
   }));
+
+  const individualCuts = [];
+  let cutNoCounter = 1;
+  bars.forEach((bar) => {
+    let currentRemaining = stockLength;
+    bar.pieces.forEach((piece, index) => {
+      currentRemaining -= piece.length;
+      individualCuts.push({
+        cutNo: cutNoCounter++,
+        itemNo: piece.itemNo,
+        pieceNo: piece.pieceNo,
+        length: piece.length,
+        barNo: bar.barNo,
+        sourceBar: bar.barNo,
+        sourceType: index === 0 ? 'new_bar' : 'leftover',
+        sisaSetelahCutting: round2(currentRemaining),
+        label: piece.label,
+        kodeItem: piece.kodeItem,
+        source: piece.pieceType
+      });
+    });
+  });
 
   return {
     kebutuhanBahan: totalBars,
@@ -564,6 +628,7 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
       label: piece.label
     })),
     barAllocations,
+    individualCuts,
     summary: {
       stockLength,
       minWelding,
@@ -809,6 +874,7 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
             totalTitikWelding: 0,
             cuttingGuide: [],
             barAllocations: [],
+            individualCuts: [],
             needsWelding: false,
             summary: {
               stockLength: 0,
@@ -902,6 +968,7 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
           totalTitikWelding: allocation.totalTitikWelding,
           cuttingGuide: itemSpecificGuides,
           barAllocations: allocation.barAllocations || [],
+          individualCuts: allocation.individualCuts || [],
           needsWelding: allocation.needsWelding,
           summary: allocation.summary,
         },
@@ -985,6 +1052,7 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
           totalTitikWelding: 0,
           cuttingGuide: [],
           barAllocations: [],
+          individualCuts: [],
           needsWelding: false,
           summary: {
             stockLength: 0,
@@ -1113,6 +1181,19 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
         totalTitikWelding: 0,
         cuttingGuide: [],
         barAllocations: [],
+        individualCuts: Array.from({ length: jumlahKeperluan }).map((_, i) => ({
+           cutNo: i + 1,
+           itemNo: 1,
+           pieceNo: i + 1,
+           length: parseFloat(item.panjangJadi) || 0,
+           barNo: i + 1, // for manual, assume each needs its own to be simple or 1, keeping 1 for now but sourceBar = 1
+           sourceBar: 1,
+           sourceType: 'new_bar',
+           sisaSetelahCutting: 0,
+           label: item.namaManual || 'Barang Manual',
+           kodeItem: item.kodeItem || null,
+           source: 'manual'
+        })),
         needsWelding: false,
         satuanHargaModal: satuanHargaModal,
       },
