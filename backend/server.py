@@ -6,7 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional, Any, Union
 from datetime import datetime, timezone
 import jwt
@@ -129,6 +129,7 @@ class EstimasiItem(BaseModel):
     ukuranMentah: Optional[str] = None
     panjangMentah: Optional[float] = 0
     panjangJadi: Optional[float] = 0
+    panjangJadiInput: Optional[str] = None
     jenisBahan: Optional[str] = None
     beratJenis: Optional[str] = None
     beratbatang: Optional[str] = None
@@ -185,9 +186,9 @@ class EstimasiItem(BaseModel):
     namaManual: Optional[str] = None
 
 class EstimasiCreate(BaseModel):
-    namaClient: Optional[str] = None
+    namaClient: str
     perusahaan: Optional[str] = None
-    lokasi: Optional[str] = None
+    lokasi: str
     kontakPerson: Optional[str] = None
     namaEstimasi: str
     namaProyek: Optional[str] = None
@@ -204,6 +205,20 @@ class EstimasiCreate(BaseModel):
     totalBeratReal: Optional[float] = 0
     totalLuasPermukaan: Optional[float] = 0
     totalTitikWelding: Optional[int] = 0
+
+    @field_validator('namaClient')
+    @classmethod
+    def validate_nama_client(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Field 'Customer' wajib diisi")
+        return v.strip()
+
+    @field_validator('lokasi')
+    @classmethod
+    def validate_lokasi(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Field 'Alamat' wajib diisi")
+        return v.strip()
 
 class EstimasiResponse(BaseModel):
     id: str
@@ -484,6 +499,10 @@ async def get_estimasi(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/estimasi", response_model=EstimasiResponse)
 async def create_estimasi(data: EstimasiCreate, current_user: dict = Depends(get_current_user)):
+    if not data.namaClient or not data.namaClient.strip():
+        raise HTTPException(status_code=400, detail="Field 'Customer' wajib diisi")
+    if not data.lokasi or not data.lokasi.strip():
+        raise HTTPException(status_code=400, detail="Field 'Alamat' wajib diisi")
     now = datetime.now(timezone.utc).isoformat()
     created_by = current_user.get("username") or "Unknown"
     created_by_role = current_user.get("role") or "user"
@@ -506,6 +525,10 @@ async def create_estimasi(data: EstimasiCreate, current_user: dict = Depends(get
 
 @api_router.put("/estimasi/{estimasi_id}", response_model=EstimasiResponse)
 async def update_estimasi(estimasi_id: str, data: EstimasiCreate, current_user: dict = Depends(get_current_user)):
+    if not data.namaClient or not data.namaClient.strip():
+        raise HTTPException(status_code=400, detail="Field 'Customer' wajib diisi")
+    if not data.lokasi or not data.lokasi.strip():
+        raise HTTPException(status_code=400, detail="Field 'Alamat' wajib diisi")
     now = datetime.now(timezone.utc).isoformat()
     updated_by = current_user.get("username") or "Unknown"
     updated_by_role = current_user.get("role") or "user"

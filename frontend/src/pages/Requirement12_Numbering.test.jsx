@@ -6,8 +6,9 @@ import { BrowserRouter } from 'react-router-dom';
 import * as api from '@/services/api';
 
 jest.mock('@/services/api');
+jest.mock('@/components/ui/calendar', () => ({ Calendar: () => <div /> }));
 jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+  BrowserRouter: ({ children }) => <div>{children}</div>,
   useNavigate: () => jest.fn(),
   useParams: () => ({ id: '1' }),
 }));

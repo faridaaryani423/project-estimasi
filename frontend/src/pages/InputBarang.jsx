@@ -222,6 +222,15 @@ const InputBarang = () => {
         );
       }
 
+      if (formData.jenisBentuk === 'wf') {
+        const pWF = parseFloat(formData.panjang);
+        if (!formData.panjang || isNaN(pWF) || pWF <= 0) {
+          toast.error('Panjang Material WF wajib diisi dan harus lebih besar dari 0');
+          setSaving(false);
+          return;
+        }
+      }
+
       const isCustom = formData.jenisBentuk === 'custom';
 
       const barangData = {
@@ -529,21 +538,25 @@ const InputBarang = () => {
 
                 {formData.jenisBentuk === 'wf' && (
                   <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <Label htmlFor="panjangWF" className="text-xs text-gray-600">Panjang Material (m)</Label>
+                      <Input id="panjangWF" name="panjang" data-testid="panjangWF-input" type="number" step="any" min="0.001" value={formData.panjang} onChange={handleInputChange} placeholder="6" required className="input-focus" />
+                    </div>
                     <div>
                       <Label htmlFor="tinggiWF" className="text-xs text-gray-600">Tinggi (H) (mm)</Label>
-                      <Input id="tinggiWF" name="tinggiWF" data-testid="tinggiWF-input" type="number" value={formData.tinggiWF} onChange={handleInputChange} placeholder="200" required className="input-focus" />
+                      <Input id="tinggiWF" name="tinggiWF" data-testid="tinggiWF-input" type="number" step="any" value={formData.tinggiWF} onChange={handleInputChange} placeholder="200" required className="input-focus" />
                     </div>
                     <div>
                       <Label htmlFor="lebarFlange" className="text-xs text-gray-600">Lebar Flange (B) (mm)</Label>
-                      <Input id="lebarFlange" name="lebarFlange" data-testid="lebarFlange-input" type="number" value={formData.lebarFlange} onChange={handleInputChange} placeholder="100" required className="input-focus" />
+                      <Input id="lebarFlange" name="lebarFlange" data-testid="lebarFlange-input" type="number" step="any" value={formData.lebarFlange} onChange={handleInputChange} placeholder="100" required className="input-focus" />
                     </div>
                     <div>
                       <Label htmlFor="ketebalanWeb" className="text-xs text-gray-600">Tebal Web (tw) (mm)</Label>
-                      <Input id="ketebalanWeb" name="ketebalanWeb" data-testid="ketebalanWeb-input" type="number" value={formData.ketebalanWeb} onChange={handleInputChange} placeholder="5.5" required className="input-focus" />
+                      <Input id="ketebalanWeb" name="ketebalanWeb" data-testid="ketebalanWeb-input" type="number" step="any" value={formData.ketebalanWeb} onChange={handleInputChange} placeholder="5.5" required className="input-focus" />
                     </div>
                     <div>
                       <Label htmlFor="ketebalanFlange" className="text-xs text-gray-600">Tebal Flange (tf) (mm)</Label>
-                      <Input id="ketebalanFlange" name="ketebalanFlange" data-testid="ketebalanFlange-input" type="number" value={formData.ketebalanFlange} onChange={handleInputChange} placeholder="8" required className="input-focus" />
+                      <Input id="ketebalanFlange" name="ketebalanFlange" data-testid="ketebalanFlange-input" type="number" step="any" value={formData.ketebalanFlange} onChange={handleInputChange} placeholder="8" required className="input-focus" />
                     </div>
                   </div>
                 )}

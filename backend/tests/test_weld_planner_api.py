@@ -285,6 +285,8 @@ class TestEstimasi:
         """Test creating a new estimasi"""
         estimasi_data = {
             "namaEstimasi": "TEST_Rangka Kanopi",
+            "namaClient": "TEST_Customer Budi",
+            "lokasi": "TEST_Jakarta Selatan",
             "items": [
                 {
                     "barangId": "1",
@@ -343,6 +345,8 @@ class TestEstimasi:
         # First create
         create_data = {
             "namaEstimasi": "TEST_Update Estimasi",
+            "namaClient": "TEST_Customer Budi",
+            "lokasi": "TEST_Jakarta Selatan",
             "items": [],
             "totalEstimasi": 0,
             "totalBeratReal": 0,
@@ -358,6 +362,8 @@ class TestEstimasi:
         # Update
         update_data = {
             "namaEstimasi": "TEST_Updated Estimasi Name",
+            "namaClient": "TEST_Customer Budi Updated",
+            "lokasi": "TEST_Bandung",
             "items": [],
             "totalEstimasi": 500000,
             "totalBeratReal": 25.0,
@@ -378,6 +384,8 @@ class TestEstimasi:
         # First create
         create_data = {
             "namaEstimasi": "TEST_Delete Estimasi",
+            "namaClient": "TEST_Customer Budi",
+            "lokasi": "TEST_Jakarta Selatan",
             "items": [],
             "totalEstimasi": 0
         }
@@ -400,6 +408,36 @@ class TestEstimasi:
         estimasi_list = get_response.json()
         found = next((e for e in estimasi_list if e["id"] == estimasi_id), None)
         assert found is None
+
+    def test_create_estimasi_validation_required_customer_and_alamat(self, auth_token):
+        """Test creating estimasi fails if customer or alamat is missing or empty"""
+        # Missing both
+        res = requests.post(f"{BASE_URL}/api/estimasi",
+            headers={"Authorization": f"Bearer {auth_token}"},
+            json={"namaEstimasi": "TEST_Val", "items": [], "totalEstimasi": 0}
+        )
+        assert res.status_code in [400, 422]
+
+        # Missing alamat
+        res = requests.post(f"{BASE_URL}/api/estimasi",
+            headers={"Authorization": f"Bearer {auth_token}"},
+            json={"namaEstimasi": "TEST_Val", "namaClient": "Budi", "items": [], "totalEstimasi": 0}
+        )
+        assert res.status_code in [400, 422]
+
+        # Missing customer
+        res = requests.post(f"{BASE_URL}/api/estimasi",
+            headers={"Authorization": f"Bearer {auth_token}"},
+            json={"namaEstimasi": "TEST_Val", "lokasi": "Jakarta", "items": [], "totalEstimasi": 0}
+        )
+        assert res.status_code in [400, 422]
+
+        # Empty strings
+        res = requests.post(f"{BASE_URL}/api/estimasi",
+            headers={"Authorization": f"Bearer {auth_token}"},
+            json={"namaEstimasi": "TEST_Val", "namaClient": "   ", "lokasi": "   ", "items": [], "totalEstimasi": 0}
+        )
+        assert res.status_code in [400, 422]
 
 
 class TestPenawaran:

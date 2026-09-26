@@ -27,6 +27,7 @@ const emptyItem = () => ({
   barangId: '',
   kodeItem: '',
   panjangJadi: '',
+  panjangJadiInput: '',
   jumlahKeperluan: '',
   volume: '',
   namaManual: '',
@@ -233,8 +234,10 @@ const EditEstimasi = () => {
           const row = rows[i];
           const namaBarang = String(row[0] || '').trim();
           const kodeItem = String(row[1] || '').trim();
-          const rawPanjang = parseFloat(String(row[2] || '').trim());
+          const rawPanjangStr = String(row[2] || '').trim();
+          const rawPanjang = parseFloat(rawPanjangStr);
           const panjangJadi = !isNaN(rawPanjang) ? String(Math.round(rawPanjang * 1000)) : '';
+          const panjangJadiInput = rawPanjangStr;
           const jumlah = String(row[3] || '').trim();
           const hargaManual = String(row[4] || '').trim();
 
@@ -247,10 +250,10 @@ const EditEstimasi = () => {
               toast.warning(`Baris ${i + 1}: "${namaBarang}" butuh Panjang Jadi (M).`);
               continue;
             }
-            items.push({ ...emptyItem(), barangId: String(matched.id), kodeItem, panjangJadi, jumlahKeperluan: jumlah });
+            items.push({ ...emptyItem(), barangId: String(matched.id), kodeItem, panjangJadi, panjangJadiInput, jumlahKeperluan: jumlah });
           } else {
             notFoundNames.push(namaBarang);
-            items.push({ ...emptyItem(), barangId: '__manual__', kodeItem, panjangJadi, jumlahKeperluan: jumlah, namaManual: namaBarang, hargamodalManual: hargaManual });
+            items.push({ ...emptyItem(), barangId: '__manual__', kodeItem, panjangJadi, panjangJadiInput, jumlahKeperluan: jumlah, namaManual: namaBarang, hargamodalManual: hargaManual });
           }
         }
 
@@ -361,6 +364,7 @@ const EditEstimasi = () => {
             kodeItem: isCustom ? '' : toStr(item.kodeItem),
             // Robust panjangJadi: try multiple field names
             panjangJadi: toStr(item.panjangJadi || item.panjang_jadi || ''),
+            panjangJadiInput: toStr(item.panjangJadiInput || ''),
             jumlahKeperluan: toStr(item.jumlahKeperluan),
             volume: toStr(item.volume),
             // ── Manual fields — selalu populate dari data tersimpan ──
@@ -433,7 +437,7 @@ const EditEstimasi = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleItemChange = (index, field, value) => {
+  const handleItemChange = (index, field, value, extraUpdates = null) => {
     setSelectedItems((prev) => {
       const updated = [...prev];
       const targetItem = updated[index];
@@ -448,11 +452,12 @@ const EditEstimasi = () => {
         field !== 'kodeItem' &&
         field !== 'jumlahKeperluan' &&
         field !== 'panjangJadi' &&
+        field !== 'panjangJadiInput' &&
         field !== 'volume'
       ) {
         for (let i = targetGroup.start; i <= targetGroup.end; i++) {
           const item = updated[i];
-          const newItem = { ...item, [field]: value };
+          const newItem = { ...item, [field]: value, ...(extraUpdates || {}) };
           if (field === 'satuanBarangManual' || field === 'satuanManual') {
             newItem.satuanBarangManual = value;
             newItem.satuanManual = value;
@@ -473,7 +478,7 @@ const EditEstimasi = () => {
         return updated;
       } else {
         const currentItem = updated[index];
-        const newItem = { ...currentItem, [field]: value };
+        const newItem = { ...currentItem, [field]: value, ...(extraUpdates || {}) };
         if (field === 'satuanBarangManual' || field === 'satuanManual') {
           newItem.satuanBarangManual = value;
           newItem.satuanManual = value;
@@ -737,6 +742,7 @@ const EditEstimasi = () => {
       if (!check(item.diameterManual)) return toast.error('Diameter wajib diisi.');
       if (!check(item.panjangManual)) return toast.error('Panjang wajib diisi.');
     } else if (jb === 'wf') {
+      if (!check(item.panjangManual) || parseFloat(item.panjangManual) <= 0) return toast.error('Panjang Material WF wajib diisi dan harus lebih besar dari 0.');
       if (!check(item.tinggiWFManual)) return toast.error('Tinggi (H) wajib diisi.');
       if (!check(item.lebarFlangeManual)) return toast.error('Lebar Flange (B) wajib diisi.');
       if (!check(item.ketebalanWebManual)) return toast.error('Tebal Web (tw) wajib diisi.');
@@ -844,8 +850,18 @@ const EditEstimasi = () => {
 
   // ─── Kalkulasi & simpan ───────────────────────────────────────────
   const handleUpdate = async () => {
-    if (!formData.namaEstimasi) {
+    if (!formData.namaEstimasi || !formData.namaEstimasi.trim()) {
       toast.error('Mohon isi nama estimasi!');
+      return;
+    }
+
+    if (!formData.namaClient || !formData.namaClient.trim()) {
+      toast.error('Customer wajib diisi!');
+      return;
+    }
+
+    if (!formData.lokasi || !formData.lokasi.trim()) {
+      toast.error('Alamat wajib diisi!');
       return;
     }
 
@@ -926,7 +942,12 @@ const EditEstimasi = () => {
         } else if (jb === 'tabung') {
           if (!check(item.diameterManual) || !check(item.panjangManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Diameter dan Panjang wajib diisi.`; break; }
         } else if (jb === 'wf') {
-          if (!check(item.tinggiWFManual) || !check(item.lebarFlangeManual) || !check(item.ketebalanWebManual) || !check(item.ketebalanFlangeManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Dimensi WF wajib diisi lengkap.`; break; }
+          const panjangWF = item.panjangManual || item.panjangMentah || item.panjang;
+          if (!check(panjangWF) || parseFloat(panjangWF) <= 0 || !check(item.tinggiWFManual) || !check(item.lebarFlangeManual) || !check(item.ketebalanWebManual) || !check(item.ketebalanFlangeManual)) {
+            hasInvalid = true;
+            errorMessage = `Baris ${i + 1} (Manual): Panjang Material dan Dimensi WF wajib diisi lengkap serta lebih dari 0.`;
+            break;
+          }
         } else if (jb === 'plat') {
           // Validasi plat: cek field manual utama, DENGAN fallback ke field alternatif
           const panjangPlat = item.panjangPlatManual || item.panjangMentah || item.panjang;
@@ -1009,9 +1030,9 @@ const EditEstimasi = () => {
         namaEstimasi:       formData.namaEstimasi,
         namaProyek:         formData.namaProyek || null,
         noOrder:            formData.noOrder || null,
-        namaClient:         formData.namaClient   || null,
+        namaClient:         formData.namaClient ? formData.namaClient.trim() : '',
         perusahaan:         formData.perusahaan || null,
-        lokasi:             formData.lokasi        || null,
+        lokasi:             formData.lokasi ? formData.lokasi.trim() : '',
         kontakPerson:       formData.kontakPerson  || null,
         metodeDimensiKerja: formData.metodeDimensiKerja || 'langsung',
         panjangRuangan:     formData.panjangRuangan ? parseFloat(formData.panjangRuangan) : null,
@@ -1107,7 +1128,7 @@ const EditEstimasi = () => {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Customer</Label>
+              <Label>Customer <span className="text-red-500">*</span></Label>
               <Input name="namaClient" value={formData.namaClient} onChange={handleInputChange} placeholder="Contoh: Bapak Budi" />
             </div>
             <div className="space-y-2">
@@ -1118,7 +1139,7 @@ const EditEstimasi = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label>Alamat</Label>
+              <Label>Alamat <span className="text-red-500">*</span></Label>
               <Input name="lokasi" value={formData.lokasi} onChange={handleInputChange} placeholder="Contoh: Jakarta Selatan" />
             </div>
             <div className="space-y-2">
@@ -1504,10 +1525,11 @@ const EditEstimasi = () => {
                             )}
                             {eb.jenisBentuk === 'wf' && (
                               <div className="grid grid-cols-2 gap-2">
-                                <div><Label className="text-xs">Tinggi (H)</Label><Input type="number" {...field('tinggiWF')} /></div>
-                                <div><Label className="text-xs">Lebar Flange (B)</Label><Input type="number" {...field('lebarFlange')} /></div>
-                                <div><Label className="text-xs">Tebal Web (tw)</Label><Input type="number" {...field('ketebalanWeb')} /></div>
-                                <div><Label className="text-xs">Tebal Flange (tf)</Label><Input type="number" {...field('ketebalanFlange')} /></div>
+                                <div className="col-span-2"><Label className="text-xs">Panjang Material (mm)</Label><Input type="number" step="any" {...field('panjang')} /></div>
+                                <div><Label className="text-xs">Tinggi (H)</Label><Input type="number" step="any" {...field('tinggiWF')} /></div>
+                                <div><Label className="text-xs">Lebar Flange (B)</Label><Input type="number" step="any" {...field('lebarFlange')} /></div>
+                                <div><Label className="text-xs">Tebal Web (tw)</Label><Input type="number" step="any" {...field('ketebalanWeb')} /></div>
+                                <div><Label className="text-xs">Tebal Flange (tf)</Label><Input type="number" step="any" {...field('ketebalanFlange')} /></div>
                               </div>
                             )}
                             {eb.jenisBentuk === 'plat' && (
@@ -1737,8 +1759,15 @@ const EditEstimasi = () => {
                         </Label>
                         <Input
                           type="number"
-                          value={(cur.panjangJadi && !isNaN(cur.panjangJadi)) ? String(cur.panjangJadi / 1000) : ''}
-                          onChange={(e) => handleItemChange(actualIdx, 'panjangJadi', e.target.value === '' ? '' : String(Math.round(parseFloat(e.target.value) * 1000)))}
+                          step="any"
+                          value={cur.panjangJadiInput !== undefined && cur.panjangJadiInput !== null && cur.panjangJadiInput !== '' ? cur.panjangJadiInput : ((cur.panjangJadi && !isNaN(cur.panjangJadi)) ? String(parseFloat(cur.panjangJadi) / 1000) : '')}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            const normalized = String(raw).replace(',', '.');
+                            const parsed = parseFloat(normalized);
+                            const calcMm = raw === '' || isNaN(parsed) ? '' : String(parsed * 1000);
+                            handleItemChange(actualIdx, 'panjangJadi', calcMm, { panjangJadiInput: raw });
+                          }}
                           placeholder="0.6"
                         />
                         {curInfo && parseFloat(cur.panjangJadi) > parseFloat(curInfo.panjangMentah) && (
@@ -1807,9 +1836,16 @@ const EditEstimasi = () => {
                         <Label className="text-xs">Panjang Jadi (M)</Label>
                         <Input
                           type="number"
+                          step="any"
                           placeholder="0.6"
-                          value={(cur.panjangJadi && !isNaN(cur.panjangJadi)) ? String(cur.panjangJadi / 1000) : ''}
-                          onChange={(e) => handleItemChange(actualIdx, 'panjangJadi', e.target.value === '' ? '' : String(Math.round(parseFloat(e.target.value) * 1000)))}
+                          value={cur.panjangJadiInput !== undefined && cur.panjangJadiInput !== null && cur.panjangJadiInput !== '' ? cur.panjangJadiInput : ((cur.panjangJadi && !isNaN(cur.panjangJadi)) ? String(parseFloat(cur.panjangJadi) / 1000) : '')}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            const normalized = String(raw).replace(',', '.');
+                            const parsed = parseFloat(normalized);
+                            const calcMm = raw === '' || isNaN(parsed) ? '' : String(parsed * 1000);
+                            handleItemChange(actualIdx, 'panjangJadi', calcMm, { panjangJadiInput: raw });
+                          }}
                         />
                       </div>
                       <div className="flex gap-1.5 items-end">

@@ -5,7 +5,19 @@ import { resolveItemSatuan } from './unitResolver.js';
  * Calculate berat per batang based on shape and material
  */
 export const calculateBerat = (barang) => {
-  const beratJenis = parseFloat(barang.beratJenis) || 7850;
+  const materialName = (barang.jenisBahan || barang.jenisBahanManual || barang.kategoriBarang || barang.kategoriBarangManual || '').toLowerCase();
+  let defaultBeratJenis = 7850;
+  if (materialName.includes('stainless')) {
+    defaultBeratJenis = 7930;
+  } else if (materialName.includes('aluminium')) {
+    defaultBeratJenis = 2700;
+  }
+
+  const rawBeratJenis = parseFloat(barang.beratJenis);
+  const beratJenis = (rawBeratJenis > 0 && !(materialName.includes('stainless') && rawBeratJenis === 7850))
+    ? rawBeratJenis
+    : defaultBeratJenis;
+
   const jenisBentuk = barang.jenisBentuk || 'balok';
   let volume = 0;
 
@@ -16,17 +28,18 @@ export const calculateBerat = (barang) => {
       const t = parseFloat(barang.tinggi) / 1000;
       const ketebalan = parseFloat(barang.ketebalan) / 1000 || 0;
 
+      if (p <= 0 || l <= 0 || t <= 0) {
+        return NaN;
+      }
+
       if (ketebalan > 0) {
-        const l_dalam = l - (2 * ketebalan);
-        const t_dalam = t - (2 * ketebalan);
-        
-        if (l_dalam <= 0 || t_dalam <= 0) {
+        if (l - (2 * ketebalan) <= 0 || t - (2 * ketebalan) <= 0) {
           return NaN; // Invalid dimension
         }
-        
-        const outerArea = l * t;
-        const innerArea = l_dalam * t_dalam;
-        volume = p * (outerArea - innerArea);
+        // Formula standar material Pipa Kotak (Balok Hollow): Keliling Luar x Ketebalan x Panjang
+        // Reference: Pipa Kotak 50 x 100 x 2.3 mm, L = 6 m -> Berat = 32.50 kg
+        const area = 2 * (l + t) * ketebalan;
+        volume = p * area;
       } else {
         volume = p * l * t; // Solid
       }
@@ -54,8 +67,23 @@ export const calculateBerat = (barang) => {
       const B = parseFloat(barang.lebarFlange) / 1000;
       const tw = parseFloat(barang.ketebalanWeb) / 1000;
       const tf = parseFloat(barang.ketebalanFlange) / 1000;
-      const panjang = parseFloat(barang.panjang) / 1000 || 1;
-      const webArea = H * tw;
+      const rawPanjang = parseFloat(barang.panjang);
+
+      if (isNaN(rawPanjang) || rawPanjang <= 0) {
+        return NaN;
+      }
+      const panjang = rawPanjang / 1000;
+
+      if (H <= 0 || B <= 0 || tw <= 0 || tf <= 0) {
+        return NaN;
+      }
+
+      const h_web = H - (2 * tf);
+      if (h_web <= 0) {
+        return NaN; // Tebal flange melebihi atau sama dengan tinggi total WF
+      }
+
+      const webArea = h_web * tw;
       const flangeArea = 2 * B * tf;
       volume = (webArea + flangeArea) * panjang;
     } else if (jenisBentuk === 'plat') {
@@ -96,7 +124,11 @@ export const calculateLuasPermukaan = (barang, customLength = null) => {
     } else if (jenisBentuk === 'wf') {
       const H = parseFloat(barang.tinggiWF) / 1000;
       const B = parseFloat(barang.lebarFlange) / 1000;
-      const panjang = parseFloat(customLength !== null ? customLength : barang.panjang) / 1000 || 1;
+      const rawPanjang = parseFloat(customLength !== null ? customLength : barang.panjang);
+      if (isNaN(rawPanjang) || rawPanjang <= 0) {
+        return 0;
+      }
+      const panjang = rawPanjang / 1000;
       luasPermukaan = (4 * B + 2 * H) * panjang;
     } else if (jenisBentuk === 'plat') {
       const p = parseFloat(customLength !== null ? customLength : barang.panjangPlat) / 1000;
@@ -550,6 +582,7 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
       namaBarang: item.namaBarang || namaBarang,
       itemNo: itemIndex + 1,
       panjangJadi: parseFloat(item.panjangJadi) || 0,
+      panjangJadiInput: item.panjangJadiInput || null,
       jumlahKeperluan: parseInt(item.jumlahKeperluan) || 0,
       panjangTerpakai: round2(itemUsedLength),
       batangTerpakai: itemBarNos.length,
@@ -562,7 +595,7 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
         source: piece.source,
         label: piece.label
       })),
-      uraian: itemPieces.map((piece) => `${piece.length / 1000} M -> batang ${piece.barNo}`).join(' | '),
+      uraian: itemPieces.map((piece) => `${Number((piece.length / 1000).toPrecision(12))} M -> batang ${piece.barNo}`).join(' | '),
       beratReal: round2(itemRealWeight),
       beratWaste: round2(itemWasteWeight),
       subtotalMaterial: round2(itemMaterialFullCost),
@@ -1037,6 +1070,7 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
         ukuranMentah: group.barang.ukuran,
         panjangMentah: allocation.summary.stockLength,
         panjangJadi: entry.panjangJadi,
+        panjangJadiInput: entry.panjangJadiInput || sourceItem.panjangJadiInput || null,
         jenisBahan: group.barang.jenisBahan,
         beratJenis: group.barang.beratJenis,
         minWelding: group.barang.minWelding,
@@ -1188,6 +1222,8 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
       panjangPlat: item.panjangPlatManual,
       lebarPlat: item.lebarPlatManual,
       ketebalanPlat: item.ketebalanPlatManual,
+      jenisBahan: item.jenisBahanManual,
+      kategoriBarang: item.kategoriBarangManual,
       beratJenis: item.beratJenisManual,
     };
 
@@ -1238,6 +1274,7 @@ export const calculateWithWasteReuse = (validItems, luasPekerjaan, barangList) =
       minWeldingManual: item.minWeldingManual || null,
       panjangMentah: parseFloat(item.panjangManual || item.panjangPlatManual || 0),
       panjangJadi: parseFloat(item.panjangJadi) || 0,
+      panjangJadiInput: item.panjangJadiInput || null,
       panjangManual: item.panjangManual || null,
       lebarManual: item.lebarManual || null,
       tinggiManual: item.tinggiManual || null,

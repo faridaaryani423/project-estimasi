@@ -38,6 +38,11 @@ const ManualItemForm = ({
   }, [item.hargajasaManual]);
 
   const handleAutoHitungBeratManual = () => {
+    let defaultBJ = '7850';
+    const matName = (item.jenisBahanManual || item.kategoriBarangManual || '').toLowerCase();
+    if (matName.includes('stainless')) defaultBJ = '7930';
+    else if (matName.includes('aluminium')) defaultBJ = '2700';
+
     const mockBarang = {
       jenisBentuk,
       panjang: item.panjangManual,
@@ -52,7 +57,9 @@ const ManualItemForm = ({
       panjangPlat: item.panjangPlatManual,
       lebarPlat: item.lebarPlatManual,
       ketebalanPlat: item.ketebalanPlatManual,
-      beratJenis: item.beratJenisManual || '7850',
+      jenisBahan: item.jenisBahanManual,
+      kategoriBarang: item.kategoriBarangManual,
+      beratJenis: (item.beratJenisManual && item.beratJenisManual !== '7850') ? item.beratJenisManual : defaultBJ,
     };
     const calculated = calculateBerat(mockBarang);
     if (calculated > 0) {
@@ -170,11 +177,17 @@ const ManualItemForm = ({
               </div>
             )}
             {jenisBentuk === 'wf' && (
-              <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-[10px] text-gray-500">Tinggi (H) (mm)</Label><Input type="number" placeholder="200" {...f('tinggiWFManual')} /></div>
-                <div><Label className="text-[10px] text-gray-500">Lebar Flange (B) (mm)</Label><Input type="number" placeholder="100" {...f('lebarFlangeManual')} /></div>
-                <div><Label className="text-[10px] text-gray-500">Tebal Web (tw) (mm)</Label><Input type="number" placeholder="5.5" {...f('ketebalanWebManual')} /></div>
-                <div><Label className="text-[10px] text-gray-500">Tebal Flange (tf) (mm)</Label><Input type="number" placeholder="8" {...f('ketebalanFlangeManual')} /></div>
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-[10px] text-gray-500">Panjang Material (m) <span className="text-red-500">*</span></Label>
+                  <Input type="number" step="any" placeholder="6" {...lengthF('panjangManual')} />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div><Label className="text-[10px] text-gray-500">Tinggi (H) (mm)</Label><Input type="number" step="any" placeholder="200" {...f('tinggiWFManual')} /></div>
+                  <div><Label className="text-[10px] text-gray-500">Lebar Flange (B) (mm)</Label><Input type="number" step="any" placeholder="100" {...f('lebarFlangeManual')} /></div>
+                  <div><Label className="text-[10px] text-gray-500">Tebal Web (tw) (mm)</Label><Input type="number" step="any" placeholder="5.5" {...f('ketebalanWebManual')} /></div>
+                  <div><Label className="text-[10px] text-gray-500">Tebal Flange (tf) (mm)</Label><Input type="number" step="any" placeholder="8" {...f('ketebalanFlangeManual')} /></div>
+                </div>
               </div>
             )}
             {jenisBentuk === 'plat' && (

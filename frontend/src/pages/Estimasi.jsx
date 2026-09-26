@@ -84,27 +84,24 @@ const Estimasi = () => {
 
   // ── Export PDF ────────────────────────────────────────────────────────────────
   const exportEstimasiToPDF = (est) => {
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'legal' });
     const pageWidth  = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const marginL = 10;
-    const marginR = 10;
+    const marginL = 8;
+    const marginR = 8;
 
     const tableAvailWidth = pageWidth - marginL - marginR;
-    const fixedColsWidth  = 48 + 16 + 12 + 12 + 12 + 14 + 12 + 22 + 22;
-    const potonganWidth   = tableAvailWidth - fixedColsWidth;
-
     const sharedColStyles = {
-      0: { cellWidth: 48 },
-      1: { cellWidth: 16, halign: 'center' },
+      0: { cellWidth: 50, halign: 'left' },
+      1: { cellWidth: 15, halign: 'center' },
       2: { cellWidth: 12, halign: 'right' },
       3: { cellWidth: 12, halign: 'right' },
-      4: { cellWidth: 12, halign: 'right' },
+      4: { cellWidth: 13, halign: 'right' },
       5: { cellWidth: 14, halign: 'right' },
-      6: { cellWidth: 12, halign: 'right' },
-      7: { cellWidth: 22, halign: 'right' },
-      8: { cellWidth: 22, halign: 'right' },
-      9: { cellWidth: potonganWidth },
+      6: { cellWidth: 11, halign: 'center' },
+      7: { cellWidth: 20, halign: 'right' },
+      8: { cellWidth: 20, halign: 'right' },
+      9: { cellWidth: tableAvailWidth - (50 + 15 + 12 + 12 + 13 + 14 + 11 + 20 + 20), halign: 'left' },
     };
 
     const nilaiDim =
@@ -113,83 +110,96 @@ const Estimasi = () => {
       ((parseFloat(est.panjangRuangan || 0) || 0) * (parseFloat(est.lebarRuangan || 0) || 0));
     const satuanDim = est.satuanDimensiKerja || 'm²';
 
-    const fmtN  = (v, d = 0) =>
+    const fmtN = (v, d = 0) =>
       Number(v || 0).toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d });
-    const fmtRp = (v) => `Rp. ${fmtN(v)}`;
+    const fmtDec = (val, maxDigits = 2) => {
+      if (val === null || val === undefined || isNaN(val)) return '-';
+      const num = Number(val);
+      if (Math.abs(num) < 0.000001) return '-';
+      return num.toLocaleString('id-ID', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: maxDigits,
+      });
+    };
 
     const cleanText = (txt) => {
-      if (!txt) return '';
-      const lower = txt.toLowerCase();
+      if (txt === null || txt === undefined) return '';
+      const str = String(txt).trim();
+      const lower = str.toLowerCase();
       if (lower.includes('wajib diisi') || lower.includes('opsional')) return '';
-      return txt;
+      return str;
     };
 
-    const printHeader = () => {
-      doc.setFillColor(246, 248, 251);
-      doc.rect(marginL, 7, pageWidth - marginL - marginR, 30, 'F');
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.text('ESTIMASI HARGA DAN PEMAKAIAN BAHAN', pageWidth / 2, 12, { align: 'center' });
-      doc.setFontSize(7.5);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Rincian Pemakaian Batang, Berat, dan Biaya per Material', pageWidth / 2, 16, { align: 'center' });
-      doc.setFontSize(8);
-      
-      let rightY = 12;
-      doc.text(`Tanggal : ${new Date(est.createdAt).toLocaleDateString('id-ID')}`, pageWidth - marginR - 2, rightY, { align: 'right' });
-      rightY += 4.5;
-      doc.text(`No. Bukti : ${est.nomorEstimasi}`, pageWidth - marginR - 2, rightY, { align: 'right' });
-      rightY += 4.5;
-      if (est.noOrder) {
-        doc.text(`No. Order : ${cleanText(est.noOrder)}`, pageWidth - marginR - 2, rightY, { align: 'right' });
-        rightY += 4.5;
+    const formatUraianPanjang = (row) => {
+      const inputVal = row.panjangJadiInput ?? row.panjang_jadi_input ?? row.breakdown?.panjangJadiInput;
+      if (inputVal !== undefined && inputVal !== null && String(inputVal).trim() !== '') {
+        return String(inputVal).trim().replace('.', ',');
       }
-      if (est.createdBy) {
-        doc.text(`Estimator : ${cleanText(est.createdBy)}`, pageWidth - marginR - 2, rightY, { align: 'right' });
+      const pj = parseFloat(row.panjangJadi ?? row.panjang_jadi);
+      if (!isNaN(pj) && pj > 0) {
+        return String(Number((pj / 1000).toPrecision(12))).replace('.', ',');
       }
-
-      let leftY = 12;
-      doc.text(`Product : ${cleanText(est.namaEstimasi)}`, marginL + 2, leftY);
-      leftY += 4.5;
-      if (cleanText(est.namaClient)) {
-        doc.text(`Customer : ${cleanText(est.namaClient)}`, marginL + 2, leftY);
-        leftY += 4.5;
-      }
-      if (cleanText(est.perusahaan)) {
-        doc.text(`Perusahaan : ${cleanText(est.perusahaan)}`, marginL + 2, leftY);
-        leftY += 4.5;
-      }
-      if (cleanText(est.lokasi)) {
-        doc.text(`Alamat : ${cleanText(est.lokasi)}`, marginL + 2, leftY);
-        leftY += 4.5;
-      }
-      if (cleanText(est.namaProyek)) {
-        doc.text(`Proyek : ${cleanText(est.namaProyek)}`, marginL + 2, leftY);
-        leftY += 4.5;
-      }
-      
-      if (nilaiDim > 0) {
-        let dimText = `Dimensi Kerja : ${Number(nilaiDim).toLocaleString('id-ID', { maximumFractionDigits: 2 })} ${satuanDim}`;
-        if (est.panjangRuangan && est.lebarRuangan && satuanDim === 'm²') {
-          dimText = `Dimensi Kerja : ${est.panjangRuangan} × ${est.lebarRuangan} m  (${Number(nilaiDim).toFixed(2)} m²)`;
-        }
-        doc.text(dimText, marginL + 2, leftY);
-      }
-      doc.setLineWidth(0.3);
-      doc.line(marginL, 38, pageWidth - marginR, 38);
+      return '0';
     };
 
-    let startY = 41;
+    // ── Header Dokumen (Halaman 1) ──────────────────────────────────────────
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('ESTIMASI HARGA DAN PEMAKAIAN BAHAN2', marginL, 12);
 
-    const ensurePageSpace = (requiredHeight = 20) => {
-      if (startY > pageHeight - requiredHeight) {
-        doc.addPage();
-        startY = 15;
-        printHeader();
-        startY = 41;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+
+    const leftFields = [
+      { label: 'Product', value: cleanText(est.namaEstimasi) },
+      { label: 'Customer', value: cleanText(est.namaClient) },
+      { label: 'Perusahaan', value: cleanText(est.perusahaan) },
+      { label: 'Alamat', value: cleanText(est.lokasi) },
+      { label: 'Proyek', value: cleanText(est.namaProyek) },
+      {
+        label: 'Dimensi',
+        value: (() => {
+          if (est.panjangRuangan && est.lebarRuangan) {
+            return `${est.panjangRuangan} X ${est.lebarRuangan}`;
+          }
+          if (nilaiDim > 0) {
+            return `${Number(nilaiDim).toLocaleString('id-ID', { maximumFractionDigits: 2 })} ${satuanDim}`;
+          }
+          return '                   X';
+        })(),
+      },
+    ];
+
+    const tglStr = est.createdAt
+      ? new Date(est.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      : '';
+    const rightFields = [
+      { label: 'Tanggal', value: tglStr },
+      { label: 'No. Bukti', value: cleanText(est.nomorEstimasi) },
+      { label: 'No. Order', value: cleanText(est.noOrder) },
+      { label: '', value: '' },
+      { label: 'Estimator', value: cleanText(est.createdBy) },
+    ];
+
+    let leftY = 16.5;
+    leftFields.forEach(({ label, value }) => {
+      doc.text(label, marginL, leftY);
+      doc.text(':', marginL + 22, leftY);
+      if (value) doc.text(value, marginL + 25, leftY);
+      leftY += 4.2;
+    });
+
+    let rightY = 12;
+    rightFields.forEach(({ label, value }) => {
+      if (label) {
+        doc.text(label, marginL + 130, rightY);
+        doc.text(':', marginL + 148, rightY);
+        if (value) doc.text(value, marginL + 151, rightY);
       }
-    };
+      rightY += 4.2;
+    });
 
+    // ── Pengelompokan Item ──────────────────────────────────────────────────
     const groups = {};
     const groupOrder = [];
     (est.items || []).forEach((item) => {
@@ -207,13 +217,14 @@ const Estimasi = () => {
       return minUA - minUB;
     });
 
+    const tableBody = [];
+    let grandPemakaianM     = 0;
+    let grandPanjangSisaM   = 0;
     let grandBeratSisa      = 0;
     let grandBeratReal      = 0;
     let grandBeratPlusWaste = 0;
     let grandHargaPlusWaste = 0;
     let grandHargaReal      = 0;
-
-    printHeader();
 
     groupOrder.forEach((key) => {
       const group    = groups[key];
@@ -234,30 +245,34 @@ const Estimasi = () => {
         (r) => r.jenisBentuk === 'plat' || r.jenisBentukManual === 'plat'
       );
 
-      // ── Custom Items (baut, mur, aksesoris custom dll) ──
+      const dateStr = est.createdAt
+        ? new Date(est.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : '';
+      const supplierRaw = repItem.supplier ? repItem.supplier.trim() : '';
+      const supplierLine = supplierRaw ? `${dateStr}   ${supplierRaw}` : (dateStr ? `${dateStr}` : '');
+
+      // ── Custom Items ──
       if (isCustomGroup) {
         const customSatuan = resolveItemSatuan(repItem, 'Bh');
         const customHargaSatuan = parseFloat(repItem.hargaSatuan || repItem.hargaModal || repItem.hargamodal || repItem.hargamodalManual || summary.hargaSatuan || 0) || 0;
-        const matLabel = `${repItem.namaBarang}  Harga Satuan : ${fmtRp(customHargaSatuan)} / ${customSatuan}`;
+        const matLabel = `${repItem.namaBarang}   Harga Satuan : Rp. ${fmtN(customHargaSatuan)} / ${customSatuan}`;
+        const bannerContent = supplierLine ? `${supplierLine}\n${matLabel}` : matLabel;
 
-        ensurePageSpace(30);
+        tableBody.push([
+          {
+            content: bannerContent,
+            colSpan: 10,
+            styles: {
+              fontStyle: 'bold',
+              fillColor: [255, 255, 255],
+              textColor: [0, 0, 0],
+              fontSize: 6.5,
+              halign: 'left',
+              cellPadding: { top: 1.5, bottom: 1.5, left: 1, right: 1 },
+            },
+          }
+        ]);
 
-        doc.setFillColor(238, 242, 247);
-        doc.rect(marginL, startY - 2.8, pageWidth - marginL - marginR, 4.3, 'F');
-        doc.setFontSize(7.5);
-        doc.setFont('helvetica', 'bold');
-        doc.text(matLabel, marginL + 1.2, startY);
-        startY += 5;
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-        // Tampilkan supplier per grup, bukan nama project (yang sudah ada di header)
-        const supplierRaw = repItem.supplier || '';
-        const supplierText = `Supplier: ${supplierRaw.trim() ? supplierRaw : '-'}`;
-        doc.text(supplierText, marginL, startY);
-        startY += 3.5;
-
-        const tableBody = [];
         let totalCustomQty = 0;
         let totalCustomSubtotal = 0;
 
@@ -269,102 +284,80 @@ const Estimasi = () => {
           totalCustomSubtotal += subtotal;
 
           const kode = row.kodeItem ? `${row.kodeItem}. ` : '';
-          const spesLabel = `${alphaLabel(rowIdx)}. ${kode}${row.namaBarang || repItem.namaBarang} ( ${fmtN(qty)} ${customSatuan} )`;
+          const displayQty = (row.jumlahKeperluan !== undefined && row.jumlahKeperluan !== null && String(row.jumlahKeperluan).trim() !== '')
+            ? String(row.jumlahKeperluan).trim()
+            : String(qty);
+          const spesLabel = `${alphaLabel(rowIdx)}. ${kode}${row.namaBarang || repItem.namaBarang} (${displayQty} ${customSatuan})`;
 
           tableBody.push([
             spesLabel,
-            `${fmtN(qty)} ${customSatuan}`,
+            `${rowIdx + 1} .   ${fmtN(qty)}`,
             '-',
             '-',
             '-',
             '-',
             '-',
-            fmtRp(subtotal),
-            fmtRp(subtotal),
-            '-',
+            fmtN(subtotal),
+            fmtN(subtotal),
+            '',
           ]);
         });
 
+        grandPemakaianM     += totalCustomQty;
         grandHargaPlusWaste += totalCustomSubtotal;
-        grandHargaReal += totalCustomSubtotal;
+        grandHargaReal      += totalCustomSubtotal;
 
-        const subTotalStyle = { fontStyle: 'bold', fillColor: [240, 240, 240] };
+        const subTotalStyle = { fontStyle: 'bold', fillColor: [255, 255, 255], textColor: [0, 0, 0] };
         tableBody.push([
-          { content: `SUB TOTAL   ${fmtN(totalCustomQty)} ${customSatuan}`, colSpan: 2, styles: { ...subTotalStyle, halign: 'left' } },
-          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
-          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
-          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
-          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
-          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
-          { content: fmtRp(totalCustomSubtotal), styles: { ...subTotalStyle, halign: 'right' } },
-          { content: fmtRp(totalCustomSubtotal), styles: { ...subTotalStyle, halign: 'right' } },
+          { content: 'SUB TOTAL', styles: { ...subTotalStyle, halign: 'left' } },
+          { content: fmtN(totalCustomQty), styles: { ...subTotalStyle, halign: 'right' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'center' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'center' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'center' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'center' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'center' } },
+          { content: fmtN(totalCustomSubtotal), styles: { ...subTotalStyle, halign: 'right' } },
+          { content: fmtN(totalCustomSubtotal), styles: { ...subTotalStyle, halign: 'right' } },
           { content: '', styles: subTotalStyle },
         ]);
-
-        autoTable(doc, {
-          startY,
-          head: [[
-            'Spesifikasi / Uraian', 'Pemakaian', 'Panjang\nSisa', 'Berat\nSisa',
-            'Berat\nReal', 'Berat\n+ Waste', 'Luas\n(M2)',
-            'Harga\nReal', 'Harga\n+ Waste', 'Potongan',
-          ]],
-          body       : tableBody,
-          theme      : 'grid',
-          tableWidth : tableAvailWidth,
-          headStyles : {
-            fillColor : [215, 220, 227], textColor: [20, 20, 20],
-            fontStyle : 'bold', fontSize: 6.5, halign: 'center',
-            lineColor : [130, 130, 130], lineWidth: 0.1,
-          },
-          styles: {
-            fontSize: 6.5, cellPadding: 1.3, overflow: 'linebreak',
-            lineColor: [150, 150, 150], lineWidth: 0.08,
-          },
-          alternateRowStyles: { fillColor: [252, 252, 252] },
-          columnStyles: sharedColStyles,
-          margin: { left: marginL, right: marginR },
-        });
-
-        startY = doc.lastAutoTable.finalY + 5;
         return;
       }
 
-      // ── Plat Items (lembar, tanpa detail potongan) ──
+      // ── Plat Items ──
       if (isPlatGroup) {
         const platHargaSatuan = parseFloat(summary.hargaSatuan || repItem.hargaSatuan || repItem.hargaModal || 0) || 0;
         const platDimensi = (() => {
           const p = repItem.panjangPlat || summary.panjangPlat;
           const l = repItem.lebarPlat   || summary.lebarPlat;
           const t = repItem.ketebalanPlat || summary.ketebalanPlat;
-          if (p && l && t) return `${p}×${l}×${t} mm`;
-          if (p && l) return `${p}×${l} mm`;
+          if (p && l && t) return `${p} x ${l} x ${t} mm`;
+          if (p && l) return `${p} x ${l} mm`;
           return '';
         })();
+        const satuanPlat = repItem.satuanHargaModal === 'kg' ? 'Kg' : 'Lembar';
         const matLabelPlat = `${repItem.namaBarang}` +
-          (repItem.jenisBahan ? ` (${repItem.jenisBahan})` : '') +
-          (platDimensi ? `  Ukuran: ${platDimensi}` : '') +
-          `  Harga Satuan: ${fmtRp(platHargaSatuan)} / Lembar`;
+          (platDimensi ? ` Uk. ${platDimensi}` : '') +
+          `   Harga Satuan : Rp. ${fmtN(platHargaSatuan)} / ${satuanPlat}`;
+        const bannerContent = supplierLine ? `${supplierLine}\n${matLabelPlat}` : matLabelPlat;
 
-        ensurePageSpace(30);
+        tableBody.push([
+          {
+            content: bannerContent,
+            colSpan: 10,
+            styles: {
+              fontStyle: 'bold',
+              fillColor: [255, 255, 255],
+              textColor: [0, 0, 0],
+              fontSize: 6.5,
+              halign: 'left',
+              cellPadding: { top: 1.5, bottom: 1.5, left: 1, right: 1 },
+            },
+          }
+        ]);
 
-        doc.setFillColor(238, 242, 247);
-        doc.rect(marginL, startY - 2.8, pageWidth - marginL - marginR, 4.3, 'F');
-        doc.setFontSize(7.5);
-        doc.setFont('helvetica', 'bold');
-        doc.text(matLabelPlat, marginL + 1.2, startY);
-        startY += 5;
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-        // Tampilkan supplier per grup, bukan nama project (yang sudah ada di header)
-        const supplierRawPlat = repItem.supplier || '';
-        const supplierTextPlat = `Supplier: ${supplierRawPlat.trim() ? supplierRawPlat : '-'}`;
-        doc.text(supplierTextPlat, marginL, startY);
-        startY += 3.5;
-
-        const tableBody = [];
         let totalPlatQty = 0;
         let totalPlatSubtotal = 0;
+        let totalPlatBerat = 0;
 
         group.rows.forEach((row, rowIdx) => {
           const qty = parseFloat(row.jumlahKeperluan) || 0;
@@ -373,434 +366,398 @@ const Estimasi = () => {
           const beratRow = parseFloat(row.beratTotal || 0) || 0;
           totalPlatQty += qty;
           totalPlatSubtotal += subtotal;
+          totalPlatBerat += beratRow;
 
           const kode = row.kodeItem ? `${row.kodeItem}. ` : '';
-          const spesLabel = `${alphaLabel(rowIdx)}. ${kode}${row.namaBarang || repItem.namaBarang} ( ${fmtN(qty)} Lembar )`;
+          const displayQty = (row.jumlahKeperluan !== undefined && row.jumlahKeperluan !== null && String(row.jumlahKeperluan).trim() !== '')
+            ? String(row.jumlahKeperluan).trim()
+            : String(qty);
+          const spesLabel = `${alphaLabel(rowIdx)}. ${kode}${row.namaBarang || repItem.namaBarang} (${displayQty} Bh.)`;
+          const pemakaianVal = beratRow > 0 ? fmtDec(beratRow, 1) : fmtN(qty);
 
           tableBody.push([
             spesLabel,
-            `${fmtN(qty)} Lbr`,
+            `${rowIdx + 1} .   ${pemakaianVal}`,
             '-',
             '-',
-            fmtN(beratRow, 2),
-            fmtN(beratRow, 2),
+            fmtDec(beratRow, 1),
+            fmtDec(beratRow, 1),
             '-',
-            fmtRp(subtotal),
-            fmtRp(subtotal),
-            '-',
+            fmtN(subtotal),
+            fmtN(subtotal),
+            '',
           ]);
         });
 
-        const totalPlatBerat = group.rows.reduce((s, r) => s + (parseFloat(r.beratTotal || 0) || 0), 0);
+        grandPemakaianM     += totalPlatBerat > 0 ? totalPlatBerat : totalPlatQty;
         grandBeratReal      += totalPlatBerat;
         grandBeratPlusWaste += totalPlatBerat;
         grandHargaPlusWaste += totalPlatSubtotal;
         grandHargaReal      += totalPlatSubtotal;
 
-        const subTotalStyle = { fontStyle: 'bold', fillColor: [240, 240, 240] };
+        const subTotalStyle = { fontStyle: 'bold', fillColor: [255, 255, 255], textColor: [0, 0, 0] };
         tableBody.push([
-          { content: `SUB TOTAL   ${fmtN(totalPlatQty)} Lembar`, colSpan: 2, styles: { ...subTotalStyle, halign: 'left' } },
-          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
-          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
-          { content: fmtN(totalPlatBerat, 2), styles: { ...subTotalStyle, halign: 'right' } },
-          { content: fmtN(totalPlatBerat, 2), styles: { ...subTotalStyle, halign: 'right' } },
-          { content: '-', styles: { ...subTotalStyle, halign: 'right' } },
-          { content: fmtRp(totalPlatSubtotal), styles: { ...subTotalStyle, halign: 'right' } },
-          { content: fmtRp(totalPlatSubtotal), styles: { ...subTotalStyle, halign: 'right' } },
+          { content: 'SUB TOTAL', styles: { ...subTotalStyle, halign: 'left' } },
+          { content: totalPlatBerat > 0 ? fmtDec(totalPlatBerat, 1) : fmtN(totalPlatQty), styles: { ...subTotalStyle, halign: 'right' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'center' } },
+          { content: totalPlatBerat > 0 ? fmtDec(totalPlatBerat, 1) : '-', styles: { ...subTotalStyle, halign: 'right' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'center' } },
+          { content: totalPlatBerat > 0 ? fmtDec(totalPlatBerat, 1) : '-', styles: { ...subTotalStyle, halign: 'right' } },
+          { content: '-', styles: { ...subTotalStyle, halign: 'center' } },
+          { content: fmtN(totalPlatSubtotal), styles: { ...subTotalStyle, halign: 'right' } },
+          { content: fmtN(totalPlatSubtotal), styles: { ...subTotalStyle, halign: 'right' } },
           { content: '', styles: subTotalStyle },
         ]);
-
-        autoTable(doc, {
-          startY,
-          head: [[
-            'Spesifikasi / Uraian', 'Pemakaian', 'Panjang\nSisa', 'Berat\nSisa',
-            'Berat\nReal', 'Berat\n+ Waste', 'Luas\n(M2)',
-            'Harga\nReal', 'Harga\n+ Waste', 'Potongan',
-          ]],
-          body       : tableBody,
-          theme      : 'grid',
-          tableWidth : tableAvailWidth,
-          headStyles : {
-            fillColor : [215, 220, 227], textColor: [20, 20, 20],
-            fontStyle : 'bold', fontSize: 6.5, halign: 'center',
-            lineColor : [130, 130, 130], lineWidth: 0.1,
-          },
-          styles: {
-            fontSize: 6.5, cellPadding: 1.3, overflow: 'linebreak',
-            lineColor: [150, 150, 150], lineWidth: 0.08,
-          },
-          alternateRowStyles: { fillColor: [252, 252, 252] },
-          columnStyles: sharedColStyles,
-          margin: { left: marginL, right: marginR },
-        });
-
-        startY = doc.lastAutoTable.finalY + 5;
         return;
       }
 
       // ── Structural Items (batang, pipa, wf dll) ──
-      const panjangMentah   = summary.stockLength  || 6000;
-
-      const panjangMentahM  = panjangMentah / 1000;
-      const beratStandar    = summary.beratStandar  || repItem.beratPerBatang || 0;
-      const hargaSatuan     = summary.hargaSatuan   || repItem.hargaSatuan    || repItem.hargaModal || parseFloat(repItem.hargamodal || repItem.hargamodalManual || 0) || 0;
+      const panjangMentah = summary.stockLength || repItem.panjangMentah || (repItem.panjangManual ? parseFloat(repItem.panjangManual) : 0) || 6000;
+      const panjangMentahM = panjangMentah / 1000;
+      const beratStandar = summary.beratStandar || repItem.beratPerBatang || 0;
+      const hargaSatuan = summary.hargaSatuan || repItem.hargaSatuan || repItem.hargaModal || parseFloat(repItem.hargamodal || repItem.hargamodalManual || 0) || 0;
       const satuanHargaModal = repItem.satuanHargaModal || repItem.breakdown?.satuanHargaModal || 'batang';
-      const satuanLabel     = satuanHargaModal === 'kg' ? 'Kg' : (repItem.jenisBentuk === 'plat' ? 'Lbr' : 'Btg');
-      const minWelding      = summary.minWelding    ?? 50;
-      let barAllocations    = lastItem?.breakdown?.barAllocations || [];
+      const satuanLabel = satuanHargaModal === 'kg' ? 'Kg' : (repItem.jenisBentuk === 'plat' ? 'Lbr' : 'Btg');
+      const minWelding = summary.minWelding ?? 50;
+      let barAllocations = lastItem?.breakdown?.barAllocations || [];
 
       if (barAllocations.length === 0) {
         const allGuides = group.rows.flatMap((row) => row.breakdown?.cuttingGuide || []);
         if (allGuides.length > 0) {
           barAllocations = allGuides.map((guide, gIdx) => {
-            const pieces          = guide.pieces || [];
+            const pieces = guide.pieces || [];
             const panjangTerpakaiMm = guide.panjangTerpakai ?? pieces.reduce((s, p) => s + (p.length || 0), 0);
-            const sisaMm          = guide.waste ?? guide.sisa ?? 0;
+            const sisaMm = guide.waste ?? guide.sisa ?? 0;
             return {
-              batangNo      : gIdx + 1,
+              batangNo: gIdx + 1,
               panjangTerpakai: panjangTerpakaiMm,
-              sisa          : sisaMm,
-              wasteReusable : guide.wasteReusable ?? sisaMm >= minWelding,
-              items         : pieces.length > 0
+              sisa: sisaMm,
+              wasteReusable: guide.wasteReusable ?? sisaMm >= minWelding,
+              items: pieces.length > 0
                 ? pieces.map((p) => ({
-                    label   : p.label || guide.label || `Item${p.itemNo ?? gIdx + 1}`,
+                    label: p.label || guide.label || `Item${p.itemNo ?? gIdx + 1}`,
                     kodeItem: p.kodeItem || null,
-                    itemNo  : p.itemNo ?? gIdx + 1,
-                    length  : p.length ?? panjangTerpakaiMm,
+                    itemNo: p.itemNo ?? gIdx + 1,
+                    length: p.length ?? panjangTerpakaiMm,
                   }))
                 : [{
-                    label   : group.rows[gIdx % group.rows.length]?.kodeItem || group.rows[gIdx % group.rows.length]?.namaBarang || `Item${gIdx + 1}`,
+                    label: group.rows[gIdx % group.rows.length]?.kodeItem || group.rows[gIdx % group.rows.length]?.namaBarang || `Item${gIdx + 1}`,
                     kodeItem: group.rows[gIdx % group.rows.length]?.kodeItem || null,
-                    itemNo  : gIdx + 1,
-                    length  : panjangTerpakaiMm,
+                    itemNo: gIdx + 1,
+                    length: panjangTerpakaiMm,
                   }],
             };
           });
         } else {
           barAllocations = group.rows.flatMap((row, rIdx) => {
-            let kebutuhan      = row.breakdown?.kebutuhanBahan  || 1;
-            let panjangReal    = row.breakdown?.panjangRealTerpakai || 0;
-            let wasteTotal     = row.breakdown?.waste           || 0;
+            let kebutuhan = row.breakdown?.kebutuhanBahan || 1;
+            let panjangReal = row.breakdown?.panjangRealTerpakai || 0;
+            let wasteTotal = row.breakdown?.waste || 0;
 
             if (row.isManual) {
               const pJadi = parseFloat(row.panjangJadi) || 0;
               const qty = parseInt(row.jumlahKeperluan) || 0;
               panjangReal = pJadi * qty;
-              
+
               if (panjangMentah > 0 && pJadi > 0) {
-                 const manualBars = [];
-                 let currentRemaining = panjangMentah;
-                 let currentBarPieces = [];
-                 let barCount = 1;
-                 
-                 for (let i = 0; i < qty; i++) {
-                     let cutRemaining = pJadi;
-                     while(cutRemaining > 0) {
-                         const cutLength = Math.min(cutRemaining, panjangMentah);
-                         // tolerance for floating point errors
-                         if (currentRemaining < cutLength - 0.01) {
-                             manualBars.push({
-                                panjangTerpakai: panjangMentah - currentRemaining,
-                                sisa: currentRemaining,
-                                items: currentBarPieces
-                             });
-                             barCount++;
-                             currentRemaining = panjangMentah;
-                             currentBarPieces = [];
-                         }
-                         currentBarPieces.push({
-                             label: row.kodeItem || row.namaBarang || `Item${rIdx + 1}`,
-                             kodeItem: row.kodeItem || null,
-                             itemNo: rIdx + 1,
-                             length: cutLength
-                         });
-                         currentRemaining -= cutLength;
-                         cutRemaining -= cutLength;
-                     }
-                 }
-                 if (currentBarPieces.length > 0) {
-                     manualBars.push({
+                const manualBars = [];
+                let currentRemaining = panjangMentah;
+                let currentBarPieces = [];
+
+                for (let i = 0; i < qty; i++) {
+                  let cutRemaining = pJadi;
+                  while (cutRemaining > 0) {
+                    const cutLength = Math.min(cutRemaining, panjangMentah);
+                    if (currentRemaining < cutLength - 0.01) {
+                      manualBars.push({
                         panjangTerpakai: panjangMentah - currentRemaining,
                         sisa: currentRemaining,
-                        items: currentBarPieces
-                     });
-                 }
-                 
-                 return manualBars.map((bar, i) => ({
-                    batangNo: rIdx * Math.max(1, manualBars.length) + i + 1,
-                    panjangTerpakai: bar.panjangTerpakai,
-                    sisa: bar.sisa,
-                    wasteReusable: bar.sisa >= minWelding,
-                    items: bar.items
-                 }));
+                        items: currentBarPieces,
+                      });
+                      currentRemaining = panjangMentah;
+                      currentBarPieces = [];
+                    }
+                    currentBarPieces.push({
+                      label: row.kodeItem || row.namaBarang || `Item${rIdx + 1}`,
+                      kodeItem: row.kodeItem || null,
+                      itemNo: rIdx + 1,
+                      length: cutLength,
+                    });
+                    currentRemaining -= cutLength;
+                    cutRemaining -= cutLength;
+                  }
+                }
+                if (currentBarPieces.length > 0) {
+                  manualBars.push({
+                    panjangTerpakai: panjangMentah - currentRemaining,
+                    sisa: currentRemaining,
+                    items: currentBarPieces,
+                  });
+                }
+
+                return manualBars.map((bar, i) => ({
+                  batangNo: rIdx * Math.max(1, manualBars.length) + i + 1,
+                  panjangTerpakai: bar.panjangTerpakai,
+                  sisa: bar.sisa,
+                  wasteReusable: bar.sisa >= minWelding,
+                  items: bar.items,
+                }));
               } else {
-                 return [{
-                    batangNo: rIdx + 1,
-                    panjangTerpakai: panjangReal,
-                    sisa: 0,
-                    wasteReusable: false,
-                    items: Array.from({ length: Math.max(1, qty) }).map(() => ({
-                        label: row.kodeItem || row.namaBarang || `Item${rIdx + 1}`,
-                        kodeItem: row.kodeItem || null,
-                        itemNo: rIdx + 1,
-                        length: pJadi || panjangReal
-                    }))
-                 }];
+                return [{
+                  batangNo: rIdx + 1,
+                  panjangTerpakai: panjangReal,
+                  sisa: 0,
+                  wasteReusable: false,
+                  items: Array.from({ length: Math.max(1, qty) }).map(() => ({
+                    label: row.kodeItem || row.namaBarang || `Item${rIdx + 1}`,
+                    kodeItem: row.kodeItem || null,
+                    itemNo: rIdx + 1,
+                    length: pJadi || panjangReal,
+                  })),
+                }];
               }
             }
 
-            // Fallback if not manual but also no barAllocations (e.g. custom)
-            const panjangPerBatang = kebutuhan > 0 ? panjangReal / kebutuhan  : panjangMentah;
-            const sisaPerBatang    = kebutuhan > 0 ? wasteTotal  / kebutuhan  : 0;
+            const panjangPerBatang = kebutuhan > 0 ? panjangReal / kebutuhan : panjangMentah;
+            const sisaPerBatang = kebutuhan > 0 ? wasteTotal / kebutuhan : 0;
             return Array.from({ length: Math.max(1, kebutuhan) }, (_, i) => ({
-              batangNo      : rIdx * Math.max(1, kebutuhan) + i + 1,
+              batangNo: rIdx * Math.max(1, kebutuhan) + i + 1,
               panjangTerpakai: panjangPerBatang,
-              sisa          : sisaPerBatang,
-              wasteReusable : sisaPerBatang >= minWelding,
-              items         : [{
-                label   : row.kodeItem || row.namaBarang || `Item${rIdx + 1}`,
+              sisa: sisaPerBatang,
+              wasteReusable: sisaPerBatang >= minWelding,
+              items: [{
+                label: row.kodeItem || row.namaBarang || `Item${rIdx + 1}`,
                 kodeItem: row.kodeItem || null,
-                itemNo  : rIdx + 1,
-                length  : panjangPerBatang,
+                itemNo: rIdx + 1,
+                length: panjangPerBatang,
               }],
             }));
           });
         }
       }
 
-      ensurePageSpace(45);
-
-      const hargaSatuanText = hargaSatuan > 0 ? `  Harga Satuan : ${fmtRp(hargaSatuan)} / ${satuanLabel}` : '';
+      // Material Banner
+      const hargaSatuanText = hargaSatuan > 0 ? `   Harga Satuan : Rp. ${fmtN(hargaSatuan)} / ${satuanLabel}` : '';
       const matLabel = repItem.isManual
-        ? `${repItem.namaBarang}${hargaSatuanText}`
+        ? `${repItem.namaBarang}${panjangMentahM > 0 ? ` (Ukr Std : ${fmtDec(panjangMentahM, 2)} M / Berat Std : ${fmtDec(beratStandar, 2)} Kg )` : ''}${hargaSatuanText}`
         : `${repItem.namaBarang}` +
           (repItem.jenisBahan ? ` (${repItem.jenisBahan})` : '') +
-          `  (Ukr Std : ${panjangMentahM} M / Berat Std : ${fmtN(beratStandar, 2)} Kg)` +
-          `  Harga Satuan : ${fmtRp(hargaSatuan)} / ${satuanLabel}`;
+          ` (Ukr Std : ${fmtDec(panjangMentahM, 2)} M / Berat Std : ${fmtDec(beratStandar, 2)} Kg )` +
+          hargaSatuanText;
+      const bannerContent = supplierLine ? `${supplierLine}\n${matLabel}` : matLabel;
 
-      doc.setFillColor(238, 242, 247);
-      doc.rect(marginL, startY - 2.8, pageWidth - marginL - marginR, 4.3, 'F');
-      doc.setFontSize(7.5);
-      doc.setFont('helvetica', 'bold');
-      doc.text(matLabel, marginL + 1.2, startY);
-      startY += 5;
+      tableBody.push([
+        {
+          content: bannerContent,
+          colSpan: 10,
+          styles: {
+            fontStyle: 'bold',
+            fillColor: [255, 255, 255],
+            textColor: [0, 0, 0],
+            fontSize: 6.5,
+            halign: 'left',
+            cellPadding: { top: 1.5, bottom: 1.5, left: 1, right: 1 },
+          },
+        }
+      ]);
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      // Tampilkan supplier per grup, bukan nama project (yang sudah ada di header)
-      const supplierRawStruct = repItem.supplier || '';
-      const supplierTextStruct = `Supplier: ${supplierRawStruct.trim() ? supplierRawStruct : '-'}`;
-      doc.text(supplierTextStruct, marginL, startY);
-      startY += 3.5;
+      const totalRows = Math.max(group.rows.length, barAllocations.length);
+      let groupPemakaianM     = 0;
+      let groupPanjangSisaM   = 0;
+      let groupBeratSisa      = 0;
+      let groupBeratReal      = 0;
+      let groupBeratPlusWaste = 0;
+      let groupHargaReal      = 0;
+      let groupHargaPlusWaste = 0;
 
-      // ── Bangun baris tabel ──
-      const tableBody    = [];
-      const barsByItem   = new Map();
-      barAllocations.forEach((bar) => {
-        (bar.items || []).forEach((piece) => {
-          const iNo = piece.itemNo;
-          if (!barsByItem.has(iNo)) barsByItem.set(iNo, []);
-          const existing = barsByItem.get(iNo);
-          if (!existing.find((b) => b.batangNo === bar.batangNo)) existing.push(bar);
-        });
-      });
-
-      group.rows.forEach((row, rowIdx) => {
-        const itemNo      = rowIdx + 1;
-        const barsForItem = barsByItem.get(itemNo) || [];
-        const panjangJadiM = (row.panjangJadi || 0) / 1000;
-        const qty         = row.jumlahKeperluan || 0;
-        const kode        = row.kodeItem || row.namaBarang || repItem.namaBarang;
-        const spesLabel   = `${alphaLabel(rowIdx)}. ${kode} ( ${fmtN(panjangJadiM, 1)} M, ${qty} Bh. )`;
-        const luasPek     = typeof row.luasPermukaanTotal === 'number'
-          ? fmtN(row.luasPermukaanTotal, 2)
-          : typeof row.luasPermukaan === 'number'
-            ? fmtN(row.luasPermukaan, 2)
-            : '-';
-        if (barsForItem.length === 0) {
-          tableBody.push([spesLabel, '-', '-', '-', '-', '-', luasPek, fmtRp(row.hargaSatuan), fmtRp(row.hargaSatuan), '-']);
-          return;
+      for (let rIdx = 0; rIdx < totalRows; rIdx++) {
+        // Col 0: Spesifikasi / Uraian
+        let spesLabel = '';
+        if (rIdx < group.rows.length) {
+          const row = group.rows[rIdx];
+          const kode = row.kodeItem || row.namaBarang || repItem.namaBarang;
+          const displayPanjang = formatUraianPanjang(row);
+          const displayQty = (row.jumlahKeperluan !== undefined && row.jumlahKeperluan !== null && String(row.jumlahKeperluan).trim() !== '')
+            ? String(row.jumlahKeperluan).trim()
+            : String(row.jumlahKeperluan || 0);
+          spesLabel = `${alphaLabel(rIdx)}. ${kode} ( ${displayPanjang} M, ${displayQty} Bh. )`;
         }
 
-        barsForItem.forEach((bar, bIdx) => {
+        // Col 1 to 9: Bar allocation data
+        if (rIdx < barAllocations.length) {
+          const bar = barAllocations[rIdx];
+          const barNo = bar.batangNo || (rIdx + 1);
           const panjangTerpakaiMm = bar.panjangTerpakai ?? 0;
-          const sisaMm            = bar.sisa            ?? 0;
-          const sisaM             = sisaMm / 1000;
-          const usageRatio        = panjangMentah > 0 ? panjangTerpakaiMm / panjangMentah : 1;
-          const billedRatio       = usageRatio <= 0.5 ? 0.5 : usageRatio <= 0.75 ? 0.75 : 1;
-          const hargaReal         = billedRatio * hargaSatuan;
-          const hargaPlusWaste    = hargaSatuan;
-          const beratReal         = (panjangTerpakaiMm / panjangMentah) * beratStandar;
-          const beratSisa         = beratStandar - beratReal;
-          const pieces            = bar.items || [];
-          const potonganStr       = pieces
-            .map((p, pIdx) => {
-              const lbl = p.kodeItem || p.label || `Item${p.itemNo}`;
-              const pM  = fmtN((p.length || 0) / 1000, 2);
-              return pIdx === 0 ? `${lbl}.(${pM})` : `${lbl} (${pM})`;
-            })
-            .join(' ');
+          const panjangTerpakaiM = panjangTerpakaiMm / 1000;
+          const sisaMm = bar.sisa ?? Math.max(0, panjangMentah - panjangTerpakaiMm);
+          const sisaM = sisaMm / 1000;
+
+          const usageRatio = panjangMentah > 0 ? panjangTerpakaiMm / panjangMentah : 1;
+          const billedRatio = usageRatio <= 0.5 ? 0.5 : usageRatio <= 0.75 ? 0.75 : 1;
+          const hargaReal = billedRatio * hargaSatuan;
+          const hargaPlusWaste = hargaSatuan;
+          const beratReal = panjangMentah > 0 ? (panjangTerpakaiMm / panjangMentah) * beratStandar : 0;
+          const beratSisa = Math.max(0, beratStandar - beratReal);
+
+          groupPemakaianM     += panjangTerpakaiM;
+          groupPanjangSisaM   += sisaM;
+          groupBeratSisa      += beratSisa;
+          groupBeratReal      += beratReal;
+          groupBeratPlusWaste += beratStandar;
+          groupHargaReal      += hargaReal;
+          groupHargaPlusWaste += hargaPlusWaste;
+
+          const pieces = bar.items || [];
+          const potonganStr = pieces.map((p, pIdx) => {
+            const lbl = p.kodeItem || p.label || `Item${p.itemNo || (rIdx + 1)}`;
+            const pM = fmtDec((p.length || 0) / 1000, 3);
+            return pIdx === 0 ? `${lbl}.(${pM})` : `${lbl} (${pM})`;
+          }).join(' ');
 
           tableBody.push([
-            bIdx === 0 ? spesLabel : '',
-            `${bIdx + 1} .  ${fmtN(panjangTerpakaiMm / 1000, 2)}`,
-            typeof sisaM === 'number' ? fmtN(sisaM, 2) : '-',
-            fmtN(beratSisa, 2),
-            fmtN(beratReal, 2),
-            fmtN(beratStandar, 2),
-            luasPek,
-            fmtRp(hargaReal),
-            fmtRp(hargaPlusWaste),
+            spesLabel,
+            `${barNo} .   ${fmtDec(panjangTerpakaiM, 2)}`,
+            fmtDec(sisaM, 2),
+            fmtDec(beratSisa, 2),
+            fmtDec(beratReal, 2),
+            fmtDec(beratStandar, 2),
+            '-',
+            fmtN(hargaPlusWaste),
+            fmtN(hargaReal),
             potonganStr,
           ]);
-        });
-      });
-
-      let stBeratReal      = summary.totalBeratReal      || 0;
-      let stBeratWaste     = summary.totalBeratWaste     || 0;
-      let stHargaReal      = 0;
-      let stHargaPlusWaste = 0;
-
-      if (summary.totalHargaPlusWaste !== undefined && summary.totalHargaPlusWaste !== null) {
-        stHargaReal = Number(summary.totalHargaReal ?? summary.totalHargaPemakaian ?? 0) || 0;
-        stHargaPlusWaste = Number(summary.totalHargaPlusWaste) || 0;
-      } else {
-        stHargaReal = Number(summary.totalHargaPemakaian ?? summary.totalHargaReal ?? 0) || 0;
-        stHargaPlusWaste = Number(summary.totalHargaReal ?? (summary.totalBars * (summary.hargaSatuan || 0)) ?? 0) || 0;
-      }
-
-      if (repItem.isManual) {
-        stBeratReal = group.rows.reduce((s, r) => s + (r.beratTotal || 0), 0);
-        stHargaReal = group.rows.reduce((s, r) => s + (r.subtotal || 0), 0);
-        stHargaPlusWaste = stHargaReal;
-        
-        let totalPanjangReal = 0;
-        group.rows.forEach(r => {
-          totalPanjangReal += (parseFloat(r.panjangJadi) || 0) * (parseInt(r.jumlahKeperluan) || 0);
-        });
-        
-        if (panjangMentah > 0 && totalPanjangReal > 0) {
-           const totalBahan = Math.ceil(totalPanjangReal / panjangMentah);
-           stBeratWaste = stBeratReal * (((totalBahan * panjangMentah) - totalPanjangReal) / totalPanjangReal);
+        } else {
+          tableBody.push([
+            spesLabel,
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            '',
+          ]);
         }
       }
 
-      const stBeratPlusWaste = stBeratReal + stBeratWaste;
-      const stSisaMm         = barAllocations.reduce((s, b) => s + (b.sisa ?? 0), 0);
+      grandPemakaianM     += groupPemakaianM;
+      grandPanjangSisaM   += groupPanjangSisaM;
+      grandBeratSisa      += groupBeratSisa;
+      grandBeratReal      += groupBeratReal;
+      grandBeratPlusWaste += groupBeratPlusWaste;
+      grandHargaReal      += groupHargaReal;
+      grandHargaPlusWaste += groupHargaPlusWaste;
 
-      grandBeratSisa      += stBeratWaste;
-      grandBeratReal      += stBeratReal;
-      grandBeratPlusWaste += stBeratPlusWaste;
-      grandHargaReal      += stHargaReal;
-      grandHargaPlusWaste += stHargaPlusWaste;
-
-      const subTotalStyle = { fontStyle: 'bold', fillColor: [240, 240, 240] };
+      // Subtotal row
+      const subTotalStyle = { fontStyle: 'bold', fillColor: [255, 255, 255], textColor: [0, 0, 0] };
       tableBody.push([
-        { content: `SUB TOTAL   ${fmtN(barAllocations.length)} Btg`, colSpan: 2, styles: { ...subTotalStyle, halign: 'left' } },
-        { content: typeof stSisaMm === 'number' ? fmtN(stSisaMm / 1000, 2) : '-', styles: { ...subTotalStyle, halign: 'right' } },
-        { content: fmtN(stBeratWaste, 2),      styles: { ...subTotalStyle, halign: 'right' } },
-        { content: fmtN(stBeratReal, 2),       styles: { ...subTotalStyle, halign: 'right' } },
-        { content: fmtN(stBeratPlusWaste, 2),  styles: { ...subTotalStyle, halign: 'right' } },
-        { content: '-',                        styles: { ...subTotalStyle, halign: 'right' } },
-        { content: fmtRp(stHargaReal),         styles: { ...subTotalStyle, halign: 'right' } },
-        { content: fmtRp(stHargaPlusWaste),    styles: { ...subTotalStyle, halign: 'right' } },
-        { content: '',                         styles: subTotalStyle },
+        { content: 'SUB TOTAL', styles: { ...subTotalStyle, halign: 'left' } },
+        { content: fmtDec(groupPemakaianM, 2), styles: { ...subTotalStyle, halign: 'right' } },
+        { content: fmtDec(groupPanjangSisaM, 2), styles: { ...subTotalStyle, halign: 'right' } },
+        { content: fmtDec(groupBeratSisa, 2), styles: { ...subTotalStyle, halign: 'right' } },
+        { content: fmtDec(groupBeratReal, 2), styles: { ...subTotalStyle, halign: 'right' } },
+        { content: fmtDec(groupBeratPlusWaste, 2), styles: { ...subTotalStyle, halign: 'right' } },
+        { content: '-', styles: { ...subTotalStyle, halign: 'center' } },
+        { content: fmtN(groupHargaPlusWaste), styles: { ...subTotalStyle, halign: 'right' } },
+        { content: fmtN(groupHargaReal), styles: { ...subTotalStyle, halign: 'right' } },
+        { content: '', styles: subTotalStyle },
       ]);
-
-      autoTable(doc, {
-        startY,
-        head: [[
-          'Spesifikasi / Uraian', 'Pemakaian', 'Panjang\nSisa', 'Berat\nSisa',
-          'Berat\nReal', 'Berat\n+ Waste', 'Luas\n(M2)',
-          'Harga\nReal', 'Harga\n+ Waste', 'Potongan',
-        ]],
-        body       : tableBody,
-        theme      : 'grid',
-        tableWidth : tableAvailWidth,
-        headStyles : {
-          fillColor : [215, 220, 227], textColor: [20, 20, 20],
-          fontStyle : 'bold', fontSize: 6.5, halign: 'center',
-          lineColor : [130, 130, 130], lineWidth: 0.1,
-        },
-        styles: {
-          fontSize: 6.5, cellPadding: 1.3, overflow: 'linebreak',
-          lineColor: [150, 150, 150], lineWidth: 0.08,
-        },
-        alternateRowStyles: { fillColor: [252, 252, 252] },
-        columnStyles: sharedColStyles,
-        margin: { left: marginL, right: marginR },
-      });
-
-      startY = doc.lastAutoTable.finalY + 5;
     });
 
-    // ── Grand Total ──────────────────────────────────────────────────────────────
-    ensurePageSpace(35);
-    const gtStyle = { fontStyle: 'bold', fillColor: [180, 210, 255] };
+    // ── Grand Total ──────────────────────────────────────────────────────────
+    const gtStyle = { fontStyle: 'bold', fillColor: [255, 255, 255], textColor: [0, 0, 0] };
+    tableBody.push([
+      { content: 'GRAND TOTAL', styles: { ...gtStyle, halign: 'left' } },
+      { content: fmtDec(grandPemakaianM, 2), styles: { ...gtStyle, halign: 'right' } },
+      { content: fmtDec(grandPanjangSisaM, 2), styles: { ...gtStyle, halign: 'right' } },
+      { content: fmtDec(grandBeratSisa, 2), styles: { ...gtStyle, halign: 'right' } },
+      { content: fmtDec(grandBeratReal, 2), styles: { ...gtStyle, halign: 'right' } },
+      { content: fmtDec(grandBeratPlusWaste, 2), styles: { ...gtStyle, halign: 'right' } },
+      { content: '-', styles: { ...gtStyle, halign: 'center' } },
+      { content: fmtN(grandHargaPlusWaste), styles: { ...gtStyle, halign: 'right' } },
+      { content: fmtN(grandHargaReal), styles: { ...gtStyle, halign: 'right' } },
+      { content: '', styles: gtStyle },
+    ]);
 
-    // Hitung nilaiDim dan grandHargaSatuan untuk PDF
-    const grandTotalForPDF = grandHargaReal || grandHargaPlusWaste;
-    const hargaSatuanPDF = nilaiDim > 0 ? grandTotalForPDF / Number(nilaiDim) : null;
+    const hargaSatuanWaste = nilaiDim > 0 ? grandHargaPlusWaste / Number(nilaiDim) : grandHargaPlusWaste;
+    const hargaSatuanReal = nilaiDim > 0 ? grandHargaReal / Number(nilaiDim) : grandHargaReal;
 
-    const grandTotalBody = [[
-      { content: 'GRAND TOTAL',               colSpan: 2, styles: { ...gtStyle, halign: 'left'  } },
-      { content: '-',                                     styles: { ...gtStyle, halign: 'right' } },
-      { content: fmtN(grandBeratSisa, 2),                 styles: { ...gtStyle, halign: 'right' } },
-      { content: fmtN(grandBeratReal, 2),                 styles: { ...gtStyle, halign: 'right' } },
-      { content: fmtN(grandBeratPlusWaste, 2),            styles: { ...gtStyle, halign: 'right' } },
-      { content: '-',                                     styles: { ...gtStyle, halign: 'right' } },
-      { content: fmtRp(grandHargaReal),                   styles: { ...gtStyle, halign: 'right' } },
-      { content: fmtRp(grandHargaPlusWaste),              styles: { ...gtStyle, halign: 'right' } },
-      { content: '',                                      styles: { fillColor: [180, 210, 255]  } },
-    ]];
+    tableBody.push([
+      { content: 'HARGA/SATUAN', styles: { ...gtStyle, halign: 'left' } },
+      { content: '', styles: gtStyle },
+      { content: '', styles: gtStyle },
+      { content: '', styles: gtStyle },
+      { content: '', styles: gtStyle },
+      { content: '', styles: gtStyle },
+      { content: '', styles: gtStyle },
+      { content: fmtN(hargaSatuanWaste), styles: { ...gtStyle, halign: 'right' } },
+      { content: fmtN(hargaSatuanReal), styles: { ...gtStyle, halign: 'right' } },
+      { content: '', styles: gtStyle },
+    ]);
 
-    if (hargaSatuanPDF !== null) {
-      const hsStyle = { fontStyle: 'bold', fillColor: [209, 231, 255] };
-      const hargaSatuanReal   = grandHargaReal      / Number(nilaiDim);
-      const hargaSatuanWaste  = grandHargaPlusWaste / Number(nilaiDim);
-      // Baris 1: HARGA / SATUAN (Harga Real & Harga + Waste ÷ Dimensi Kerja)
-      grandTotalBody.push([
-        { content: 'HARGA / SATUAN', colSpan: 2, styles: { ...hsStyle, halign: 'left' } },
-        { content: '-', styles: { ...hsStyle, halign: 'right' } },
-        { content: '-', styles: { ...hsStyle, halign: 'right' } },
-        { content: '-', styles: { ...hsStyle, halign: 'right' } },
-        { content: '-', styles: { ...hsStyle, halign: 'right' } },
-        { content: '-', styles: { ...hsStyle, halign: 'right' } },
-        { content: fmtN(hargaSatuanReal, 0),  styles: { ...hsStyle, halign: 'right' } },
-        { content: fmtN(hargaSatuanWaste, 0), styles: { ...hsStyle, halign: 'right' } },
-        { content: '',                         styles: { fillColor: [209, 231, 255] } },
-      ]);
-    }
-
+    // ── Render Tabel Tunggal Terpadu ─────────────────────────────────────────
     autoTable(doc, {
-      startY,
-      showHead  : 'never',
-      head      : [['Spesifikasi / Uraian','Pemakaian','Panjang\nSisa','Berat\nSisa',
-                    'Berat\nReal','Berat\n+ Waste','Luas\n(M2)','Harga\nReal','Harga\n+ Waste','Potongan']],
-      headStyles: { minCellHeight: 0, cellPadding: 0, fontSize: 0, lineWidth: 0 },
-      body: grandTotalBody,
-      theme      : 'grid',
-      tableWidth : tableAvailWidth,
-      styles     : { fontSize: 7.5, cellPadding: 1.5, lineColor: [130, 130, 130], lineWidth: 0.1 },
+      startY: 40,
+      head: [[
+        'Spesifikasi / Uraian',
+        'Pemakaian',
+        'Panjang\nSisa',
+        'Berat\nSisa',
+        'Berat\nReal',
+        'Berat\n+ Waste',
+        'Luas\n(M2)',
+        'Harga\n+ Waste',
+        'Harga\nReal',
+        'Potongan',
+      ]],
+      body: tableBody,
+      theme: 'grid',
+      tableWidth: tableAvailWidth,
+      showHead: 'everyPage',
+      headStyles: {
+        fillColor: [255, 255, 255],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold',
+        fontSize: 6.5,
+        halign: 'center',
+        valign: 'middle',
+        lineColor: [0, 0, 0],
+        lineWidth: 0.15,
+      },
+      styles: {
+        fontSize: 6.5,
+        cellPadding: { top: 1.1, bottom: 1.1, left: 1, right: 1 },
+        overflow: 'linebreak',
+        lineColor: [0, 0, 0],
+        lineWidth: 0.1,
+        textColor: [0, 0, 0],
+        fillColor: [255, 255, 255],
+      },
+      alternateRowStyles: {
+        fillColor: [255, 255, 255],
+      },
       columnStyles: sharedColStyles,
-      margin     : { left: marginL, right: marginR },
+      margin: { top: 8, bottom: 12, left: marginL, right: marginR },
     });
 
-    // ── Nomor halaman ────────────────────────────────────────────────────────────
+    // ── Footer Halaman ───────────────────────────────────────────────────────
     const totalPages = doc.internal.getNumberOfPages();
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const footerDate = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}.${pad(now.getMinutes())}.${pad(now.getSeconds())}`;
+
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
-      doc.setFontSize(6.5);
+      doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
-      doc.text(
-        `${new Date().toLocaleDateString('id-ID')} ${new Date().toLocaleTimeString('id-ID')}   Hal. ${i} / ${totalPages}`,
-        pageWidth - marginR,
-        pageHeight - 5,
-        { align: 'right' }
-      );
+      doc.setTextColor(0, 0, 0);
+      doc.text(footerDate, marginL, pageHeight - 5);
+      doc.text(`Hal.   ${i}`, pageWidth - marginR, pageHeight - 5, { align: 'right' });
     }
 
-    doc.save(`Estimasi_${est.nomorEstimasi.replace(/\//g, '-')}.pdf`);
+    doc.save(`Estimasi_${(est.nomorEstimasi || 'doc').replace(/\//g, '-')}.pdf`);
     toast.success('PDF berhasil diexport!');
   };
 
