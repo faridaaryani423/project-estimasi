@@ -1,6 +1,6 @@
 import { calculateWithWasteReuse } from '../utils/calculationEngine';
 
-describe('Requirement 16: Harga Real calculation', () => {
+describe('Requirement 16: Harga Real quarter billing calculation', () => {
   const dummyBarangList = [
     {
       id: 'barang_1',
@@ -16,7 +16,7 @@ describe('Requirement 16: Harga Real calculation', () => {
     }
   ];
 
-  test('6000 mm, price 230000, usage 3750 mm -> Rp143.750', () => {
+  test('6000 mm, price 230000, usage 3750 mm -> 3/4 = Rp172.500', () => {
     const validItems = [
       {
         barangId: 'barang_1',
@@ -30,12 +30,12 @@ describe('Requirement 16: Harga Real calculation', () => {
     const detail = result.itemDetails[0];
     
     // Check global summary if needed, but item breakdown should have it too
-    // subtotalMaterialPemakaian represents the usage-based cost (Harga Real)
-    expect(detail.breakdown.summary.totalHargaReal).toBe(143750);
-    expect(detail.subtotalMaterialPemakaian).toBe(143750);
+    // Harga Real follows the canonical quarter billing rule.
+    expect(detail.breakdown.summary.totalHargaReal).toBe(172500);
+    expect(detail.subtotalMaterialPemakaian).toBe(172500);
   });
 
-  test('6000 mm, price 230000, usage 3000 mm -> Rp115.000', () => {
+  test('6000 mm, price 230000, usage 3000 mm -> 1/2 = Rp115.000', () => {
     const validItems = [
       {
         barangId: 'barang_1',
@@ -52,7 +52,7 @@ describe('Requirement 16: Harga Real calculation', () => {
     expect(detail.subtotalMaterialPemakaian).toBe(115000);
   });
 
-  test('A=4000 + B=1500 dari satu stock 6000 -> Harga Real berdasarkan 5500/6000', () => {
+  test('A=4000 + B=1500 dari satu stock 6000 -> Harga Real 1 batang penuh', () => {
     const validItems = [
       {
         barangId: 'barang_1',
@@ -70,14 +70,14 @@ describe('Requirement 16: Harga Real calculation', () => {
 
     const result = calculateWithWasteReuse(validItems, 0, dummyBarangList);
     
-    // total usage = 5500. 5500/6000 * 230000 = 210833.33 -> rounded to 210833
-    const expectedTotal = Math.round((5500 / 6000) * 230000);
+    // The shared bar is 5500/6000 used, so it bills as one full bar.
+    const expectedTotal = 230000;
     
     const detailA = result.itemDetails.find(i => i.kodeItem === 'A');
     // They share the same breakdown summary
     expect(detailA.breakdown.summary.totalHargaReal).toBeCloseTo(expectedTotal, 0);
 
-    // Summing their individual usages should match the total
+    // Summing their individual shares should match the total
     const totalSubtotal = result.itemDetails.reduce((sum, item) => sum + item.subtotalMaterialPemakaian, 0);
     expect(totalSubtotal).toBeCloseTo(expectedTotal, 0);
 

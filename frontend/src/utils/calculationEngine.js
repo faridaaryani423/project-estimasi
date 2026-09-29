@@ -154,7 +154,7 @@ const getPanjangMentah = (barang) => {
   if (jenisBentuk === 'plat') {
     return parseFloat(barang.panjangPlat) || 0;
   }
-  return parseFloat(barang.panjang) || 0;
+  return parseFloat(barang.panjang) || parseFloat(barang.panjangMentah) || parseFloat(barang.panjangbatang) || 0;
 };
 
 /**
@@ -374,24 +374,21 @@ const buildItemBreakdown = (jumlah, panjangTarget, pieceToBarMap, bars, minWeldi
 
 const round2 = (value) => Math.round((Number(value) || 0) * 100) / 100;
 
-const getUsageBasedBarPrice = (usedLength, stockLength, hargaSatuan) => {
-  if (usedLength <= 0 || stockLength <= 0) return 0;
-  return (usedLength / stockLength) * hargaSatuan;
-};
-
-const getBilledBarPrice = (usedLength, stockLength, hargaSatuan) => {
+export const getBilledBarPrice = (usedLength, stockLength, hargaSatuan) => {
   if (usedLength <= 0 || stockLength <= 0) return 0;
   const usageRatio = usedLength / stockLength;
   const billedRatio = usageRatio <= 0.25 ? 0.25 : usageRatio <= 0.5 ? 0.5 : usageRatio <= 0.75 ? 0.75 : 1;
   return billedRatio * hargaSatuan;
 };
 
+export const getFullBarPrice = (hargaSatuan) => Math.max(Number(hargaSatuan) || 0, 0);
+
 /**
  * Calculate a full allocation summary for a single material group.
- * Uses a fixed 6 m stock length and Best Fit Decreasing packing.
+ * Uses the material's standard stock length and Best Fit Decreasing packing.
  */
 export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPekerjaan = 0) => {
-  const stockLength = 6000;
+  const stockLength = getPanjangMentah(barang);
   const baseHargaModal = parseFloat(barang?.hargamodal || 0) || 0;
   const satuanHargaModal = barang?.satuanHargaModal || 'batang';
   const parsedMinWelding = parseFloat(barang?.minWelding);
@@ -479,20 +476,19 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
       bar.pieces.reduce((sum, piece) => sum + piece.length, 0)
     ])
   );
-  const barHargaPemakaianMap = new Map(
-    bars.map((bar) => {
-      const usedLength = barUsedLengthMap.get(bar.barNo) || 0;
-      return [bar.barNo, getUsageBasedBarPrice(usedLength, stockLength, hargaSatuan)];
-    })
-  );
-  const barHargaPlusWasteMap = new Map(
+  const barHargaRealMap = new Map(
     bars.map((bar) => {
       const usedLength = barUsedLengthMap.get(bar.barNo) || 0;
       return [bar.barNo, getBilledBarPrice(usedLength, stockLength, hargaSatuan)];
     })
   );
+  const barHargaPlusWasteMap = new Map(
+    bars.map((bar) => {
+      return [bar.barNo, getFullBarPrice(hargaSatuan)];
+    })
+  );
   const totalHargaPlusWaste = [...barHargaPlusWasteMap.values()].reduce((sum, value) => sum + value, 0);
-  const totalHargaReal = [...barHargaPemakaianMap.values()].reduce((sum, value) => sum + value, 0);
+  const totalHargaReal = [...barHargaRealMap.values()].reduce((sum, value) => sum + value, 0);
   const totalHargaPemakaian = totalHargaReal;
   const selisihBiayaWaste = Math.max(totalHargaPlusWaste - totalHargaReal, 0);
   // Keep BFD allocation, but follow requirement-table welding definition per item.
@@ -509,7 +505,7 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
 
   const barAllocations = bars.map((bar) => {
     const usedLength = bar.pieces.reduce((sum, piece) => sum + piece.length, 0);
-    const hargaPemakaian = barHargaPemakaianMap.get(bar.barNo) || 0;
+    const hargaReal = barHargaRealMap.get(bar.barNo) || 0;
     const breakdownStr = bar.pieces
       .map((piece) => `${piece.label} ${piece.length / 1000} M`)
       .join(' + ');
@@ -530,9 +526,9 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
       sisa: round2(bar.remaining),
       beratReal: round2((usedLength / stockLength) * beratStandar),
       beratSisa: round2(beratStandar - ((usedLength / stockLength) * beratStandar)),
-      hargaReal: round2(hargaSatuan),
-      hargaPemakaian: round2(hargaPemakaian),
-      selisihBiayaWaste: round2(barHargaPlusWasteMap.get(bar.barNo) - hargaPemakaian),
+      hargaReal: round2(hargaReal),
+      hargaPemakaian: round2(hargaReal),
+      selisihBiayaWaste: round2(barHargaPlusWasteMap.get(bar.barNo) - hargaReal),
       titikWelding: Math.max(bar.pieces.length - 1, 0),
       wasteReusable: bar.remaining >= minWelding,
       wasteNote: bar.remaining >= minWelding
@@ -563,12 +559,12 @@ export const calculateMaterialGroupAllocation = (barang, groupItems = [], luasPe
       const barUsedLength = barUsedLengthMap.get(barNo) || 0;
       if (barUsedLength <= 0) return sum;
 
-      const barHargaPemakaian = barHargaPemakaianMap.get(barNo) || 0;
+      const barHargaReal = barHargaRealMap.get(barNo) || 0;
       const itemUsedOnBar = itemPieces
         .filter((piece) => piece.barNo === barNo)
         .reduce((pieceSum, piece) => pieceSum + piece.length, 0);
 
-      return sum + ((itemUsedOnBar / barUsedLength) * barHargaPemakaian);
+      return sum + ((itemUsedOnBar / barUsedLength) * barHargaReal);
     }, 0);
     const materialWasteCost = Math.max(itemMaterialFullCost - materialPemakaianCost, 0);
     const itemRealWeight = (itemUsedLength / stockLength) * beratStandar;

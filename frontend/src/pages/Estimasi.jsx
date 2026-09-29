@@ -9,6 +9,7 @@ import { Calculator, Plus, Trash2, Weight, Ruler, Pencil, Download, Eye, Loader2
 import { estimasiAPI } from '@/services/api';
 import { formatNumberWithSeparator } from '@/lib/utils';
 import { resolveItemSatuan } from '@/utils/unitResolver';
+import { getBilledBarPrice, getFullBarPrice } from '@/utils/calculationEngine';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -592,10 +593,8 @@ const Estimasi = () => {
           const sisaMm = bar.sisa ?? Math.max(0, panjangMentah - panjangTerpakaiMm);
           const sisaM = sisaMm / 1000;
 
-          const usageRatio = panjangMentah > 0 ? panjangTerpakaiMm / panjangMentah : 1;
-          const billedRatio = usageRatio <= 0.5 ? 0.5 : usageRatio <= 0.75 ? 0.75 : 1;
-          const hargaReal = billedRatio * hargaSatuan;
-          const hargaPlusWaste = hargaSatuan;
+          const hargaReal = getBilledBarPrice(panjangTerpakaiMm, panjangMentah, hargaSatuan);
+          const hargaPlusWaste = getFullBarPrice(hargaSatuan);
           const beratReal = panjangMentah > 0 ? (panjangTerpakaiMm / panjangMentah) * beratStandar : 0;
           const beratSisa = Math.max(0, beratStandar - beratReal);
 
@@ -1239,16 +1238,20 @@ const Estimasi = () => {
                             if (summary.totalHargaPlusWaste !== undefined && summary.totalHargaPlusWaste !== null) {
                               totalHargaReal        = parseFloat(summary.totalHargaReal ?? summary.totalHargaPemakaian ?? 0) || 0;
                               totalHargaPlusWaste   = parseFloat(summary.totalHargaPlusWaste) || 0;
-                            } else {
+                              group.hasCanonicalHargaPlusWaste = true;
+                              group.finalHargaReal       = totalHargaReal;
+                              group.finalHargaPlusWaste  = totalHargaPlusWaste;
+                              group.lastItemIndex        = itemIdx;
+                            } else if (!group.hasCanonicalHargaPlusWaste && itemIdx >= group.lastItemIndex) {
                               totalHargaReal        = parseFloat(summary.totalHargaPemakaian ?? summary.totalHargaReal ?? 0) || 0;
                               totalHargaPlusWaste   = parseFloat(summary.totalHargaReal ?? (summary.totalBars * (summary.hargaSatuan || 0)) ?? 0) || 0;
+                              group.finalHargaReal       = totalHargaReal;
+                              group.finalHargaPlusWaste  = totalHargaPlusWaste;
+                              group.lastItemIndex        = itemIdx;
                             }
                           }
                           group.finalBeratReal       = totalBeratReal;
                           group.finalBeratPlusWaste  = totalBeratReal + totalBeratWaste;
-                          group.finalHargaReal       = totalHargaReal;
-                          group.finalHargaPlusWaste  = totalHargaPlusWaste;
-                          group.lastItemIndex        = itemIdx;
                         }
                       }
                       group.count++;

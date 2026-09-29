@@ -500,20 +500,28 @@ const EditEstimasi = () => {
     });
   };
 
+  const createNewItem = () => ({
+    ...emptyItem(),
+    kodeItem: selectedItems[selectedItems.length - 1]?.kodeItem || '',
+  });
+
   const addItemRow = () => {
-    setSelectedItems([...selectedItems, emptyItem()]);
+    setSelectedItems([...selectedItems, createNewItem()]);
   };
 
   const insertItemRowAfter = (insertAfterIndex) => {
     const newItems = [...selectedItems];
-    newItems.splice(insertAfterIndex + 1, 0, emptyItem());
+    newItems.splice(insertAfterIndex + 1, 0, {
+      ...emptyItem(),
+      kodeItem: selectedItems[selectedItems.length - 1]?.kodeItem || '',
+    });
     setSelectedItems(newItems);
   };
 
   const addItemRowWithSameBarang = (index) => {
     const currentItem = selectedItems[index];
     const newItem = {
-      ...emptyItem(),
+      ...createNewItem(),
       barangId: currentItem.barangId,
       ...(currentItem.barangId === '__manual__' ? {
         namaManual: currentItem.namaManual,

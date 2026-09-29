@@ -39,12 +39,11 @@ describe('Requirement 7 - Fix Harga Real vs Harga + Waste', () => {
     // Numerical expectations:
     // Stock: 6000 mm, Kebutuhan: 3000 mm (50% usage)
     // Harga: Rp 600.000
-    // Harga Real (usage cost without waste) = 50% * 600.000 = Rp 300.000
-    // Harga + Waste (fractional billing) = 50% -> 1/2 bar * 600.000 = Rp 300.000
+    // Both fields are 1/2 billing for one bar at 50% usage.
     expect(summary.totalBars).toBe(1);
     expect(summary.totalHargaReal).toBe(300000);
-    expect(summary.totalHargaPlusWaste).toBe(300000);
-    expect(summary.selisihBiayaWaste).toBe(0);
+    expect(summary.totalHargaPlusWaste).toBe(600000);
+    expect(summary.selisihBiayaWaste).toBe(300000);
 
     // Backward-compatibility field check:
     expect(summary.totalHargaPemakaian).toBe(300000);
@@ -81,12 +80,12 @@ describe('Requirement 7 - Fix Harga Real vs Harga + Waste', () => {
 
     // 2 pieces of 3500 mm cannot fit in 1 bar of 6000 mm -> requires 2 bars
     expect(summary.totalBars).toBe(2);
-    // Harga + Waste = 2 bars, each at 3500/6000 (58.33%) -> 3/4 (75%) billing -> 0.75 * 600.000 = 450.000. 2 * 450.000 = 900.000
-    expect(summary.totalHargaPlusWaste).toBe(900000);
+    // Harga Real = 2 * 3/4 billing; Harga + Waste = 2 full bars.
+    expect(summary.totalHargaPlusWaste).toBe(1200000);
     // Each bar has 3500 mm used (3500/6000 * 600.000 = 350.000)
     // 2 bars * 350.000 = 700.000
-    expect(summary.totalHargaReal).toBe(700000);
-    expect(summary.selisihBiayaWaste).toBe(200000);
+    expect(summary.totalHargaReal).toBe(900000);
+    expect(summary.selisihBiayaWaste).toBe(300000);
     expect(summary.totalHargaReal).toBeLessThan(summary.totalHargaPlusWaste);
   });
 
@@ -190,7 +189,7 @@ describe('Requirement 7 - Fix Harga Real vs Harga + Waste', () => {
 
     // Source of Truth
     expect(summary.totalHargaReal).toBe(300000);
-    expect(summary.totalHargaPlusWaste).toBe(300000);
+    expect(summary.totalHargaPlusWaste).toBe(600000);
 
     // Modal table calculation simulation
     let modalHargaReal = 0;
@@ -204,7 +203,7 @@ describe('Requirement 7 - Fix Harga Real vs Harga + Waste', () => {
     }
 
     expect(modalHargaReal).toBe(300000);
-    expect(modalHargaPlusWaste).toBe(300000);
+    expect(modalHargaPlusWaste).toBe(600000);
 
     // Modal table cell display logic
     const isManualRow = false;
@@ -217,8 +216,7 @@ describe('Requirement 7 - Fix Harga Real vs Harga + Waste', () => {
       : Number(modalHargaPlusWaste ?? item.subtotal ?? 0);
 
     expect(displayHargaReal).toBe(300000);
-    expect(displayHargaPlusWaste).toBe(300000);
-    expect(displayHargaReal).toBe(displayHargaPlusWaste);
+    expect(displayHargaPlusWaste).toBe(600000);
 
     // PDF Subtotal calculation logic
     let pdfStHargaReal = 0;
@@ -232,7 +230,7 @@ describe('Requirement 7 - Fix Harga Real vs Harga + Waste', () => {
     }
 
     expect(pdfStHargaReal).toBe(300000);
-    expect(pdfStHargaPlusWaste).toBe(300000);
+    expect(pdfStHargaPlusWaste).toBe(600000);
     expect(pdfStHargaReal).toBe(displayHargaReal);
     expect(pdfStHargaPlusWaste).toBe(displayHargaPlusWaste);
   });
