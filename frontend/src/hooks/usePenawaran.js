@@ -48,7 +48,10 @@ export const usePenawaran = () => {
         estimasiAPI.getAll(),
       ]);
       setPenawaranList(penawaranData);
-      setEstimasiList(estimasiData);
+      const finalEstimasi = Array.isArray(estimasiData)
+        ? estimasiData.filter((e) => (e.status || 'final') === 'final')
+        : [];
+      setEstimasiList(finalEstimasi);
     } catch (error) {
       toast.error('Gagal memuat data: ' + error.message);
     } finally {

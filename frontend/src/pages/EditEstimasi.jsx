@@ -154,6 +154,122 @@ const EditEstimasi = () => {
   const [savingManualBarang, setSavingManualBarang]     = useState({});
   const importFileRef                                   = useRef(null);
 
+  // ── Auto Save Draft State & Refs (Khusus Draft) ──────────────────────────────
+  const [autoSaveStatus, setAutoSaveStatus] = useState('');
+  const [lastAutoSavedTime, setLastAutoSavedTime] = useState('');
+  const isAutoSavingRef = useRef(false);
+  const hasPendingAutoSaveRef = useRef(false);
+  const autoSaveTimerRef = useRef(null);
+  const latestDataRef = useRef({ formData, selectedItems });
+
+  useEffect(() => {
+    latestDataRef.current = { formData, selectedItems };
+  }, [formData, selectedItems]);
+
+  const performDraftAutoSave = async () => {
+    if (saving) return;
+    if (estimasi?.status !== 'draft') return; // STRICT: Hanya autosave jika estimasi berstatus draft!
+
+    if (isAutoSavingRef.current) {
+      hasPendingAutoSaveRef.current = true;
+      return;
+    }
+
+    isAutoSavingRef.current = true;
+    setAutoSaveStatus('saving');
+
+    try {
+      const currentFormData = latestDataRef.current.formData;
+      const currentItems = latestDataRef.current.selectedItems;
+
+      const metodeDimensi = currentFormData.metodeDimensiKerja || 'langsung';
+      const luasPekerjaan = (() => {
+        if (metodeDimensi === 'pxl') {
+          return (parseFloat(currentFormData.panjangRuangan) || 0) * (parseFloat(currentFormData.lebarRuangan) || 0);
+        }
+        return parseFloat(currentFormData.nilaiDimensiKerja) || parseFloat(currentFormData.luasRuanganInput) || 0;
+      })();
+      const satuanDimensi = currentFormData.satuanDimensiKerja || 'm²';
+
+      const touchedItems = currentItems
+        .filter((it) => (it.barangId && it.barangId !== '__manual__') || ((it.namaManual || '').trim() !== ''))
+        .map((it, idx) => {
+          const barang = (it.barangId && it.barangId !== '__manual__') ? getEffectiveBarang(it.barangId) : null;
+          const namaBarang = it.barangId === '__manual__' ? (it.namaManual || 'Item Manual') : (barang?.nama || 'Item');
+          const jumlahKeperluan = parseInt(it.jumlahKeperluan) || 0;
+          const hargaSatuan = parseFloat(it.hargaManual || it.hargamodalManual || barang?.hargamodal || 0) || 0;
+          const subtotal = jumlahKeperluan * hargaSatuan;
+          return {
+            ...it,
+            namaBarang,
+            jumlahKeperluan,
+            hargaSatuan,
+            subtotal,
+            urutan: it.urutan || (idx + 1)
+          };
+        });
+
+      const draftPayload = {
+        namaEstimasi: currentFormData.namaEstimasi || 'Draft Estimasi',
+        namaProyek: currentFormData.namaProyek || null,
+        noOrder: currentFormData.noOrder || null,
+        namaClient: currentFormData.namaClient || '-',
+        perusahaan: currentFormData.perusahaan || null,
+        lokasi: currentFormData.lokasi || '-',
+        kontakPerson: currentFormData.kontakPerson || null,
+        metodeDimensiKerja: metodeDimensi,
+        panjangRuangan: currentFormData.panjangRuangan ? parseFloat(currentFormData.panjangRuangan) : null,
+        lebarRuangan: currentFormData.lebarRuangan ? parseFloat(currentFormData.lebarRuangan) : null,
+        luasRuanganInput: currentFormData.luasRuanganInput ? parseFloat(currentFormData.luasRuanganInput) : (currentFormData.nilaiDimensiKerja ? parseFloat(currentFormData.nilaiDimensiKerja) : null),
+        nilaiDimensiKerja: luasPekerjaan > 0 ? luasPekerjaan : null,
+        satuanDimensiKerja: satuanDimensi,
+        luasRuangan: luasPekerjaan > 0 ? luasPekerjaan : null,
+        items: touchedItems,
+        totalEstimasi: touchedItems.reduce((acc, item) => acc + (item.subtotal || 0), 0),
+        totalBeratReal: 0,
+        totalLuasPermukaan: 0,
+        totalTitikWelding: 0,
+        status: 'draft',
+      };
+
+      await estimasiAPI.update(id, draftPayload);
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      setLastAutoSavedTime(timeStr);
+      setAutoSaveStatus('saved');
+    } catch (err) {
+      console.error('Autosave draft error in EditEstimasi:', err);
+      setAutoSaveStatus('error');
+    } finally {
+      isAutoSavingRef.current = false;
+      if (hasPendingAutoSaveRef.current) {
+        hasPendingAutoSaveRef.current = false;
+        performDraftAutoSave();
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (loading) return;
+    if (saving) return;
+    if (estimasi?.status !== 'draft') return; // STRICT: Final estimate TIDAK autosave
+
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      performDraftAutoSave();
+    }, 1500);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [formData, selectedItems, localBarangOverrides, estimasi?.status]);
+
   // ── Download & Import Excel ───────────────────────────────────────────────────
   const downloadTemplate = () => {
     const wb = XLSX.utils.book_new();
@@ -1054,6 +1170,7 @@ const EditEstimasi = () => {
         totalBeratReal:     Math.round(totalBeratReal * 100) / 100,
         totalLuasPermukaan: Math.round(totalLuasPermukaan * 100) / 100,
         totalTitikWelding,
+        status:             'final',
       };
 
       const updated = await estimasiAPI.update(id, payload);
@@ -1094,7 +1211,35 @@ const EditEstimasi = () => {
 
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-1">Edit Estimasi</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">Edit Estimasi</h1>
+          {estimasi?.status === 'draft' ? (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+              Draft
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+              Final
+            </span>
+          )}
+          {estimasi?.status === 'draft' && autoSaveStatus === 'saving' && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 animate-pulse">
+              <Loader2 className="w-3 h-3 animate-spin" /> Menyimpan draft...
+            </span>
+          )}
+          {estimasi?.status === 'draft' && autoSaveStatus === 'saved' && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              Draft tersimpan otomatis {lastAutoSavedTime}
+            </span>
+          )}
+          {estimasi?.status === 'draft' && autoSaveStatus === 'error' && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+              Gagal menyimpan draft
+            </span>
+          )}
+        </div>
         <p className="text-gray-500 text-sm">{estimasi?.nomorEstimasi} · {estimasi?.namaEstimasi}</p>
       </div>
 

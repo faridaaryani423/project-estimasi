@@ -149,6 +149,13 @@ export const estimasiAPI = {
     });
     return handleResponse(response);
   },
+
+  getById: async (id) => {
+    const response = await fetch(`${API_URL}/api/estimasi/${id}`, {
+      headers: getHeaders()
+    });
+    return handleResponse(response);
+  },
   
   create: async (data) => {
     const response = await fetch(`${API_URL}/api/estimasi`, {

@@ -163,6 +163,148 @@ const EstimasiForm = () => {
   // ── State untuk barang manual ─────────────────────────────────────────────────
   const [savingManualBarang, setSavingManualBarang] = useState({});
 
+  // ── Auto Save Draft State & Refs ──────────────────────────────────────────────
+  const draftIdRef = useRef(null);
+  const [draftId, setDraftId] = useState(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState(''); // '', 'saving', 'saved', 'error'
+  const [lastAutoSavedTime, setLastAutoSavedTime] = useState('');
+  const isAutoSavingRef = useRef(false);
+  const hasPendingAutoSaveRef = useRef(false);
+  const autoSaveTimerRef = useRef(null);
+  const latestDataRef = useRef({ formData, selectedItems });
+
+  const getEffectiveBarang = (barangId) => {
+    const base = barangList.find((b) => String(b.id) === String(barangId));
+    if (!base) return null;
+    return { ...base, ...(localBarangOverrides[barangId] || {}) };
+  };
+
+  useEffect(() => {
+    latestDataRef.current = { formData, selectedItems };
+  }, [formData, selectedItems]);
+
+  const hasUserStarted = (fData, items) => {
+    if ((fData.namaEstimasi || '').trim()) return true;
+    if ((fData.namaClient || '').trim()) return true;
+    if (items.some((it) => (it.barangId && it.barangId !== '__manual__') || ((it.namaManual || '').trim() !== ''))) {
+      return true;
+    }
+    return false;
+  };
+
+  const performAutoSave = async () => {
+    if (saving) return;
+    const currentFormData = latestDataRef.current.formData;
+    const currentItems = latestDataRef.current.selectedItems;
+
+    if (!hasUserStarted(currentFormData, currentItems)) {
+      return;
+    }
+
+    if (isAutoSavingRef.current) {
+      hasPendingAutoSaveRef.current = true;
+      return;
+    }
+
+    isAutoSavingRef.current = true;
+    setAutoSaveStatus('saving');
+
+    try {
+      const metodeDimensi = currentFormData.metodeDimensiKerja || 'langsung';
+      const luasPekerjaan = (() => {
+        if (metodeDimensi === 'pxl') {
+          return (parseFloat(currentFormData.panjangRuangan) || 0) * (parseFloat(currentFormData.lebarRuangan) || 0);
+        }
+        return parseFloat(currentFormData.nilaiDimensiKerja) || parseFloat(currentFormData.luasRuanganInput) || 0;
+      })();
+      const satuanDimensi = currentFormData.satuanDimensiKerja || 'm²';
+
+      const touchedItems = currentItems
+        .filter((it) => (it.barangId && it.barangId !== '__manual__') || ((it.namaManual || '').trim() !== ''))
+        .map((it, idx) => {
+          const barang = (it.barangId && it.barangId !== '__manual__') ? getEffectiveBarang(it.barangId) : null;
+          const namaBarang = it.barangId === '__manual__' ? (it.namaManual || 'Item Manual') : (barang?.nama || 'Item');
+          const jumlahKeperluan = parseInt(it.jumlahKeperluan) || 0;
+          const hargaSatuan = parseFloat(it.hargaManual || it.hargamodalManual || barang?.hargamodal || 0) || 0;
+          const subtotal = jumlahKeperluan * hargaSatuan;
+          return {
+            ...it,
+            namaBarang,
+            jumlahKeperluan,
+            hargaSatuan,
+            subtotal,
+            urutan: it.urutan || (idx + 1)
+          };
+        });
+
+      const draftPayload = {
+        namaEstimasi: currentFormData.namaEstimasi || 'Draft Estimasi',
+        namaProyek: currentFormData.namaProyek || null,
+        noOrder: currentFormData.noOrder || null,
+        namaClient: currentFormData.namaClient || '-',
+        perusahaan: currentFormData.perusahaan || null,
+        lokasi: currentFormData.lokasi || '-',
+        kontakPerson: currentFormData.kontakPerson || null,
+        metodeDimensiKerja: metodeDimensi,
+        panjangRuangan: currentFormData.panjangRuangan ? parseFloat(currentFormData.panjangRuangan) : null,
+        lebarRuangan: currentFormData.lebarRuangan ? parseFloat(currentFormData.lebarRuangan) : null,
+        luasRuanganInput: currentFormData.luasRuanganInput ? parseFloat(currentFormData.luasRuanganInput) : (currentFormData.nilaiDimensiKerja ? parseFloat(currentFormData.nilaiDimensiKerja) : null),
+        nilaiDimensiKerja: luasPekerjaan > 0 ? luasPekerjaan : null,
+        satuanDimensiKerja: satuanDimensi,
+        luasRuangan: luasPekerjaan > 0 ? luasPekerjaan : null,
+        items: touchedItems,
+        totalEstimasi: touchedItems.reduce((acc, item) => acc + (item.subtotal || 0), 0),
+        totalBeratReal: 0,
+        totalLuasPermukaan: 0,
+        totalTitikWelding: 0,
+        status: 'draft',
+      };
+
+      if (!draftIdRef.current) {
+        const res = await estimasiAPI.create(draftPayload);
+        if (res && res.id) {
+          draftIdRef.current = res.id;
+          setDraftId(res.id);
+        }
+      } else {
+        await estimasiAPI.update(draftIdRef.current, draftPayload);
+      }
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      setLastAutoSavedTime(timeStr);
+      setAutoSaveStatus('saved');
+    } catch (err) {
+      console.error('Autosave error:', err);
+      setAutoSaveStatus('error');
+    } finally {
+      isAutoSavingRef.current = false;
+      if (hasPendingAutoSaveRef.current) {
+        hasPendingAutoSaveRef.current = false;
+        performAutoSave();
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!hasUserStarted(formData, selectedItems)) return;
+    if (saving) return;
+
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      performAutoSave();
+    }, 1500);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [formData, selectedItems, localBarangOverrides]);
+
   useEffect(() => {
     loadBarang();
     loadMaterials();
@@ -751,10 +893,16 @@ const EstimasiForm = () => {
         totalBeratReal: Math.round(totalBeratReal * 100) / 100,
         totalLuasPermukaan: Math.round(totalLuasPermukaan * 100) / 100,
         totalTitikWelding,
+        status: 'final',
       };
 
-      const newEstimasi = await estimasiAPI.create(estimasiData);
-      toast.success(`Estimasi ${newEstimasi.nomorEstimasi} berhasil!`);
+      let savedEstimasi;
+      if (draftIdRef.current) {
+        savedEstimasi = await estimasiAPI.update(draftIdRef.current, estimasiData);
+      } else {
+        savedEstimasi = await estimasiAPI.create(estimasiData);
+      }
+      toast.success(`Estimasi ${savedEstimasi.nomorEstimasi} berhasil!`);
       navigate('/estimasi');
     } catch (error) {
       toast.error('Gagal menyimpan estimasi: ' + error.message);
@@ -764,11 +912,6 @@ const EstimasiForm = () => {
   };
 
   // ── Helper barang dari database ───────────────────────────────────────────────
-  const getEffectiveBarang = (barangId) => {
-    const base = barangList.find((b) => String(b.id) === String(barangId));
-    if (!base) return null;
-    return { ...base, ...(localBarangOverrides[barangId] || {}) };
-  };
 
   const handleBarangFieldChange = (barangId, field, value) => {
     setLocalBarangOverrides((prev) => ({
@@ -939,7 +1082,26 @@ const EstimasiForm = () => {
     <div className="space-y-6 fade-in">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Buat Estimasi Baru</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-gray-900">Buat Estimasi Baru</h1>
+            {autoSaveStatus === 'saving' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 animate-pulse">
+                <Loader2 className="w-3 h-3 animate-spin" /> Menyimpan draft...
+              </span>
+            )}
+            {autoSaveStatus === 'saved' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Draft tersimpan otomatis {lastAutoSavedTime}
+              </span>
+            )}
+            {autoSaveStatus === 'error' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                Gagal menyimpan draft
+              </span>
+            )}
+          </div>
           <p className="text-gray-600">Hitung kebutuhan material proyek Anda</p>
         </div>
         <Button variant="outline" onClick={() => navigate('/estimasi')}>

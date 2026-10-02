@@ -73,13 +73,15 @@ const Estimasi = () => {
 
   const filteredEstimasiList = estimasiList.filter((est) => {
     const q = searchQuery.toLowerCase();
+    const estStatus = (est.status || 'final').toLowerCase();
     return (
       est.namaEstimasi?.toLowerCase().includes(q) ||
       est.nomorEstimasi?.toLowerCase().includes(q) ||
       est.createdBy?.toLowerCase().includes(q) ||
       est.namaClient?.toLowerCase().includes(q) ||
       est.lokasi?.toLowerCase().includes(q) ||
-      est.kontakPerson?.toLowerCase().includes(q)
+      est.kontakPerson?.toLowerCase().includes(q) ||
+      estStatus.includes(q)
     );
   });
 
@@ -818,6 +820,7 @@ const Estimasi = () => {
                     <TableRow>
                       <TableHead>No</TableHead>
                       <TableHead>Nomor</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Nama Estimasi</TableHead>
                       <TableHead>Client</TableHead>
                       <TableHead>Lokasi</TableHead>
@@ -841,6 +844,17 @@ const Estimasi = () => {
                               <span className="px-2 py-0.5 bg-sky-600 text-white text-xs font-bold rounded">
                                 {est.nomorEstimasi}
                               </span>
+                            </TableCell>
+                            <TableCell>
+                              {est.status === 'draft' ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                                  Draft
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                  Final
+                                </span>
+                              )}
                             </TableCell>
                             <TableCell className="font-medium">{est.namaEstimasi}</TableCell>
 
@@ -973,6 +987,15 @@ const Estimasi = () => {
                   <span className="px-3 py-1 bg-sky-600 text-white text-xs font-bold rounded">
                     {viewingEstimasi.nomorEstimasi}
                   </span>
+                  {viewingEstimasi.status === 'draft' ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                      Draft
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      Final
+                    </span>
+                  )}
                   {viewingEstimasi.namaEstimasi}
                 </CardTitle>
                 <Button onClick={() => exportEstimasiToPDF(viewingEstimasi)} className="bg-red-500 hover:bg-red-600">

@@ -6,7 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import List, Optional, Any, Union
 from datetime import datetime, timezone
 import jwt
@@ -118,12 +118,12 @@ class MaterialResponse(MaterialBase):
     lastUpdatedBy: Optional[str] = None
 
 class EstimasiItem(BaseModel):
-    barangId: str
+    barangId: Optional[str] = None
     materialId: Optional[str] = None
     urutan: Optional[int] = None
     kodeItem: Optional[str] = None
     isManual: Optional[bool] = None
-    namaBarang: str
+    namaBarang: Optional[str] = None
     jenisBentuk: Optional[str] = None
     supplier: Optional[str] = None
     ukuranMentah: Optional[str] = None
@@ -134,11 +134,11 @@ class EstimasiItem(BaseModel):
     beratJenis: Optional[str] = None
     beratbatang: Optional[str] = None
     minWelding: Optional[str] = None
-    jumlahKeperluan: int
+    jumlahKeperluan: Optional[int] = 0
     volume: Optional[str] = None
     satuan: Optional[str] = None
     satuanBarang: Optional[str] = None
-    hargaSatuan: float
+    hargaSatuan: Optional[float] = 0
     hargaJual: Optional[float] = None
     hargaJasa: Optional[float] = None
     hargaModal: Optional[float] = None
@@ -147,7 +147,7 @@ class EstimasiItem(BaseModel):
     subtotalMaterialPemakaian: Optional[float] = None
     subtotalMaterialWaste: Optional[float] = None
     subtotalJasa: Optional[float] = None
-    subtotal: float
+    subtotal: Optional[float] = 0
     beratPerBatang: Optional[float] = None
     beratTotal: Optional[float] = None
     beratWaste: Optional[float] = None
@@ -186,11 +186,11 @@ class EstimasiItem(BaseModel):
     namaManual: Optional[str] = None
 
 class EstimasiCreate(BaseModel):
-    namaClient: str
+    namaClient: Optional[str] = None
     perusahaan: Optional[str] = None
-    lokasi: str
+    lokasi: Optional[str] = None
     kontakPerson: Optional[str] = None
-    namaEstimasi: str
+    namaEstimasi: Optional[str] = None
     namaProyek: Optional[str] = None
     noOrder: Optional[str] = None
     metodeDimensiKerja: Optional[str] = 'pxl'
@@ -200,30 +200,30 @@ class EstimasiCreate(BaseModel):
     satuanDimensiKerja: Optional[str] = 'm²'
     nilaiDimensiKerja: Optional[float] = None
     luasRuangan: Optional[float] = None
-    items: List[EstimasiItem]
-    totalEstimasi: float
+    items: Optional[List[EstimasiItem]] = []
+    totalEstimasi: Optional[float] = 0
     totalBeratReal: Optional[float] = 0
     totalLuasPermukaan: Optional[float] = 0
     totalTitikWelding: Optional[int] = 0
+    status: Optional[str] = "final"
 
-    @field_validator('namaClient')
-    @classmethod
-    def validate_nama_client(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("Field 'Customer' wajib diisi")
-        return v.strip()
-
-    @field_validator('lokasi')
-    @classmethod
-    def validate_lokasi(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("Field 'Alamat' wajib diisi")
-        return v.strip()
+    @model_validator(mode='after')
+    def validate_fields_by_status(self):
+        st = (self.status or "final").lower().strip()
+        if st not in ["draft", "final"]:
+            raise ValueError("Status harus 'draft' atau 'final'")
+        self.status = st
+        if st == "final":
+            if not self.namaClient or not self.namaClient.strip():
+                raise ValueError("Field 'Customer' wajib diisi")
+            if not self.lokasi or not self.lokasi.strip():
+                raise ValueError("Field 'Alamat' wajib diisi")
+        return self
 
 class EstimasiResponse(BaseModel):
     id: str
     nomorEstimasi: str
-    namaEstimasi: str
+    namaEstimasi: Optional[str] = None
     namaClient: Optional[str] = None
     perusahaan: Optional[str] = None
     lokasi: Optional[str] = None
@@ -237,8 +237,8 @@ class EstimasiResponse(BaseModel):
     satuanDimensiKerja: Optional[str] = 'm²'
     nilaiDimensiKerja: Optional[float] = None
     luasRuangan: Optional[float] = None
-    items: List[EstimasiItem]
-    totalEstimasi: float
+    items: Optional[List[EstimasiItem]] = []
+    totalEstimasi: Optional[float] = 0
     totalBeratReal: Optional[float] = 0
     totalLuasPermukaan: Optional[float] = 0
     totalTitikWelding: Optional[int] = 0
@@ -248,6 +248,7 @@ class EstimasiResponse(BaseModel):
     updatedAt: Optional[str] = None
     updatedBy: Optional[str] = None
     updatedByRole: Optional[str] = None
+    status: Optional[str] = "final"
 
 class EstimasiRef(BaseModel):
     id: str
@@ -495,14 +496,28 @@ async def delete_barang(barang_id: str, current_user: dict = Depends(get_current
 @api_router.get("/estimasi", response_model=List[EstimasiResponse])
 async def get_estimasi(current_user: dict = Depends(get_current_user)):
     estimasi_list = await db.estimasi.find({}, {"_id": 0}).to_list(1000)
+    for est in estimasi_list:
+        if "status" not in est or not est["status"]:
+            est["status"] = "final"
     return estimasi_list
+
+@api_router.get("/estimasi/{estimasi_id}", response_model=EstimasiResponse)
+async def get_estimasi_by_id(estimasi_id: str, current_user: dict = Depends(get_current_user)):
+    est = await db.estimasi.find_one({"id": estimasi_id}, {"_id": 0})
+    if not est:
+        raise HTTPException(status_code=404, detail="Estimasi not found")
+    if "status" not in est or not est["status"]:
+        est["status"] = "final"
+    return est
 
 @api_router.post("/estimasi", response_model=EstimasiResponse)
 async def create_estimasi(data: EstimasiCreate, current_user: dict = Depends(get_current_user)):
-    if not data.namaClient or not data.namaClient.strip():
-        raise HTTPException(status_code=400, detail="Field 'Customer' wajib diisi")
-    if not data.lokasi or not data.lokasi.strip():
-        raise HTTPException(status_code=400, detail="Field 'Alamat' wajib diisi")
+    status = (data.status or "final").lower().strip()
+    if status == "final":
+        if not data.namaClient or not data.namaClient.strip():
+            raise HTTPException(status_code=400, detail="Field 'Customer' wajib diisi")
+        if not data.lokasi or not data.lokasi.strip():
+            raise HTTPException(status_code=400, detail="Field 'Alamat' wajib diisi")
     now = datetime.now(timezone.utc).isoformat()
     created_by = current_user.get("username") or "Unknown"
     created_by_role = current_user.get("role") or "user"
@@ -511,6 +526,7 @@ async def create_estimasi(data: EstimasiCreate, current_user: dict = Depends(get
         "id": str(int(datetime.now(timezone.utc).timestamp() * 1000)),
         "nomorEstimasi": generate_unique_number("EST"),
         **data.model_dump(),
+        "status": status,
         "createdAt": now,
         "createdBy": created_by,
         "createdByRole": created_by_role,
@@ -525,16 +541,19 @@ async def create_estimasi(data: EstimasiCreate, current_user: dict = Depends(get
 
 @api_router.put("/estimasi/{estimasi_id}", response_model=EstimasiResponse)
 async def update_estimasi(estimasi_id: str, data: EstimasiCreate, current_user: dict = Depends(get_current_user)):
-    if not data.namaClient or not data.namaClient.strip():
-        raise HTTPException(status_code=400, detail="Field 'Customer' wajib diisi")
-    if not data.lokasi or not data.lokasi.strip():
-        raise HTTPException(status_code=400, detail="Field 'Alamat' wajib diisi")
+    status = (data.status or "final").lower().strip()
+    if status == "final":
+        if not data.namaClient or not data.namaClient.strip():
+            raise HTTPException(status_code=400, detail="Field 'Customer' wajib diisi")
+        if not data.lokasi or not data.lokasi.strip():
+            raise HTTPException(status_code=400, detail="Field 'Alamat' wajib diisi")
     now = datetime.now(timezone.utc).isoformat()
     updated_by = current_user.get("username") or "Unknown"
     updated_by_role = current_user.get("role") or "user"
     
     update_data = {
         **data.model_dump(),
+        "status": status,
         "updatedAt": now,
         "updatedBy": updated_by,
         "updatedByRole": updated_by_role
@@ -550,6 +569,8 @@ async def update_estimasi(estimasi_id: str, data: EstimasiCreate, current_user: 
         raise HTTPException(status_code=404, detail="Estimasi not found")
     
     del result["_id"]
+    if "status" not in result or not result["status"]:
+        result["status"] = "final"
     return result
 
 @api_router.delete("/estimasi/{estimasi_id}")
