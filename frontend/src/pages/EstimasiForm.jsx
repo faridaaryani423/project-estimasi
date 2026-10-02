@@ -601,7 +601,7 @@ const EstimasiForm = () => {
       if (!item.barangId) continue; // Skip completely empty rows that user hasn't touched
       
       const isManual = item.barangId === '__manual__';
-      const jb = isManual ? (item.jenisBentukManual || 'custom') : '';
+      const jb = isManual ? String(item.jenisBentukManual || 'custom').toLowerCase().trim() : '';
       const isCustomManual = isManual && jb === 'custom';
       const barang = !isManual ? getEffectiveBarang(item.barangId) : null;
       const isCustomDB = !isManual && barang?.jenisBentuk === 'custom';
@@ -670,8 +670,10 @@ const EstimasiForm = () => {
 
         if (!['wf', 'plat', 'custom'].includes(jb) && !check(item.ketebalanManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Ketebalan wajib diisi.`; break; }
 
-        if (!check(item.jenisBahanManual) || !check(item.beratJenisManual) || !check(item.minWeldingManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Jenis Bahan, Berat Jenis, Min Welding wajib diisi.`; break; }
-        if (!check(item.beratbatangManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Berat per Batang wajib diisi.`; break; }
+        if (jb !== 'custom') {
+          if (!check(item.jenisBahanManual) || !check(item.beratJenisManual) || !check(item.minWeldingManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Jenis Bahan, Berat Jenis, Min Welding wajib diisi.`; break; }
+          if (!check(item.beratbatangManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Berat per Batang wajib diisi.`; break; }
+        }
 
         if (!check(item.hargamodalManual)) { hasInvalid = true; errorMessage = `Baris ${i + 1} (Manual): Harga Modal wajib diisi.`; break; }
 
@@ -809,7 +811,7 @@ const EstimasiForm = () => {
     if (!item || item.barangId !== '__manual__') return;
 
     const namaBarang = (item.namaManual || '').trim();
-    const jb = item.jenisBentukManual || 'custom';
+    const jb = String(item.jenisBentukManual || 'custom').toLowerCase().trim();
     
     const check = (val) => val !== undefined && val !== null && String(val).trim() !== '';
 

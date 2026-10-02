@@ -736,7 +736,7 @@ const EditEstimasi = () => {
     if (!item || item.barangId !== '__manual__') return;
 
     const namaBarang = (item.namaManual || '').trim();
-    const jb = item.jenisBentukManual || 'custom';
+    const jb = String(item.jenisBentukManual || 'custom').toLowerCase().trim();
     
     const check = (val) => val !== undefined && val !== null && String(val).trim() !== '';
 
@@ -891,7 +891,7 @@ const EditEstimasi = () => {
       const barang = !isManual ? effectiveBarangList.find((b) => String(b.id) === String(item.barangId)) : null;
       const isCustomDB = !isManual && barang?.jenisBentuk === 'custom';
       const isPlatDB = !isManual && barang?.jenisBentuk === 'plat';
-      const jb = isManual ? (item.jenisBentukManual || 'custom') : '';
+      const jb = isManual ? String(item.jenisBentukManual || 'custom').toLowerCase().trim() : '';
       const isCustomManual = isManual && jb === 'custom';
 
       if (isCustomManual) {
