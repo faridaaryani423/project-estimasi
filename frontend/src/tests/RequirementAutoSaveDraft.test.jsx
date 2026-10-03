@@ -90,16 +90,16 @@ describe('Requirement Auto Save Draft Test Suite', () => {
     expect(estimasiAPI.update).not.toHaveBeenCalled();
   });
 
-  // B & C & E & J. Isi nama estimasi → POST 1x, perubahan berikutnya PUT ke ID yang sama (No duplicate)
-  test('B, C, E, J. Autosave pertama POST 1x, perubahan berikutnya PUT ke draft ID yang sama', async () => {
+  // B & C & E & J. Isi nama estimasi → POST 1x, perubahan berikutnya PUT ke ID yang sama (No duplicate & no nomorEstimasi yet)
+  test('B, C, E, J. Autosave pertama POST 1x tanpa nomor estimasi, perubahan berikutnya PUT ke draft ID yang sama', async () => {
     estimasiAPI.create.mockResolvedValue({
       id: 'draft-999',
-      nomorEstimasi: 'EST/202610/9999',
+      nomorEstimasi: null,
       status: 'draft',
     });
     estimasiAPI.update.mockResolvedValue({
       id: 'draft-999',
-      nomorEstimasi: 'EST/202610/9999',
+      nomorEstimasi: null,
       status: 'draft',
     });
 
@@ -156,11 +156,11 @@ describe('Requirement Auto Save Draft Test Suite', () => {
     expect(estimasiAPI.create).not.toHaveBeenCalled();
   });
 
-  // I & J. Lengkapi data → klik Simpan Estimasi → Draft berubah menjadi Final pada ID yang sama
-  test('I & J. Finalisasi draft memanggil PUT status final ke ID yang sama tanpa duplicate', async () => {
+  // I & J. Lengkapi data → klik Simpan Estimasi → Draft berubah menjadi Final dan mendapat nomor estimasi
+  test('I & J. Finalisasi draft memanggil PUT status final ke ID yang sama dan mendapatkan nomor estimasi', async () => {
     estimasiAPI.create.mockResolvedValue({
       id: 'draft-777',
-      nomorEstimasi: 'EST/202610/7777',
+      nomorEstimasi: null,
       status: 'draft',
     });
     estimasiAPI.update.mockResolvedValue({
@@ -217,10 +217,10 @@ describe('Requirement Auto Save Draft Test Suite', () => {
     }));
   });
 
-  // D, K, L. List Estimasi: status Draft & Final badges (termasuk legacy data tanpa status)
-  test('D, K, L. List Estimasi menampilkan badge Draft dan Final dengan benar', async () => {
+  // D, K, L. List Estimasi: status Draft & Final badges (Draft belum memiliki nomor estimasi)
+  test('D, K, L. List Estimasi menampilkan status Draft (-) dan Final (bernomor)', async () => {
     estimasiAPI.getAll.mockResolvedValue([
-      { id: '1', nomorEstimasi: 'EST/001', namaEstimasi: 'Estimasi Draft', status: 'draft', createdAt: new Date().toISOString() },
+      { id: '1', nomorEstimasi: null, namaEstimasi: 'Estimasi Draft Baru', status: 'draft', createdAt: new Date().toISOString() },
       { id: '2', nomorEstimasi: 'EST/002', namaEstimasi: 'Estimasi Final', status: 'final', createdAt: new Date().toISOString() },
       { id: '3', nomorEstimasi: 'EST/003', namaEstimasi: 'Estimasi Legacy', createdAt: new Date().toISOString() }, // tanpa status
     ]);
@@ -228,11 +228,18 @@ describe('Requirement Auto Save Draft Test Suite', () => {
     render(<Estimasi />);
 
     await waitFor(() => {
-      expect(screen.getByText('Estimasi Draft')).toBeInTheDocument();
+      expect(screen.getByText('Estimasi Draft Baru')).toBeInTheDocument();
     });
 
     // Badge Draft harus ada
     expect(screen.getByText('Draft')).toBeInTheDocument();
+
+    // Nomor untuk draft harus dash '-' (tidak ada nomor EST)
+    expect(screen.getAllByText('-').length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText('EST/001')).not.toBeInTheDocument();
+
+    // Nomor untuk final harus ada
+    expect(screen.getByText('EST/002')).toBeInTheDocument();
 
     // Badge Final harus ada untuk Estimasi Final dan Estimasi Legacy (default final)
     const finalBadges = screen.getAllByText('Final');
@@ -240,11 +247,11 @@ describe('Requirement Auto Save Draft Test Suite', () => {
   });
 
   // F & G. Buka Draft di EditEstimasi → data ter-load dan status tetap Draft
-  test('F, G. EditEstimasi memuat draft dan mempertahankan status draft', async () => {
+  test('F, G. EditEstimasi memuat draft tanpa nomor dan mempertahankan status draft', async () => {
     estimasiAPI.getAll.mockResolvedValue([
       {
         id: 'draft-101',
-        nomorEstimasi: 'EST/001',
+        nomorEstimasi: null,
         namaEstimasi: 'Proyek Draft Sedang Diedit',
         namaClient: 'Budi',
         lokasi: 'Bandung',
@@ -268,7 +275,7 @@ describe('Requirement Auto Save Draft Test Suite', () => {
     penawaranAPI.getAll.mockResolvedValue([]);
     estimasiAPI.getAll.mockResolvedValue([
       { id: '1', nomorEstimasi: 'EST/001', namaEstimasi: 'Estimasi Final 1', status: 'final' },
-      { id: '2', nomorEstimasi: 'EST/002', namaEstimasi: 'Estimasi Draft 1', status: 'draft' },
+      { id: '2', nomorEstimasi: null, namaEstimasi: 'Estimasi Draft 1', status: 'draft' },
       { id: '3', nomorEstimasi: 'EST/003', namaEstimasi: 'Estimasi Legacy Final' }, // legacy tanpa status = final
     ]);
 

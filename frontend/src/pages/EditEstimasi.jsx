@@ -1240,7 +1240,7 @@ const EditEstimasi = () => {
             </span>
           )}
         </div>
-        <p className="text-gray-500 text-sm">{estimasi?.nomorEstimasi} · {estimasi?.namaEstimasi}</p>
+        <p className="text-gray-500 text-sm">{estimasi?.nomorEstimasi ? `${estimasi.nomorEstimasi} · ` : ''}{estimasi?.namaEstimasi}</p>
       </div>
 
       {/* Card: Detail Estimasi */}

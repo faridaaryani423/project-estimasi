@@ -902,7 +902,7 @@ const EstimasiForm = () => {
       } else {
         savedEstimasi = await estimasiAPI.create(estimasiData);
       }
-      toast.success(`Estimasi ${savedEstimasi.nomorEstimasi} berhasil!`);
+      toast.success(savedEstimasi?.nomorEstimasi ? `Estimasi ${savedEstimasi.nomorEstimasi} berhasil!` : 'Estimasi berhasil disimpan!');
       navigate('/estimasi');
     } catch (error) {
       toast.error('Gagal menyimpan estimasi: ' + error.message);

@@ -222,7 +222,7 @@ class EstimasiCreate(BaseModel):
 
 class EstimasiResponse(BaseModel):
     id: str
-    nomorEstimasi: str
+    nomorEstimasi: Optional[str] = None
     namaEstimasi: Optional[str] = None
     namaClient: Optional[str] = None
     perusahaan: Optional[str] = None
@@ -521,10 +521,11 @@ async def create_estimasi(data: EstimasiCreate, current_user: dict = Depends(get
     now = datetime.now(timezone.utc).isoformat()
     created_by = current_user.get("username") or "Unknown"
     created_by_role = current_user.get("role") or "user"
+    nomor_estimasi = generate_unique_number("EST") if status == "final" else None
     
     estimasi = {
         "id": str(int(datetime.now(timezone.utc).timestamp() * 1000)),
-        "nomorEstimasi": generate_unique_number("EST"),
+        "nomorEstimasi": nomor_estimasi,
         **data.model_dump(),
         "status": status,
         "createdAt": now,
@@ -547,12 +548,22 @@ async def update_estimasi(estimasi_id: str, data: EstimasiCreate, current_user: 
             raise HTTPException(status_code=400, detail="Field 'Customer' wajib diisi")
         if not data.lokasi or not data.lokasi.strip():
             raise HTTPException(status_code=400, detail="Field 'Alamat' wajib diisi")
+
+    existing = await db.estimasi.find_one({"id": estimasi_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Estimasi not found")
+
+    nomor_estimasi = existing.get("nomorEstimasi")
+    if status == "final" and not nomor_estimasi:
+        nomor_estimasi = generate_unique_number("EST")
+
     now = datetime.now(timezone.utc).isoformat()
     updated_by = current_user.get("username") or "Unknown"
     updated_by_role = current_user.get("role") or "user"
     
     update_data = {
         **data.model_dump(),
+        "nomorEstimasi": nomor_estimasi,
         "status": status,
         "updatedAt": now,
         "updatedBy": updated_by,

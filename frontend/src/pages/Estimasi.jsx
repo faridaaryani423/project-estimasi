@@ -841,9 +841,13 @@ const Estimasi = () => {
                           <TableRow key={est.id} className={isViewing ? 'bg-sky-50' : ''}>
                             <TableCell>{index + 1}</TableCell>
                             <TableCell>
-                              <span className="px-2 py-0.5 bg-sky-600 text-white text-xs font-bold rounded">
-                                {est.nomorEstimasi}
-                              </span>
+                              {est.nomorEstimasi ? (
+                                <span className="px-2 py-0.5 bg-sky-600 text-white text-xs font-bold rounded">
+                                  {est.nomorEstimasi}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 font-mono text-xs">-</span>
+                              )}
                             </TableCell>
                             <TableCell>
                               {est.status === 'draft' ? (
@@ -984,9 +988,11 @@ const Estimasi = () => {
             <CardHeader>
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <CardTitle className="flex items-center gap-3">
-                  <span className="px-3 py-1 bg-sky-600 text-white text-xs font-bold rounded">
-                    {viewingEstimasi.nomorEstimasi}
-                  </span>
+                  {viewingEstimasi.nomorEstimasi && (
+                    <span className="px-3 py-1 bg-sky-600 text-white text-xs font-bold rounded">
+                      {viewingEstimasi.nomorEstimasi}
+                    </span>
+                  )}
                   {viewingEstimasi.status === 'draft' ? (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
                       Draft
