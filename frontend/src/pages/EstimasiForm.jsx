@@ -18,11 +18,18 @@ import { calculateLuasPermukaan, calculateMaterialGroupAllocation, calculateBera
 import { formatNumberWithSeparator } from '@/lib/utils';
 import ManualItemForm from '@/components/ManualItemForm';
 import { resolveItemSatuan } from '@/utils/unitResolver';
+import {
+  buildDraftPayload,
+  sanitizeEstimasiItem,
+  toNumberOrNull,
+  toIntegerOrZero,
+} from '@/utils/estimasiPayload';
 
 // ── Template untuk item kosong ─────────────────────────────────────────────────
 const emptyItem = () => ({
   urutan: null,
   barangId: '',
+  isManual: false,
   kodeItem: '',
   panjangJadi: '',
   panjangJadiInput: '',
@@ -34,7 +41,7 @@ const emptyItem = () => ({
   hargamodalManual: '',
   satuanHargaModalManual: 'unit',
   hargajasaManual: '',
-  jenisBentukManual: 'custom',
+  jenisBentukManual: '',
   supplierManual: '',
   jenisBahanManual: '',
   materialIdManual: '',
@@ -57,7 +64,6 @@ const emptyItem = () => ({
   satuanManual: 'Bh',
   satuan: 'Bh',
   satuanBarang: 'Bh',
-  urutan: null,
   savedDbId: null,
 });
 
@@ -210,55 +216,7 @@ const EstimasiForm = () => {
     setAutoSaveStatus('saving');
 
     try {
-      const metodeDimensi = currentFormData.metodeDimensiKerja || 'langsung';
-      const luasPekerjaan = (() => {
-        if (metodeDimensi === 'pxl') {
-          return (parseFloat(currentFormData.panjangRuangan) || 0) * (parseFloat(currentFormData.lebarRuangan) || 0);
-        }
-        return parseFloat(currentFormData.nilaiDimensiKerja) || parseFloat(currentFormData.luasRuanganInput) || 0;
-      })();
-      const satuanDimensi = currentFormData.satuanDimensiKerja || 'm²';
-
-      const touchedItems = currentItems
-        .filter((it) => (it.barangId && it.barangId !== '__manual__') || ((it.namaManual || '').trim() !== ''))
-        .map((it, idx) => {
-          const barang = (it.barangId && it.barangId !== '__manual__') ? getEffectiveBarang(it.barangId) : null;
-          const namaBarang = it.barangId === '__manual__' ? (it.namaManual || 'Item Manual') : (barang?.nama || 'Item');
-          const jumlahKeperluan = parseInt(it.jumlahKeperluan) || 0;
-          const hargaSatuan = parseFloat(it.hargaManual || it.hargamodalManual || barang?.hargamodal || 0) || 0;
-          const subtotal = jumlahKeperluan * hargaSatuan;
-          return {
-            ...it,
-            namaBarang,
-            jumlahKeperluan,
-            hargaSatuan,
-            subtotal,
-            urutan: it.urutan || (idx + 1)
-          };
-        });
-
-      const draftPayload = {
-        namaEstimasi: currentFormData.namaEstimasi || 'Draft Estimasi',
-        namaProyek: currentFormData.namaProyek || null,
-        noOrder: currentFormData.noOrder || null,
-        namaClient: currentFormData.namaClient || '-',
-        perusahaan: currentFormData.perusahaan || null,
-        lokasi: currentFormData.lokasi || '-',
-        kontakPerson: currentFormData.kontakPerson || null,
-        metodeDimensiKerja: metodeDimensi,
-        panjangRuangan: currentFormData.panjangRuangan ? parseFloat(currentFormData.panjangRuangan) : null,
-        lebarRuangan: currentFormData.lebarRuangan ? parseFloat(currentFormData.lebarRuangan) : null,
-        luasRuanganInput: currentFormData.luasRuanganInput ? parseFloat(currentFormData.luasRuanganInput) : (currentFormData.nilaiDimensiKerja ? parseFloat(currentFormData.nilaiDimensiKerja) : null),
-        nilaiDimensiKerja: luasPekerjaan > 0 ? luasPekerjaan : null,
-        satuanDimensiKerja: satuanDimensi,
-        luasRuangan: luasPekerjaan > 0 ? luasPekerjaan : null,
-        items: touchedItems,
-        totalEstimasi: touchedItems.reduce((acc, item) => acc + (item.subtotal || 0), 0),
-        totalBeratReal: 0,
-        totalLuasPermukaan: 0,
-        totalTitikWelding: 0,
-        status: 'draft',
-      };
+      const draftPayload = buildDraftPayload(currentFormData, currentItems, getEffectiveBarang);
 
       if (!draftIdRef.current) {
         const res = await estimasiAPI.create(draftPayload);
@@ -561,12 +519,12 @@ const EstimasiForm = () => {
       const updated = [...selectedItems];
       updated[index] = {
         ...updated[index],
-        barangId: '__manual__',
-        isManual: true,
+        barangId: String(matched.id),
+        isManual: false,
         savedDbId: String(matched.id),
         kategoriBarangManual: matched.kategoriBarang || 'Lainnya',
-        jenisBentukManual: 'custom',
-        namaManual: matched.nama,
+        jenisBentukManual: '',
+        namaManual: '',
         supplierManual: matched.supplier || '',
         satuanBarangManual: exactSatuan,
         satuanManual: exactSatuan,
@@ -581,13 +539,15 @@ const EstimasiForm = () => {
       setSelectedItems(updated);
       return;
     }
+    const isManual = barangId === '__manual__';
     const updated = [...selectedItems];
     updated[index] = {
       ...updated[index],
       barangId,
-      namaManual: barangId === '__manual__' ? namaManual : '',
+      isManual,
+      namaManual: isManual ? namaManual : '',
       hargaManual: '',
-      savedDbId: barangId === '__manual__' ? null : String(barangId),
+      savedDbId: isManual ? null : String(barangId),
     };
     setSelectedItems(updated);
   };
@@ -597,23 +557,26 @@ const EstimasiForm = () => {
     const wb = XLSX.utils.book_new();
     const formDataRows = [
       ['TEMPLATE IMPORT ESTIMASI MATERIAL'],
-      ['Petunjuk: Isi kolom putih. Hapus baris contoh (baris 13-15) sebelum import.'],
+      ['Petunjuk: Isi kolom nilai (kolom B). Hapus baris contoh item sebelum import.'],
       [''],
       ['Nama Estimasi', '← wajib diisi'],
-      ['Nama Client', '← opsional'],     // ← NEW
-      ['Lokasi Proyek', '← opsional'],     // ← NEW
-      ['Kontak Person', '← opsional'],     // ← NEW
+      ['Proyek', '← opsional'],
+      ['Nama Client', '← opsional'],
+      ['Perusahaan', '← opsional'],
+      ['Lokasi', '← opsional'],
+      ['Kontak Person', '← opsional'],
+      ['No Order', '← opsional'],
       ['Panjang Ruangan (m)', '← opsional'],
       ['Lebar Ruangan (m)', '← opsional'],
       [''],
-      ['Nama Barang *', 'Kode Item', 'Panjang Jadi (mm)', 'Jumlah *', 'Harga Manual (Rp)'],
-      ['(lihat sheet Daftar Barang)', '(bebas, misal A-01)', '(kosongkan jika barang manual)', '', '(isi jika barang tidak ada di Daftar Barang)'],
-      ['Hollow 40x40x1.8', 'A-01', '600', '15', ''],
-      ['Hollow 40x40x1.8', 'A-02', '800', '10', ''],
+      ['Nama Barang *', 'Kode Item', 'Panjang Jadi (M)', 'Jumlah *', 'Harga Manual (Rp)'],
+      ['(lihat sheet Daftar Barang)', '(bebas, misal A-01)', '(contoh: 0.6 untuk 60 cm)', '', '(isi jika barang tidak ada di Daftar Barang)'],
+      ['Hollow 40x40x1.8', 'A-01', '0.6', '15', ''],
+      ['Hollow 40x40x1.8', 'A-02', '0.8', '10', ''],
       ['Barang Tidak Ada Di Daftar', 'C-01', '', '3', '750000'],
     ];
     const ws1 = XLSX.utils.aoa_to_sheet(formDataRows);
-    ws1['!cols'] = [{ wch: 35 }, { wch: 15 }, { wch: 22 }, { wch: 10 }, { wch: 25 }];
+    ws1['!cols'] = [{ wch: 35 }, { wch: 25 }, { wch: 22 }, { wch: 10 }, { wch: 25 }];
 
     const daftarHeader = [
       ['DAFTAR BARANG TERSEDIA'],
@@ -644,20 +607,31 @@ const EstimasiForm = () => {
         const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
         const cleanExcelVal = (val) => {
-          const str = String(val || '').trim();
+          const str = String(val ?? '').trim();
           if (str.toLowerCase().includes('wajib diisi') || str.toLowerCase().includes('opsional')) return '';
           return str;
         };
 
-        const namaEstimasi = cleanExcelVal(rows[3]?.[1]);
-        const namaProyek = cleanExcelVal(rows[4]?.[1]);
-        const namaClient = cleanExcelVal(rows[5]?.[1]);    // ← NEW
-        const perusahaan = cleanExcelVal(rows[6]?.[1]);
-        const lokasi = cleanExcelVal(rows[7]?.[1]);       // ← NEW
-        const kontakPerson = cleanExcelVal(rows[8]?.[1]); // ← NEW
-        const noOrder = cleanExcelVal(rows[9]?.[1]);
-        const panjangRuangan = cleanExcelVal(rows[10]?.[1]);
-        const lebarRuangan = cleanExcelVal(rows[11]?.[1]);
+        const findMetaVal = (labelRegex, fallbackRowIdx) => {
+          const found = rows.find(r => Array.isArray(r) && labelRegex.test(String(r[0] || '').trim()));
+          if (found && found[1] !== undefined) {
+            return cleanExcelVal(found[1]);
+          }
+          if (fallbackRowIdx !== undefined && rows[fallbackRowIdx]) {
+            return cleanExcelVal(rows[fallbackRowIdx][1]);
+          }
+          return '';
+        };
+
+        const namaEstimasi = findMetaVal(/^nama\s*estimasi/i, 3);
+        const namaProyek = findMetaVal(/^(?:nama\s*)?proyek/i, 4);
+        const namaClient = findMetaVal(/^(?:nama\s*)?client/i, 5);
+        const perusahaan = findMetaVal(/^perusahaan/i, 6);
+        const lokasi = findMetaVal(/^(?:lokasi\s*proyek|lokasi)/i, 7);
+        const kontakPerson = findMetaVal(/^kontak\s*person/i, 8);
+        const noOrder = findMetaVal(/^no\s*(?:order)?/i, 9);
+        const panjangRuangan = findMetaVal(/^panjang\s*ruangan/i, 10);
+        const lebarRuangan = findMetaVal(/^lebar\s*ruangan/i, 11);
 
         if (!namaEstimasi) {
           toast.error('Nama Estimasi wajib diisi di template!');
@@ -668,18 +642,27 @@ const EstimasiForm = () => {
         const notFoundNames = [];
         const items = [];
 
-        for (let i = 12; i < rows.length; i++) {
+        // Cari index row header tabel item (yang mengandung 'nama barang')
+        const headerRowIdx = rows.findIndex(r => Array.isArray(r) && String(r[0] || '').toLowerCase().includes('nama barang'));
+        const itemStartIdx = headerRowIdx >= 0 ? headerRowIdx + 1 : 13;
+
+        for (let i = itemStartIdx; i < rows.length; i++) {
           const row = rows[i];
+          if (!row || !Array.isArray(row)) continue;
           const namaBarang = String(row[0] || '').trim();
+          // Lewati baris kosong atau baris instruksi/contoh seperti '(lihat sheet Daftar Barang)'
+          if (!namaBarang || namaBarang.startsWith('(') || namaBarang.toLowerCase().includes('daftar barang')) continue;
+
           const kodeItem = String(row[1] || '').trim();
-          const rawPanjangStr = String(row[2] || '').trim();
+          const rawPanjangStr = String(row[2] || '').trim().replace(',', '.');
           const rawPanjang = parseFloat(rawPanjangStr);
+          // Convention: Excel/UI = meter, internal = millimeter (0.6 M -> 600 mm)
           const panjangJadi = !isNaN(rawPanjang) ? String(Math.round(rawPanjang * 1000)) : '';
-          const panjangJadiInput = rawPanjangStr;
+          const panjangJadiInput = !isNaN(rawPanjang) ? String(rawPanjang) : (rawPanjangStr || '');
           const jumlah = String(row[3] || '').trim();
           const hargaManual = String(row[4] || '').trim();
 
-          if (!namaBarang || !jumlah || parseInt(jumlah) <= 0) continue;
+          if (!jumlah || parseInt(jumlah, 10) <= 0) continue;
 
           const matched = barangList.find((b) => b.nama.toLowerCase() === namaBarang.toLowerCase());
 
@@ -875,24 +858,24 @@ const EstimasiForm = () => {
 
       const estimasiData = {
         namaEstimasi: formData.namaEstimasi,
-        namaProyek: formData.namaProyek,
-        noOrder: formData.noOrder,
+        namaProyek: formData.namaProyek || null,
+        noOrder: formData.noOrder || null,
         namaClient: formData.namaClient ? formData.namaClient.trim() : '',
-        perusahaan: formData.perusahaan,
+        perusahaan: formData.perusahaan || null,
         lokasi: formData.lokasi ? formData.lokasi.trim() : '',
-        kontakPerson: formData.kontakPerson,
+        kontakPerson: formData.kontakPerson || null,
         metodeDimensiKerja: formData.metodeDimensiKerja || 'langsung',
-        panjangRuangan: formData.panjangRuangan ? parseFloat(formData.panjangRuangan) : null,
-        lebarRuangan: formData.lebarRuangan ? parseFloat(formData.lebarRuangan) : null,
-        luasRuanganInput: formData.luasRuanganInput ? parseFloat(formData.luasRuanganInput) : (formData.nilaiDimensiKerja ? parseFloat(formData.nilaiDimensiKerja) : null),
+        panjangRuangan: toNumberOrNull(formData.panjangRuangan),
+        lebarRuangan: toNumberOrNull(formData.lebarRuangan),
+        luasRuanganInput: toNumberOrNull(formData.luasRuanganInput) ?? toNumberOrNull(formData.nilaiDimensiKerja),
         nilaiDimensiKerja: luasPekerjaan > 0 ? luasPekerjaan : null,
         satuanDimensiKerja: satuanDimensi,
         luasRuangan: luasPekerjaan > 0 ? luasPekerjaan : null,
-        items: itemDetails,
+        items: itemDetails.map((it, idx) => sanitizeEstimasiItem(it, idx)),
         totalEstimasi: Math.round(totalEstimasi),
         totalBeratReal: Math.round(totalBeratReal * 100) / 100,
         totalLuasPermukaan: Math.round(totalLuasPermukaan * 100) / 100,
-        totalTitikWelding,
+        totalTitikWelding: toIntegerOrZero(totalTitikWelding),
         status: 'final',
       };
 
