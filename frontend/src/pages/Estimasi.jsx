@@ -9,9 +9,76 @@ import { Calculator, Plus, Trash2, Weight, Ruler, Pencil, Download, Eye, Loader2
 import { estimasiAPI } from '@/services/api';
 import { formatNumberWithSeparator } from '@/lib/utils';
 import { resolveItemSatuan } from '@/utils/unitResolver';
-import { getBilledBarPrice, getFullBarPrice } from '@/utils/calculationEngine';
+import { calculateMaterialGroupAllocation, getBilledBarPrice, getFullBarPrice } from '@/utils/calculationEngine';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
+// Resolve saved material properties without reading today's master prices.
+const savedStock = (item) => {
+  const summary = item.breakdown?.summary || {};
+  const number = (...values) => {
+    for (const value of values) {
+      if (value === null || value === undefined || value === '') continue;
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+    return 0;
+  };
+  const stockLength = number(summary.stockLength > 0 ? summary.stockLength : null,
+    item.panjangMentah, item.panjangManual);
+  const weight = number(summary.beratStandar > 0 ? summary.beratStandar : null,
+    item.beratPerBatang, item.beratbatangManual, item.beratbatang);
+  const priceUnit = item.satuanHargaModal || item.satuanHargaModalManual || 'batang';
+  const rawPrice = number(item.hargaModal, item.hargamodalManual, item.hargamodal, item.hargaSatuan);
+  // A canonical summary contains price per bar; manual legacy rows may not.
+  const price = summary.hargaSatuan !== undefined && summary.stockLength > 0
+    ? number(summary.hargaSatuan)
+    : (priceUnit === 'kg' ? rawPrice * weight : number(item.hargaSatuan, rawPrice));
+  return { stockLength, weight, price };
+};
+
+const pdfMaterialKey = (item) => {
+  const manual = item.isManual || item.barangId === '__manual__';
+  const shape = item.jenisBentuk || item.jenisBentukManual || '';
+  const stock = savedStock(item);
+  // Name alone is not enough to identify interchangeable manual material.
+  const dimensions = ['lebar', 'tinggi', 'diameter', 'ketebalan', 'tinggiWF',
+    'lebarFlange', 'ketebalanWeb', 'ketebalanFlange', 'panjangPlat', 'lebarPlat', 'ketebalanPlat']
+    .map((field) => item[field + 'Manual'] ?? item[field] ?? null);
+  return JSON.stringify([
+    manual ? ['manual', item.namaBarang || item.namaManual] : ['catalog', item.barangId],
+    shape, item.jenisBahanManual || item.jenisBahan || '',
+    item.supplierManual || item.supplier || '', stock.stockLength, stock.weight, stock.price,
+    item.satuanHargaModal || item.satuanHargaModalManual || '', dimensions,
+  ]);
+};
+
+const allocatePdfMaterial = (rows) => {
+  const { stockLength, weight, price } = savedStock(rows[0]);
+  if (!(stockLength > 0) || weight < 0 || price < 0) {
+    throw new Error('Panjang batang atau data material tidak valid: ' + rows[0].namaBarang);
+  }
+  const items = rows.map((row) => {
+    const length = Number(row.panjangJadi);
+    const qty = Number(row.jumlahKeperluan);
+    if (!(length > 0) || !Number.isFinite(length) || !Number.isInteger(qty) || qty <= 0) {
+      throw new Error('Panjang/jumlah kebutuhan tidak valid: ' + (row.kodeItem || row.namaBarang));
+    }
+    return { ...row, panjangJadi: length, jumlahKeperluan: qty,
+      namaManual: row.kodeItem || row.namaBarang || row.namaManual };
+  });
+  const allocation = calculateMaterialGroupAllocation({
+    nama: rows[0].namaBarang, panjang: stockLength,
+    // Price is already normalized to a full bar, including kg-priced materials.
+    beratbatang: weight, hargamodal: price, satuanHargaModal: 'batang',
+    minWelding: rows[0].minWelding ?? rows[0].minWeldingManual ?? 50,
+  }, items);
+  // Explicit zero weight means unavailable, not a request for geometry inference.
+  if (weight === 0) allocation.barAllocations.forEach((bar) => {
+    bar.beratReal = 0; bar.beratSisa = 0;
+  });
+  return allocation.barAllocations.map((bar, index) => ({ ...bar, batangNo: index + 1 }));
+};
 
 const Estimasi = () => {
   const navigate = useNavigate();
@@ -206,7 +273,7 @@ const Estimasi = () => {
     const groups = {};
     const groupOrder = [];
     (est.items || []).forEach((item) => {
-      const key = item.isManual ? `manual-${item.namaBarang}` : String(item.barangId);
+      const key = pdfMaterialKey(item);
       if (!groups[key]) {
         groups[key] = { key, rows: [], isManual: !!item.isManual };
         groupOrder.push(key);
@@ -219,6 +286,20 @@ const Estimasi = () => {
       const minUB = Math.min(...groups[keyB].rows.map((r) => (r.urutan !== undefined && r.urutan !== null ? r.urutan : 999999)));
       return minUA - minUB;
     });
+
+    try {
+      groupOrder.forEach((key) => {
+        const rows = groups[key].rows;
+        const nonLinear = rows.some((row) =>
+          ['custom', 'plat'].includes(row.jenisBentuk) ||
+          ['custom', 'plat'].includes(row.jenisBentukManual) ||
+          row.breakdown?.isCustom || row.breakdown?.summary?.isCustom);
+        if (!nonLinear) allocatePdfMaterial(rows);
+      });
+    } catch (error) {
+      toast.error('PDF belum dapat dibuat. ' + error.message);
+      return;
+    }
 
     const tableBody = [];
     let grandPemakaianM     = 0;
@@ -415,129 +496,14 @@ const Estimasi = () => {
       }
 
       // ── Structural Items (batang, pipa, wf dll) ──
-      const panjangMentah = summary.stockLength || repItem.panjangMentah || (repItem.panjangManual ? parseFloat(repItem.panjangManual) : 0) || 6000;
+      const stock = savedStock(repItem);
+      const panjangMentah = stock.stockLength;
       const panjangMentahM = panjangMentah / 1000;
-      const beratStandar = summary.beratStandar || repItem.beratPerBatang || 0;
-      const hargaSatuan = summary.hargaSatuan || repItem.hargaSatuan || repItem.hargaModal || parseFloat(repItem.hargamodal || repItem.hargamodalManual || 0) || 0;
-      const satuanHargaModal = repItem.satuanHargaModal || repItem.breakdown?.satuanHargaModal || 'batang';
-      const satuanLabel = satuanHargaModal === 'kg' ? 'Kg' : (repItem.jenisBentuk === 'plat' ? 'Lbr' : 'Btg');
-      const minWelding = summary.minWelding ?? 50;
-      let barAllocations = lastItem?.breakdown?.barAllocations || [];
-
-      if (barAllocations.length === 0) {
-        const allGuides = group.rows.flatMap((row) => row.breakdown?.cuttingGuide || []);
-        if (allGuides.length > 0) {
-          barAllocations = allGuides.map((guide, gIdx) => {
-            const pieces = guide.pieces || [];
-            const panjangTerpakaiMm = guide.panjangTerpakai ?? pieces.reduce((s, p) => s + (p.length || 0), 0);
-            const sisaMm = guide.waste ?? guide.sisa ?? 0;
-            return {
-              batangNo: gIdx + 1,
-              panjangTerpakai: panjangTerpakaiMm,
-              sisa: sisaMm,
-              wasteReusable: guide.wasteReusable ?? sisaMm >= minWelding,
-              items: pieces.length > 0
-                ? pieces.map((p) => ({
-                    label: p.label || guide.label || `Item${p.itemNo ?? gIdx + 1}`,
-                    kodeItem: p.kodeItem || null,
-                    itemNo: p.itemNo ?? gIdx + 1,
-                    length: p.length ?? panjangTerpakaiMm,
-                  }))
-                : [{
-                    label: group.rows[gIdx % group.rows.length]?.kodeItem || group.rows[gIdx % group.rows.length]?.namaBarang || `Item${gIdx + 1}`,
-                    kodeItem: group.rows[gIdx % group.rows.length]?.kodeItem || null,
-                    itemNo: gIdx + 1,
-                    length: panjangTerpakaiMm,
-                  }],
-            };
-          });
-        } else {
-          barAllocations = group.rows.flatMap((row, rIdx) => {
-            let kebutuhan = row.breakdown?.kebutuhanBahan || 1;
-            let panjangReal = row.breakdown?.panjangRealTerpakai || 0;
-            let wasteTotal = row.breakdown?.waste || 0;
-
-            if (row.isManual) {
-              const pJadi = parseFloat(row.panjangJadi) || 0;
-              const qty = parseInt(row.jumlahKeperluan) || 0;
-              panjangReal = pJadi * qty;
-
-              if (panjangMentah > 0 && pJadi > 0) {
-                const manualBars = [];
-                let currentRemaining = panjangMentah;
-                let currentBarPieces = [];
-
-                for (let i = 0; i < qty; i++) {
-                  let cutRemaining = pJadi;
-                  while (cutRemaining > 0) {
-                    const cutLength = Math.min(cutRemaining, panjangMentah);
-                    if (currentRemaining < cutLength - 0.01) {
-                      manualBars.push({
-                        panjangTerpakai: panjangMentah - currentRemaining,
-                        sisa: currentRemaining,
-                        items: currentBarPieces,
-                      });
-                      currentRemaining = panjangMentah;
-                      currentBarPieces = [];
-                    }
-                    currentBarPieces.push({
-                      label: row.kodeItem || row.namaBarang || `Item${rIdx + 1}`,
-                      kodeItem: row.kodeItem || null,
-                      itemNo: rIdx + 1,
-                      length: cutLength,
-                    });
-                    currentRemaining -= cutLength;
-                    cutRemaining -= cutLength;
-                  }
-                }
-                if (currentBarPieces.length > 0) {
-                  manualBars.push({
-                    panjangTerpakai: panjangMentah - currentRemaining,
-                    sisa: currentRemaining,
-                    items: currentBarPieces,
-                  });
-                }
-
-                return manualBars.map((bar, i) => ({
-                  batangNo: rIdx * Math.max(1, manualBars.length) + i + 1,
-                  panjangTerpakai: bar.panjangTerpakai,
-                  sisa: bar.sisa,
-                  wasteReusable: bar.sisa >= minWelding,
-                  items: bar.items,
-                }));
-              } else {
-                return [{
-                  batangNo: rIdx + 1,
-                  panjangTerpakai: panjangReal,
-                  sisa: 0,
-                  wasteReusable: false,
-                  items: Array.from({ length: Math.max(1, qty) }).map(() => ({
-                    label: row.kodeItem || row.namaBarang || `Item${rIdx + 1}`,
-                    kodeItem: row.kodeItem || null,
-                    itemNo: rIdx + 1,
-                    length: pJadi || panjangReal,
-                  })),
-                }];
-              }
-            }
-
-            const panjangPerBatang = kebutuhan > 0 ? panjangReal / kebutuhan : panjangMentah;
-            const sisaPerBatang = kebutuhan > 0 ? wasteTotal / kebutuhan : 0;
-            return Array.from({ length: Math.max(1, kebutuhan) }, (_, i) => ({
-              batangNo: rIdx * Math.max(1, kebutuhan) + i + 1,
-              panjangTerpakai: panjangPerBatang,
-              sisa: sisaPerBatang,
-              wasteReusable: sisaPerBatang >= minWelding,
-              items: [{
-                label: row.kodeItem || row.namaBarang || `Item${rIdx + 1}`,
-                kodeItem: row.kodeItem || null,
-                itemNo: rIdx + 1,
-                length: panjangPerBatang,
-              }],
-            }));
-          });
-        }
-      }
+      const beratStandar = stock.weight;
+      const hargaSatuan = stock.price;
+      // Structural prices below are per bar, including originally kg-priced stock.
+      const satuanLabel = 'Btg';
+      const barAllocations = allocatePdfMaterial(group.rows);
 
       // Material Banner
       const hargaSatuanText = hargaSatuan > 0 ? `   Harga Satuan : Rp. ${fmtN(hargaSatuan)} / ${satuanLabel}` : '';
